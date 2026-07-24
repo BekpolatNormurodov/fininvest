@@ -1,7 +1,15 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import type { CaseSectionKey } from '@credit-core/shared';
+import {
+  type CaseSectionKey,
+  type LoanProduct,
+  LOAN_PRODUCT_PROFILES,
+  loanProductProfile,
+  termBandFor,
+  TERM_BAND_LABEL,
+} from '@credit-core/shared';
 import { getErrorMessage } from '@credit-core/api-client';
 import { Button } from '../../components/primitives';
+import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../components/Toast';
 import { Check } from '../../lib/icons';
 import { cn } from '../../lib/cn';
@@ -20,11 +28,17 @@ const STEPS: { title: string; section: CaseSectionKey; Comp: (p: { f: ReturnType
 ];
 
 export function OriginationWizard() {
-  const { id } = useParams();
+  const { id, product } = useParams();
   const nav = useNavigate();
   const toast = useToast();
+  const { lang } = useI18n();
   const f = useOriginationForm(id);
   const { Comp } = STEPS[f.step];
+
+  // Product chosen on the picker (route /cases/new/:product); guarded to a known product.
+  const prod = product && product in LOAN_PRODUCT_PROFILES ? (product as LoanProduct) : null;
+  const termM = f.form.creditLine?.termMonths ?? f.form.termMonths ?? null;
+  const band = prod && termM ? termBandFor(termM) : null;
 
   const next = async () => {
     if (f.stepHasErrors(f.step)) { f.setAttempted(true); toast.error('Tekshiring', 'Majburiy maydonlarni to‘ldiring'); return; }
@@ -64,7 +78,19 @@ export function OriginationWizard() {
     <div className="space-y-6">
       <div>
         <div className="flex items-end justify-between gap-3">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{id ? 'Arizani to‘ldirish' : 'Yangi ariza'}</h1>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{id ? 'Arizani to‘ldirish' : 'Yangi ariza'}</h1>
+            {prod && (
+              <span className="rounded-lg bg-brand-50 px-2.5 py-1 text-sm font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-400">
+                {lang === 'ru' ? loanProductProfile(prod).label.ru : loanProductProfile(prod).label.uz}
+                {band && (
+                  <span className="ml-1.5 font-normal text-brand-600/80 dark:text-brand-400/80">
+                    · {lang === 'ru' ? TERM_BAND_LABEL[band].ru : TERM_BAND_LABEL[band].uz}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
           <span className="shrink-0 text-sm font-semibold text-brand-700 dark:text-brand-400">Bosqich {f.step + 1}/{STEPS.length}</span>
         </div>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Har bosqich alohida saqlanadi — istalgan vaqtda qaytib tuzatishingiz mumkin</p>
