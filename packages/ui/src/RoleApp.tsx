@@ -25,6 +25,7 @@ import { Dashboard } from './pages/Dashboard';
 import { CaseView } from './pages/CaseView';
 import { CaseDocumentsPage } from './pages/CaseDocumentsPage';
 import { OriginationWizard } from './pages/origination/OriginationWizard';
+import { NewApplicationPage } from './pages/origination/NewApplicationPage';
 import { ReMflPage } from './pages/ReMflPage';
 import { DocCheckPage } from './pages/DocCheckPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
@@ -76,7 +77,8 @@ function Shell({ role, title }: { role: Role; title: string }) {
     <AppShell title={title} nav={navFor(role, t)}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/cases/new" element={<OriginationWizard />} />}
+        {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/cases/new" element={<NewApplicationPage />} />}
+        {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/cases/new/:product" element={<OriginationWizard />} />}
         {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/cases/re-mfl" element={<ReMflPage />} />}
         {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/hujjatlar" element={<DocCheckPage />} />}
         {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/cases/:id/origination" element={<OriginationWizard />} />}
