@@ -87,10 +87,27 @@ async function main() {
     await prisma.seller.upsert({ where: { id: s.id }, update: s, create: s });
   }
 
+  // Auto-salon catalog for AVTO — names only for now; requisites are filled per deal or later.
+  const AUTO_SALONS = [
+    'UzAuto Motors avtosaloni', 'Roodell avtosaloni', 'ADM Motors', 'Chevrolet Toshkent',
+    'Chevrolet Samarqand', 'Chery Uzbekistan', 'BYD Uzbekistan', 'KIA Toshkent',
+    'Hyundai Uzbekistan', 'Changan Motors', 'Haval Uzbekistan', 'Geely Uzbekistan',
+    'Lada Avto', 'Toyota Toshkent', 'Nissan Uzbekistan', 'MG Motor Uzbekistan',
+    'JAC Motors', 'Foton Uzbekistan', 'Isuzu Uzbekistan', 'Mercedes-Benz Toshkent',
+    'BMW Toshkent', 'Audi Uzbekistan', 'Volkswagen Uzbekistan', 'Skoda Uzbekistan',
+    'Renault Uzbekistan', 'Peugeot Uzbekistan', 'Ravon Motors', 'Uz-Daewoo Auto',
+    'Avtomir Toshkent', 'Zamon Auto', 'Mega Motors', 'Premium Auto salon',
+    'Elite Motors', 'Grand Auto', 'Silk Road Motors', 'Buxoro Avto',
+  ];
+  for (let i = 0; i < AUTO_SALONS.length; i++) {
+    const data = { id: `seller-salon-${i + 1}`, kind: SellerKind.LEGAL, orgName: AUTO_SALONS[i], isCatalog: true };
+    await prisma.seller.upsert({ where: { id: data.id }, update: data, create: data });
+  }
+
   // eslint-disable-next-line no-console
   console.log('✅ Seed tayyor. Login: operator/moderator/director/admin — parol: parol123');
   // eslint-disable-next-line no-console
-  console.log(`✅ ${catalogSellers.length} ta katalog sotuvchi qo'shildi (avto/ipoteka uchun).`);
+  console.log(`✅ ${catalogSellers.length + AUTO_SALONS.length} ta katalog sotuvchi (${AUTO_SALONS.length} avtosalon) qo'shildi.`);
 }
 
 main()
