@@ -167,24 +167,25 @@ export function useOriginationForm(id?: string) {
     katm: katmFilled ? undefined : 'KATM bo‘limi to‘liq to‘ldirilishi shart',
   } as const;
   type ErrKey = keyof typeof errors;
-  // Which errors belong to which wizard step (index in OriginationWizard.STEPS).
-  // Steps: 0 Qarz oluvchi · 1 Ish & daromad · 2 Liniya · 3 Sug‘urta · 4 Garov · 5 Transh · 6 KATM.
-  const STEP_ERRORS: Record<number, ErrKey[]> = {
-    0: ['fullName', 'pinfl', 'passportSeries', 'passportNumber', 'phone', 'contacts'],
-    1: ['employment'],
-    2: ['amountTotal', 'lineTerm'],
-    3: [],
-    4: ['collateral'],
-    5: ['scheduleType', 'trancheTerm', 'principal'],
-    6: ['katm'],
+  // Errors per wizard step, keyed by a STABLE step key (not the display index) so the wizard can
+  // reorder steps per product (e.g. put the asset first for AVTO/IPOTEKA) without misaligning them.
+  const STEP_ERRORS: Record<string, ErrKey[]> = {
+    borrower: ['fullName', 'pinfl', 'passportSeries', 'passportNumber', 'phone', 'contacts'],
+    employment: ['employment'],
+    creditLine: ['amountTotal', 'lineTerm'],
+    sugurta: [],
+    garov: ['collateral'],
+    transh: ['scheduleType', 'trancheTerm', 'principal'],
+    katm: ['katm'],
+    seller: [],
   };
-  const stepHasErrors = (s: number) => (STEP_ERRORS[s] ?? []).some((k) => errors[k]);
+  const stepHasErrors = (key: string) => (STEP_ERRORS[key] ?? []).some((k) => errors[k]);
   // A step is "complete" (green ✓) only when it actually HAS required fields and all are satisfied.
-  // Ish & daromad (step 1) is conditional (majburiy only for 100 mln+), so it goes green ONLY when the
-  // key fields are actually filled — never green by default on a blank form.
+  // Ish & daromad is conditional (majburiy only for 100 mln+), so it goes green ONLY when the key
+  // fields are actually filled — never green by default on a blank form.
   const employmentFilled = !!form.employment?.employer?.trim() && (form.affordability?.mainActivityIncome ?? 0) > 0;
-  const stepComplete = (s: number) =>
-    s === 1 ? employmentFilled : (STEP_ERRORS[s] ?? []).length > 0 && !stepHasErrors(s);
+  const stepComplete = (key: string) =>
+    key === 'employment' ? employmentFilled : (STEP_ERRORS[key] ?? []).length > 0 && !stepHasErrors(key);
   const valid = (Object.keys(errors) as ErrKey[]).every((k) => !errors[k]);
 
   /** Persist one section (autosave). Creates the case first if it doesn't exist yet. */

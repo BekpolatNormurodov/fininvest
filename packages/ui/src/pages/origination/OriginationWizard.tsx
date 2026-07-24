@@ -19,14 +19,16 @@ import { useOriginationForm } from './useOriginationForm';
 import { Step1, Step2, Step3, StepSugurta, StepGarov, Step4, Step5, StepSeller } from './steps';
 import { Summary } from './Summary';
 
-const BASE_STEPS: { title: string; section: CaseSectionKey; Comp: (p: { f: ReturnType<typeof useOriginationForm> }) => JSX.Element }[] = [
-  { title: 'Qarz oluvchi', section: 'borrower', Comp: Step1 },
-  { title: 'Ish & daromad', section: 'employment', Comp: Step2 },
-  { title: 'Liniya', section: 'creditLine', Comp: Step3 },
-  { title: 'Sug‘urta', section: 'creditLine', Comp: StepSugurta },
-  { title: 'Garov', section: 'creditLine', Comp: StepGarov },
-  { title: 'Transh', section: 'creditLine', Comp: Step4 },
-  { title: 'KATM', section: 'creditHistory', Comp: Step5 },
+type WizardStep = { key: string; title: string; section: CaseSectionKey; Comp: (p: { f: ReturnType<typeof useOriginationForm> }) => JSX.Element };
+
+const BASE_STEPS: WizardStep[] = [
+  { key: 'borrower', title: 'Qarz oluvchi', section: 'borrower', Comp: Step1 },
+  { key: 'employment', title: 'Ish & daromad', section: 'employment', Comp: Step2 },
+  { key: 'creditLine', title: 'Liniya', section: 'creditLine', Comp: Step3 },
+  { key: 'sugurta', title: 'Sug‘urta', section: 'creditLine', Comp: StepSugurta },
+  { key: 'garov', title: 'Garov', section: 'creditLine', Comp: StepGarov },
+  { key: 'transh', title: 'Transh', section: 'creditLine', Comp: Step4 },
+  { key: 'katm', title: 'KATM', section: 'creditHistory', Comp: Step5 },
 ];
 
 export function OriginationWizard() {
@@ -44,10 +46,13 @@ export function OriginationWizard() {
   // purchased asset — it is not a separate «garov». Appended (not inserted) so the index-keyed
   // per-step validation for the base steps stays aligned.
   const assetStepTitle = effProduct === 'AVTO' ? 'Mashina' : effProduct === 'IPOTEKA' ? 'Uy-joy' : 'Aktiv';
-  const steps = useMemo(() => {
+  const steps = useMemo<WizardStep[]>(() => {
     if (!isAsset) return BASE_STEPS;
-    const renamed = BASE_STEPS.map((s) => (s.Comp === StepGarov ? { ...s, title: assetStepTitle } : s));
-    return [...renamed, { title: 'Sotuvchi', section: 'creditLine' as CaseSectionKey, Comp: StepSeller }];
+    // Asset products lead with the purchased item (car/house), then the usual steps, then the seller.
+    const asset = { ...BASE_STEPS.find((s) => s.key === 'garov')!, title: assetStepTitle };
+    const rest = BASE_STEPS.filter((s) => s.key !== 'garov');
+    const seller: WizardStep = { key: 'seller', title: 'Sotuvchi', section: 'creditLine', Comp: StepSeller };
+    return [asset, ...rest, seller];
   }, [isAsset, assetStepTitle]);
   const { Comp } = steps[f.step] ?? steps[0];
   const termM = f.form.creditLine?.termMonths ?? f.form.termMonths ?? null;
@@ -60,7 +65,7 @@ export function OriginationWizard() {
   }, [prod, id]);
 
   const next = async () => {
-    if (f.stepHasErrors(f.step)) { f.setAttempted(true); toast.error('Tekshiring', 'Majburiy maydonlarni to‘ldiring'); return; }
+    if (f.stepHasErrors(steps[f.step].key)) { f.setAttempted(true); toast.error('Tekshiring', 'Majburiy maydonlarni to‘ldiring'); return; }
     try {
       await f.saveSection(steps[f.step].section);
       if (f.step < steps.length - 1) f.setStep(f.step + 1);
@@ -122,8 +127,8 @@ export function OriginationWizard() {
           <ol className="flex flex-wrap gap-2">
             {steps.map((s, i) => {
               const current = i === f.step; // selected
-              const complete = f.stepComplete(i); // has required fields AND all filled correctly
-              const invalid = f.attempted && f.stepHasErrors(i); // touched (submit attempted), still missing a required field
+              const complete = f.stepComplete(s.key); // has required fields AND all filled correctly
+              const invalid = f.attempted && f.stepHasErrors(s.key); // touched (submit attempted), still missing a required field
               return (
                 <li key={i}>
                   <button
