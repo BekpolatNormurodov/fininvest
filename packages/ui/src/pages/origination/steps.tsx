@@ -583,7 +583,7 @@ export function StepSeller({ f }: { f: OriginationForm }) {
   const toast = useToast();
   const { data: firms = [] } = useQuery({ queryKey: ['sellersCatalog'], queryFn: () => api.sellersCatalog() });
   const [kind, setKind] = useState<'LEGAL' | 'INDIVIDUAL'>('LEGAL');
-  const [indiv, setIndiv] = useState({ fullName: '', phone: '', bankAccount: '', ownershipDoc: '' });
+  const [indiv, setIndiv] = useState({ fullName: '', pinfl: '', passport: '', address: '', phone: '', bankAccount: '', ownershipDoc: '' });
   const [saving, setSaving] = useState(false);
   const [downInput, setDownInput] = useState('');
 
@@ -629,6 +629,9 @@ export function StepSeller({ f }: { f: OriginationForm }) {
       const s = await api.createSeller({
         kind: SellerKind.INDIVIDUAL,
         fullName: indiv.fullName,
+        pinfl: indiv.pinfl || null,
+        passport: indiv.passport || null,
+        address: indiv.address || null,
         phone: indiv.phone || null,
         bankAccount: indiv.bankAccount || null,
         ownershipDoc: indiv.ownershipDoc || null,
@@ -661,9 +664,13 @@ export function StepSeller({ f }: { f: OriginationForm }) {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="F.I.Sh."><Input value={indiv.fullName} onChange={(e) => setIndiv({ ...indiv, fullName: e.target.value })} /></Field>
+            <Field label="JSHSHIR (PINFL)"><Input value={indiv.pinfl} onChange={(e) => setIndiv({ ...indiv, pinfl: e.target.value })} /></Field>
+            <Field label="Passport (seriya va raqam)"><Input value={indiv.passport} onChange={(e) => setIndiv({ ...indiv, passport: e.target.value })} placeholder="AA 1234567" /></Field>
+            <Field label="Manzil"><Input value={indiv.address} onChange={(e) => setIndiv({ ...indiv, address: e.target.value })} /></Field>
             <Field label="Telefon"><Input value={indiv.phone} onChange={(e) => setIndiv({ ...indiv, phone: e.target.value })} /></Field>
             <Field label="Karta / hisob raqami"><Input value={indiv.bankAccount} onChange={(e) => setIndiv({ ...indiv, bankAccount: e.target.value })} /></Field>
             <Field label="Egalik hujjati (kadastr / tex passport)"><Input value={indiv.ownershipDoc} onChange={(e) => setIndiv({ ...indiv, ownershipDoc: e.target.value })} /></Field>
+            <div className="sm:col-span-2 text-xs text-gray-500 dark:text-gray-400">Passport rasmlari va egalik hujjatlari (kadastr / tex passport) «Hujjatlar» bo‘limiga yuklanadi.</div>
             <div className="sm:col-span-2"><Button onClick={saveIndiv} disabled={saving}>{saving ? '…' : 'Sotuvchini saqlash'}</Button></div>
           </div>
         )}
