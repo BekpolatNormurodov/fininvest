@@ -299,6 +299,31 @@ export function StepSugurta({ f }: { f: OriginationForm }) {
   const ins = l.insurance ?? ({} as Ins);
   const setLine = (p: Partial<Line>) => f.patch({ creditLine: { ...l, ...p } as Line });
   const setIns = (p: Partial<Ins>) => setLine({ insurance: { ...ins, ...p } as Ins });
+
+  // Asset products (AVTO/IPOTEKA) insure the ASSET (KASKO / property), not the loan-risk cover.
+  // A distinct, manually-filled policy form — the bracket/×130% derivation below is loan-risk only.
+  const insProduct = (f.form.product ?? null) as LoanProduct | null;
+  if (insProduct && loanProductProfile(insProduct).kind === 'ASSET') {
+    const label = ({ CAR: 'KASKO (mashina sug\'urtasi)', PROPERTY: 'Mulk sug\'urtasi', LOAN_RISK: '' } as const)[loanProductProfile(insProduct).insurance];
+    return (
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-800 dark:text-white">Sug‘urta — {label}</h2>
+          <span className="rounded-md bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">Majburiy</span>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Asset kreditda aktivning o‘zi (garov) sug‘urtalanadi. Polis ma’lumotlarini kiriting.</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Kompaniya"><Select value={(ins.company ?? '') as string} onChange={(v) => setIns({ company: v })} options={opt([...INSURANCE_COMPANIES])} /></Field>
+          <Field label="Polis №"><Input value={ins.policyNo ?? ''} onChange={(e) => setIns({ policyNo: e.target.value })} /></Field>
+          <Field label="Polis sanasi"><DatePicker value={ins.policyIssueDate ?? null} onChange={(iso) => setIns({ policyIssueDate: iso })} /></Field>
+          <Field label="Polis muddati (oy)"><Input type="number" min={1} value={ins.policyTermMonths ?? ''} onChange={(e) => setIns({ policyTermMonths: numv(e.target.value) })} /></Field>
+          <Field label="Sug‘urta summasi"><MoneyInput value={ins.insuredSum ?? null} onChange={(n) => setIns({ insuredSum: n, insured: true })} /></Field>
+          <Field label="Sug‘urta mukofoti (premiya)"><MoneyInput value={ins.premium ?? null} onChange={(n) => setIns({ premium: n, insured: true })} /></Field>
+        </div>
+      </Card>
+    );
+  }
+
   // Premium is a FLAT rate by term bracket (≤2 yil → 2%, 2–4 yil → 4%) of the insured sum — derived,
   // not entered. Term capped at 48 months (4 years) for the effective bracket.
   const policyMonths = Math.min(ins.policyTermMonths ?? 0, INSURANCE_MAX_MONTHS) || null;
