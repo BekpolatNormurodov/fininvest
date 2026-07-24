@@ -3,6 +3,7 @@ import { moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { p } from './_shared';
+import { loanProductProfile, LoanProductKind } from '@credit-core/shared';
 
 /** 16-digit card → "0000 0000 0000 0000"; any other length is left as-is. */
 function groupCard(n: string | null | undefined): string {
@@ -24,6 +25,16 @@ export function disbursementTemplate(c: CaseDocData): TDocumentDefinitions {
   const org = c.organization;
   const b = c.borrower;
   const d = c.disbursement;
+  // Asset products (AVTO/IPOTEKA): the money is paid to the SELLER, so fall back to the seller's
+  // requisites when the disbursement detail has not been filled separately.
+  const isAsset = c.product ? loanProductProfile(c.product).kind === LoanProductKind.ASSET : false;
+  const seller = isAsset ? c.seller : null;
+  const holderName = d?.holderName ?? seller?.orgName ?? seller?.fullName ?? '—';
+  const cardNumber = d?.cardNumber ?? null;
+  const accountNumber = d?.accountNumber ?? seller?.bankAccount ?? '—';
+  const bankMfo = d?.bankMfo ?? seller?.mfoCode ?? '—';
+  const holderInn = d?.holderInn ?? seller?.stir ?? '—';
+  const bankName = d?.bankName ?? seller?.bankName ?? '—';
   const amount = c.creditLine?.amountTotal ?? c.amount ?? null;
 
   const line = (label: string, value: string): Content => ({ text: `${label}: ${value}`, margin: [0, 2, 0, 0] });
@@ -70,12 +81,12 @@ export function disbursementTemplate(c: CaseDocData): TDocumentDefinitions {
           `микроқарзни қуйидаги ҳисоб рақамга ўтказиб беришингизни сўрайман.`,
       ),
       { text: 'Тўлов реквизитлари:', bold: true, margin: [0, 10, 0, 2] },
-      line('Ҳисоб эгаси', d?.holderName ?? '—'),
-      line('Карта рақами', groupCard(d?.cardNumber)),
-      line('Ҳисоб рақами (Х/Р)', d?.accountNumber ?? '—'),
-      line('МФО', d?.bankMfo ?? '—'),
-      line('ИНН', d?.holderInn ?? '—'),
-      line('Банк', d?.bankName ?? '—'),
+      line('Ҳисоб эгаси', holderName),
+      line('Карта рақами', groupCard(cardNumber)),
+      line('Ҳисоб рақами (Х/Р)', accountNumber),
+      line('МФО', bankMfo),
+      line('ИНН', holderInn),
+      line('Банк', bankName),
       /*
         The signature row is three real columns, matching the caption row below it. It used to be a
         single string padded with spaces — so the rules drifted away from «Имзо» and «Сана» as soon
