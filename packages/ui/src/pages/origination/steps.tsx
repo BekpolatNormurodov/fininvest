@@ -380,18 +380,31 @@ export function StepGarov({ f }: { f: OriginationForm }) {
   const amountTotal = l.amountTotal ?? null;
   const policyMonths = Math.min(ins.policyTermMonths ?? 0, INSURANCE_MAX_MONTHS) || null;
   const calc = originationCalc({ loanUnderPolicy: ins.loanUnderPolicy, policyTermMonths: policyMonths, requiredInsuredAmount: l.requiredInsuredAmount });
+
+  // Asset products: the purchased item (car/house) IS the collateral — auto-add it once and hide the
+  // "add pledge" affordance, so the operator just fills the asset (its price drives the down payment).
+  const gProduct = (f.form.product ?? null) as LoanProduct | null;
+  const gIsAsset = gProduct ? loanProductProfile(gProduct).kind === 'ASSET' : false;
+  const gAssetType = gProduct === 'AVTO' ? ProductType.AUTO : gProduct === 'IPOTEKA' ? ProductType.REAL_ESTATE : null;
+  useEffect(() => {
+    if (gIsAsset && gAssetType && cols.length === 0) f.addCol(gAssetType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gIsAsset, gAssetType, cols.length]);
+
   return (
     <div className="space-y-6">
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800 dark:text-white">Garovlar <span className="text-gray-500 dark:text-gray-400">({cols.length})</span></h2>
-          {/* Add-a-collateral buttons: a leading + makes the "add" action unmistakable, with the
-              type icon (uy-joy / avto) after it for scannability. */}
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => addCol(ProductType.REAL_ESTATE)}><Plus className="h-4 w-4" /><House className="h-4 w-4" /> Uy-joy</Button>
-            <Button variant="secondary" onClick={() => addCol(ProductType.AUTO)}><Plus className="h-4 w-4" /><Car className="h-4 w-4" /> Avto</Button>
-          </div>
+          <h2 className="font-semibold text-gray-800 dark:text-white">{gIsAsset ? 'Sotib olinayotgan aktiv (garov)' : 'Garovlar'} <span className="text-gray-500 dark:text-gray-400">({cols.length})</span></h2>
+          {/* Add-a-collateral buttons — hidden for asset products, whose single asset is auto-added. */}
+          {!gIsAsset && (
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => addCol(ProductType.REAL_ESTATE)}><Plus className="h-4 w-4" /><House className="h-4 w-4" /> Uy-joy</Button>
+              <Button variant="secondary" onClick={() => addCol(ProductType.AUTO)}><Plus className="h-4 w-4" /><Car className="h-4 w-4" /> Avto</Button>
+            </div>
+          )}
         </div>
+        {gIsAsset && <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Sotib olinayotgan {gProduct === 'AVTO' ? 'mashina' : 'uy-joy'} — u avtomatik garov bo‘ladi. Narxini (kelishilgan qiymat) kiriting; boshlang‘ich to‘lov «Sotuvchi» bosqichida shundan hisoblanadi.</p>}
         {/* One tab per collateral — green ✓ when complete, red ! when a required field is missing.
             Only the selected collateral is shown below. */}
         <ol className="mb-3 flex flex-wrap gap-2">
@@ -415,7 +428,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
                   <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold', done ? 'bg-success-600 text-white' : 'bg-error-600 text-white')}>
                     {done ? <Check className="h-3 w-3" /> : '!'}
                   </span>
-                  Garov {i + 1} · {c.type === ProductType.AUTO ? 'Avto' : 'Uy-joy'}
+                  {gIsAsset ? 'Aktiv' : `Garov ${i + 1}`} · {c.type === ProductType.AUTO ? 'Avto' : 'Uy-joy'}
                 </button>
               </li>
             );
@@ -423,11 +436,11 @@ export function StepGarov({ f }: { f: OriginationForm }) {
         </ol>
         {cols.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-error-300 bg-error-50/50 p-8 text-center dark:border-error-500/40 dark:bg-error-500/5">
-            <p className="font-medium text-error-700 dark:text-error-400">Hali garov qo‘shilmagan — majburiy</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Yuqoridagi tugmalar bilan <b>Uy-joy</b> yoki <b>Avto</b> garov qo‘shing — kamida bittasi to‘liq to‘ldirilishi shart.</p>
+            <p className="font-medium text-error-700 dark:text-error-400">{gIsAsset ? 'Sotib olinayotgan aktiv qo‘shilmagan' : 'Hali garov qo‘shilmagan — majburiy'}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{gIsAsset ? 'Sotib olinayotgan aktivni qo‘shing — u avtomatik garov bo‘ladi.' : (<>Yuqoridagi tugmalar bilan <b>Uy-joy</b> yoki <b>Avto</b> garov qo‘shing — kamida bittasi to‘liq to‘ldirilishi shart.</>)}</p>
             <div className="mt-4 flex justify-center gap-2">
-              <Button variant="secondary" onClick={() => addCol(ProductType.REAL_ESTATE)}><Plus className="h-4 w-4" /><House className="h-4 w-4" /> Uy-joy</Button>
-              <Button variant="secondary" onClick={() => addCol(ProductType.AUTO)}><Plus className="h-4 w-4" /><Car className="h-4 w-4" /> Avto</Button>
+              {(!gIsAsset || gAssetType === ProductType.REAL_ESTATE) && <Button variant="secondary" onClick={() => addCol(ProductType.REAL_ESTATE)}><Plus className="h-4 w-4" /><House className="h-4 w-4" /> Uy-joy</Button>}
+              {(!gIsAsset || gAssetType === ProductType.AUTO) && <Button variant="secondary" onClick={() => addCol(ProductType.AUTO)}><Plus className="h-4 w-4" /><Car className="h-4 w-4" /> Avto</Button>}
             </div>
           </div>
         ) : cols[active] && (
