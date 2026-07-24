@@ -381,15 +381,11 @@ export function StepGarov({ f }: { f: OriginationForm }) {
   const policyMonths = Math.min(ins.policyTermMonths ?? 0, INSURANCE_MAX_MONTHS) || null;
   const calc = originationCalc({ loanUnderPolicy: ins.loanUnderPolicy, policyTermMonths: policyMonths, requiredInsuredAmount: l.requiredInsuredAmount });
 
-  // Asset products: the purchased item (car/house) IS the collateral — auto-add it once and hide the
-  // "add pledge" affordance, so the operator just fills the asset (its price drives the down payment).
+  // Asset products: the purchased item (car/house) IS the collateral. Start empty (default 0) and let
+  // the operator add the one asset with a single button — its price then drives the down payment.
   const gProduct = (f.form.product ?? null) as LoanProduct | null;
   const gIsAsset = gProduct ? loanProductProfile(gProduct).kind === 'ASSET' : false;
   const gAssetType = gProduct === 'AVTO' ? ProductType.AUTO : gProduct === 'IPOTEKA' ? ProductType.REAL_ESTATE : null;
-  useEffect(() => {
-    if (gIsAsset && gAssetType && cols.length === 0) f.addCol(gAssetType);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gIsAsset, gAssetType, cols.length]);
 
   return (
     <div className="space-y-6">
