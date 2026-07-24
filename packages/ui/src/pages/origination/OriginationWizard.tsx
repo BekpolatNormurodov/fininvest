@@ -40,12 +40,15 @@ export function OriginationWizard() {
   const prod = product && product in LOAN_PRODUCT_PROFILES ? (product as LoanProduct) : null;
   const effProduct = prod ?? ((f.form.product ?? null) as LoanProduct | null);
   const isAsset = effProduct ? loanProductProfile(effProduct).kind === LoanProductKind.ASSET : false;
-  // Asset products (AVTO/IPOTEKA) gain a final "Sotuvchi" step. Appended (not inserted) so the
-  // index-keyed per-step validation for the base steps stays aligned.
-  const steps = useMemo(
-    () => (isAsset ? [...BASE_STEPS, { title: 'Sotuvchi', section: 'creditLine' as CaseSectionKey, Comp: StepSeller }] : BASE_STEPS),
-    [isAsset],
-  );
+  // Asset products (AVTO/IPOTEKA) gain a final "Sotuvchi" step, and the pledge step is renamed to the
+  // purchased asset — it is not a separate «garov». Appended (not inserted) so the index-keyed
+  // per-step validation for the base steps stays aligned.
+  const assetStepTitle = effProduct === 'AVTO' ? 'Mashina' : effProduct === 'IPOTEKA' ? 'Uy-joy' : 'Aktiv';
+  const steps = useMemo(() => {
+    if (!isAsset) return BASE_STEPS;
+    const renamed = BASE_STEPS.map((s) => (s.Comp === StepGarov ? { ...s, title: assetStepTitle } : s));
+    return [...renamed, { title: 'Sotuvchi', section: 'creditLine' as CaseSectionKey, Comp: StepSeller }];
+  }, [isAsset, assetStepTitle]);
   const { Comp } = steps[f.step] ?? steps[0];
   const termM = f.form.creditLine?.termMonths ?? f.form.termMonths ?? null;
   const band = effProduct && termM ? termBandFor(termM) : null;
