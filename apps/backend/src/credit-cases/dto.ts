@@ -209,6 +209,7 @@ export class UpsertCaseDto {
   @IsOptional() @BlankToNull() @IsNumber() @Min(0) amount?: number | null;
   @IsOptional() @BlankToNull() @IsInt() @Min(1) @Max(600) termMonths?: number | null;
   @IsOptional() @IsEnum(LoanProduct) product?: LoanProduct | null;
+  @IsOptional() @IsString() sellerId?: string | null;
 
   @ValidateNested()
   @Type(() => BorrowerInput)

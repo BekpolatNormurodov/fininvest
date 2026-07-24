@@ -476,6 +476,8 @@ export interface UpsertCasePayload {
   termMonths: number | null;
   /** fin-invest: chosen product (ADM_TEAM/OSON/AVTO/IPOTEKA); null on legacy/credit-core cases. */
   product?: LoanProduct | null;
+  /** fin-invest: seller/distributor for asset-purchase products (AVTO/IPOTEKA). */
+  sellerId?: string | null;
   borrower: BorrowerDto;
   guarantors: GuarantorDto[];
   collaterals: CollateralDto[];
