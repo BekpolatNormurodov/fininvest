@@ -66,6 +66,27 @@ enum RepaymentMethod {
   DIFFERENTIATED
 }
 
+// fin-invest: the four commercial products. OSON/ADM_TEAM are cash microloans (separate
+// pledge); AVTO/IPOTEKA are asset-purchase loans where the purchased asset is the collateral.
+enum LoanProduct {
+  ADM_TEAM
+  OSON
+  AVTO
+  IPOTEKA
+}
+
+// Derived from termMonths, never picked by the user (краткосрочный / долгосрочный).
+enum TermBand {
+  SHORT
+  LONG
+}
+
+// Seller / distributor party type for asset-purchase products.
+enum SellerKind {
+  INDIVIDUAL // used-car owner, flat owner
+  LEGAL      // avtosalon, quruvchi firma (Xonsaroy)
+}
+
 enum ScoringVerdict {
   APPROVED
   REFER_COMMITTEE
@@ -122,6 +143,17 @@ model CreditCase {
   amount      Decimal?    @db.Decimal(18, 2)
   termMonths  Int?
   katmPrice   Decimal?    @db.Decimal(18, 2)
+
+  // fin-invest: which of the four products, and the term band derived from termMonths.
+  // Nullable so legacy/credit-core-shaped cases (no product) still load.
+  product        LoanProduct?
+  termBand       TermBand?
+  downPaymentPct Decimal?     @db.Decimal(5, 2) // client down payment %, asset products only
+  ltvPct         Decimal?     @db.Decimal(5, 2) // loan / asset value %, asset products only
+
+  // Seller/distributor for AVTO/IPOTEKA — money for the financed part goes here.
+  seller   Seller? @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  sellerId String?
 
   // Auto contract number (assigned on submit to moderator) — separate from `number` (ariza id).
   // Format: "{contractGlobalNo} MFL {contractYearlyNo} {contractBranchSym}" e.g. "2012 MFL 1320 PS".
@@ -708,6 +740,43 @@ model DisbursementDetail {
   holderInn     String? // account-holder ИНН (may differ from borrower.inn)
   bankName      String?
   updatedAt     DateTime   @updatedAt
+}
+
+/// Seller / distributor for asset-purchase products (AVTO, IPOTEKA). The financed part is
+/// paid to this party; the client pays the down payment to them directly. Legal sellers
+/// (dealers, developers like Xonsaroy) are saved once (isCatalog) and reused across cases.
+/// Ownership is validated against the asset's cadastre / tech passport (warn, not block).
+model Seller {
+  id   String     @id @default(cuid())
+  kind SellerKind
+
+  // Individual seller (used-car owner, flat owner)
+  fullName String?
+  pinfl    String?
+  passport String?
+  address  String?
+
+  // Legal seller (avtosalon, quruvchi firma)
+  orgName      String?
+  stir         String? // ИНН
+  directorName String?
+  legalAddress String?
+
+  // Common
+  phone        String?
+  bankAccount  String? // r/s yoki karta — pul shu yerga o'tadi
+  bankName     String?
+  mfoCode      String? // МФО
+  ownershipDoc String? // kadastr / tex passport ref (egaligini isbot)
+
+  isCatalog Boolean @default(false) // saved for reuse (legal sellers)
+
+  cases CreditCase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isCatalog])
 }
 
 // ── Audit trail (3 layers) ──────────────────────────────────────────────

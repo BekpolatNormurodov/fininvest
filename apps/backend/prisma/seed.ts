@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, SellerKind } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -51,8 +51,46 @@ async function main() {
     });
   }
 
+  // Catalog sellers (distributors) for asset-purchase products — reusable across cases so the
+  // operator picks them instead of retyping. Demo names; replace with real partners in prod.
+  const catalogSellers = [
+    {
+      id: 'seller-demo-developer',
+      kind: SellerKind.LEGAL,
+      orgName: 'Namuna Qurilish MChJ',
+      stir: '300111222',
+      directorName: 'Karimov Anvar',
+      legalAddress: 'Toshkent sh., Yunusobod tumani',
+      phone: '78 140-11-11',
+      bankAccount: '20208000000000000011',
+      bankName: 'АЖ «ANORBANK»',
+      mfoCode: '01183',
+      ownershipDoc: 'DDU / ulushli qurilish',
+      isCatalog: true,
+    },
+    {
+      id: 'seller-demo-autosalon',
+      kind: SellerKind.LEGAL,
+      orgName: 'Namuna Motors avtosaloni',
+      stir: '300333444',
+      directorName: 'Rasulov Botir',
+      legalAddress: 'Toshkent sh., Chilonzor tumani',
+      phone: '78 140-22-22',
+      bankAccount: '20208000000000000022',
+      bankName: 'АЖ «ANORBANK»',
+      mfoCode: '01183',
+      ownershipDoc: 'Proforma-invoys',
+      isCatalog: true,
+    },
+  ];
+  for (const s of catalogSellers) {
+    await prisma.seller.upsert({ where: { id: s.id }, update: s, create: s });
+  }
+
   // eslint-disable-next-line no-console
   console.log('✅ Seed tayyor. Login: operator/moderator/director/admin — parol: parol123');
+  // eslint-disable-next-line no-console
+  console.log(`✅ ${catalogSellers.length} ta katalog sotuvchi qo'shildi (avto/ipoteka uchun).`);
 }
 
 main()
