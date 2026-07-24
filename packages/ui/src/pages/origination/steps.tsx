@@ -133,8 +133,8 @@ export function Step2({ f }: { f: OriginationForm }) {
         ? 'border-error-200 bg-error-50 text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400'
         : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300')}>
         {bigLoan
-          ? 'Mikrokredit (100 mln+) — ish joyi va asosiy daromad MAJBURIY. To‘ldirilmasa ariza yakunlanmaydi.'
-          : 'Mikroqarz (100 mln gacha) — bu bo‘lim shart emas (ixtiyoriy). Xohlasangiz to‘ldiring.'}
+          ? '100 mln+ — ish joyi va asosiy daromad MAJBURIY. To‘ldirilmasa ariza yakunlanmaydi.'
+          : '100 mln gacha — bu bo‘lim shart emas (ixtiyoriy). Xohlasangiz to‘ldiring.'}
       </div>
       {bigLoan && (
         <Card className="space-y-4">
@@ -239,18 +239,22 @@ export function Step3({ f }: { f: OriginationForm }) {
       <Card className="space-y-4">
         <h2 className="font-semibold text-gray-800 dark:text-white">Kredit liniyasi (РКЛ)</h2>
         {(() => {
+          const product = (f.form.product ?? null) as LoanProduct | null;
           const isBig = loanTypeFor(amountTotal) === 'MICROCREDIT';
           const annual = Math.round((l.interestRate ?? minRate) * 100);
           const penalty = Math.round((l.penaltyRate ?? 1.05) * 100);
+          // The product IS the credit type; the >100M warning colour is kept only for legacy
+          // cases that carry no product.
+          const useWarn = !product && isBig;
           return (
-            <div className={cn('rounded-2xl border p-4', isBig
+            <div className={cn('rounded-2xl border p-4', useWarn
               ? 'border-warning-200 bg-warning-50/60 dark:border-warning-500/20 dark:bg-warning-500/5'
               : 'border-brand-200 bg-brand-50/60 dark:border-brand-500/20 dark:bg-brand-500/5')}>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Kredit turi</p>
-                  <p className={cn('text-2xl font-bold', isBig ? 'text-warning-700 dark:text-warning-400' : 'text-brand-700 dark:text-brand-400')}>{isBig ? 'Mikrokredit' : 'Mikroqarz'}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{isBig ? '100 mln so‘mdan yuqori' : '100 mln so‘mgacha'}</p>
+                  <p className={cn('text-2xl font-bold', useWarn ? 'text-warning-700 dark:text-warning-400' : 'text-brand-700 dark:text-brand-400')}>{product ? loanProductProfile(product).label.uz : isBig ? 'Mikrokredit' : 'Mikroqarz'}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{product ? `${loanProductProfile(product).maxTermMonths} oygacha` : isBig ? '100 mln so‘mdan yuqori' : '100 mln so‘mgacha'}</p>
                 </div>
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-right">
                   <div><p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Yillik foiz</p><p className="nums text-xl font-bold text-gray-800 dark:text-white">{annual}%</p></div>

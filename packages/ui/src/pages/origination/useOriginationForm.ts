@@ -148,7 +148,7 @@ export function useOriginationForm(id?: string) {
     // Mikrokredit (100 mln+) — ish joyi va asosiy daromad majburiy (mikroqarzda ixtiyoriy).
     employment: (amountTotal ?? 0) > MICRO_THRESHOLD
       && (!form.employment?.employer?.trim() || !((form.affordability?.mainActivityIncome ?? 0) > 0))
-      ? 'Mikrokredit (100 mln+) — ish joyi va asosiy daromad majburiy'
+      ? '100 mln+ — ish joyi va asosiy daromad majburiy'
       : undefined,
     amountTotal: amountTotal && amountTotal > 0 ? undefined : 'Jami summa majburiy',
     lineTerm: !line?.termMonths || line.termMonths <= 0
