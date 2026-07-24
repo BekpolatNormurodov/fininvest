@@ -56,12 +56,14 @@ function KadastrCard({ cadastreNo }: { cadastreNo: string }) {
 // A per-collateral staged attachment (image/file + name + free text), bound by collateral index.
 export type StagedColDoc = { localId: string; colIndex: number; file: File; type: DocumentType; title: string; description: string };
 
-export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove, docs, onAddDocs, onRemoveDoc, onSetDocField, hideDocs = false, mediaSlot, texSlot, borrowerName }: {
+export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove, docs, onAddDocs, onRemoveDoc, onSetDocField, hideDocs = false, hideOwners = false, mediaSlot, texSlot, borrowerName }: {
   index: number; c: CollateralDto; errors?: Partial<Record<CollateralField, string>>; onChange: (p: Partial<CollateralDto>) => void; onRemove: () => void; canRemove: boolean;
   docs: StagedColDoc[]; onAddDocs: (files: FileList | File[] | null) => void; onRemoveDoc: (localId: string) => void;
   onSetDocField: (localId: string, patch: Partial<Pick<StagedColDoc, 'title' | 'description'>>) => void;
   /** In the wizard, photos/videos are attached in the case view after saving (needs a collateral id). */
   hideDocs?: boolean;
+  /** Asset-purchase products: the buyer (borrower) becomes the owner, so the pledge-owner block is hidden. */
+  hideOwners?: boolean;
   /** When provided (wizard), replaces the staged doc block with a working media uploader. */
   mediaSlot?: ReactNode;
   /** When provided (wizard, AUTO), the tex-passport scanner — so it can also save the scanned images. */
@@ -151,6 +153,7 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
         <Field label="Qiymat (prописью)" icon={Tag}><Input value={c.agreedValueWords ?? ''} onChange={(e) => onChange({ agreedValueWords: e.target.value })} /></Field>
       </div>
 
+      {!hideOwners && (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Egalik huquqi (3 shaxsgacha)</h4>
@@ -187,6 +190,7 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
           </div>
         ))}
       </div>
+      )}
 
       {/* Wizard: a working per-collateral media uploader (mediaSlot). Elsewhere: the staged doc block. */}
       {mediaSlot ? (
