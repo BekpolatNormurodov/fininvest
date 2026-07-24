@@ -1,5 +1,26 @@
-import { CaseStatus, DocumentType, ProductType, Role, WorkflowDecision } from './enums';
+import { CaseStatus, DocumentType, ProductType, Role, SellerKind, WorkflowDecision } from './enums';
 import type { LoanProduct } from './loan-product';
+
+/** Seller / distributor (firm or individual owner) for asset-purchase products. */
+export interface SellerDto {
+  id: string;
+  kind: SellerKind;
+  fullName?: string | null;
+  pinfl?: string | null;
+  passport?: string | null;
+  address?: string | null;
+  orgName?: string | null;
+  stir?: string | null;
+  directorName?: string | null;
+  legalAddress?: string | null;
+  phone?: string | null;
+  bankAccount?: string | null;
+  bankName?: string | null;
+  mfoCode?: string | null;
+  ownershipDoc?: string | null;
+  isCatalog?: boolean;
+}
+export type SellerInput = Omit<SellerDto, 'id'>;
 
 export interface AuthUser {
   id: string;

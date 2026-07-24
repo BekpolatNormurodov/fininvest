@@ -22,6 +22,8 @@ import type {
   StepDeadlineSetting,
   TransitionPayload,
   UpsertCasePayload,
+  SellerDto,
+  SellerInput,
 } from '@credit-core/shared';
 
 const TOKEN_KEY = 'cc_token';
@@ -130,6 +132,14 @@ export const api = {
   /** Qayta MFL: create a new draft linked to the chosen source contract. */
   async createReMfl(sourceCaseId: string): Promise<CreditCaseDto> {
     const { data } = await http.post<CreditCaseDto>('/cases/re-mfl', { sourceCaseId });
+    return data;
+  },
+  async sellersCatalog(): Promise<SellerDto[]> {
+    const { data } = await http.get<SellerDto[]>('/sellers/catalog');
+    return data;
+  },
+  async createSeller(payload: SellerInput): Promise<SellerDto> {
+    const { data } = await http.post<SellerDto>('/sellers', payload);
     return data;
   },
   async createCase(payload: UpsertCasePayload): Promise<CreditCaseDto> {

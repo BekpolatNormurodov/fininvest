@@ -8,6 +8,7 @@ import {
   collateralComplete, collateralErrors,
   monthlyPaymentFor, termCapFor, isTermValid, paymentDayFor, DocumentType, type RepaymentMethod,
   type UpsertCasePayload,
+  loanProductProfile, SellerKind, type LoanProduct,
 } from '@credit-core/shared';
 import { Button, Card, Field, Input } from '../../components/primitives';
 import { MoneyInput, DatePicker, PhoneInput, Select } from '../../components/forms';
@@ -528,5 +529,89 @@ export function Step5({ f }: { f: OriginationForm }) {
         <Field label="Komitet qarori sanasi"><DatePicker value={h.committeeDecisionDate ?? null} onChange={(iso) => set({ committeeDecisionDate: iso })} /></Field> */}
       </div>
     </Card>
+  );
+}
+
+/**
+ * Sotuvchi bosqichi (faqat AVTO/IPOTEKA) — sotuvchi (firma yoki jismoniy shaxs egasi) +
+ * boshlang'ich to'lov / LTV xulosasi. Aktivning o'zi garov, shuning uchun narx garov
+ * qiymatidan olinadi; boshlang'ich = narx − qarz.
+ */
+export function StepSeller({ f }: { f: OriginationForm }) {
+  const toast = useToast();
+  const { data: firms = [] } = useQuery({ queryKey: ['sellersCatalog'], queryFn: () => api.sellersCatalog() });
+  const [kind, setKind] = useState<'LEGAL' | 'INDIVIDUAL'>('LEGAL');
+  const [indiv, setIndiv] = useState({ fullName: '', phone: '', bankAccount: '', ownershipDoc: '' });
+  const [saving, setSaving] = useState(false);
+
+  const product = (f.form.product ?? null) as LoanProduct | null;
+  const minDown = product ? loanProductProfile(product).minDownPayment * 100 : 0;
+  const price = f.form.collaterals?.[0]?.agreedValue ?? null;
+  const loan = f.form.creditLine?.amountTotal ?? f.form.amount ?? null;
+  const down = price != null && loan != null ? price - loan : null;
+  const ltv = price && loan != null ? (loan / price) * 100 : null;
+  const downPct = price && down != null ? (down / price) * 100 : null;
+  const belowMin = downPct != null && downPct < minDown;
+
+  const saveIndiv = async () => {
+    if (!indiv.fullName.trim()) { toast.error('Tekshiring', 'Sotuvchi F.I.Sh. sini kiriting'); return; }
+    setSaving(true);
+    try {
+      const s = await api.createSeller({
+        kind: SellerKind.INDIVIDUAL,
+        fullName: indiv.fullName,
+        phone: indiv.phone || null,
+        bankAccount: indiv.bankAccount || null,
+        ownershipDoc: indiv.ownershipDoc || null,
+      });
+      f.patch({ sellerId: s.id });
+      toast.success('Saqlandi', 'Sotuvchi (jismoniy shaxs)');
+    } catch {
+      toast.error('Xatolik', 'Sotuvchi saqlanmadi');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="space-y-4">
+        <h2 className="font-semibold text-gray-800 dark:text-white">Sotuvchi (distributor)</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button variant={kind === 'LEGAL' ? 'primary' : 'secondary'} onClick={() => setKind('LEGAL')}>Firma</Button>
+          <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => setKind('INDIVIDUAL')}>Jismoniy shaxs (egasi)</Button>
+        </div>
+        {kind === 'LEGAL' ? (
+          <Field label="Firma (avtosalon / quruvchi)">
+            <Select
+              value={f.form.sellerId ?? ''}
+              onChange={(v) => f.patch({ sellerId: v || null })}
+              options={[{ value: '', label: '— tanlang —' }, ...firms.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))]}
+            />
+          </Field>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="F.I.Sh."><Input value={indiv.fullName} onChange={(e) => setIndiv({ ...indiv, fullName: e.target.value })} /></Field>
+            <Field label="Telefon"><Input value={indiv.phone} onChange={(e) => setIndiv({ ...indiv, phone: e.target.value })} /></Field>
+            <Field label="Karta / hisob raqami"><Input value={indiv.bankAccount} onChange={(e) => setIndiv({ ...indiv, bankAccount: e.target.value })} /></Field>
+            <Field label="Egalik hujjati (kadastr / tex passport)"><Input value={indiv.ownershipDoc} onChange={(e) => setIndiv({ ...indiv, ownershipDoc: e.target.value })} /></Field>
+            <div className="sm:col-span-2"><Button onClick={saveIndiv} disabled={saving}>{saving ? '…' : 'Sotuvchini saqlash'}</Button></div>
+          </div>
+        )}
+        {f.form.sellerId && <p className="text-sm font-medium text-success-700 dark:text-success-400">✓ Sotuvchi bog'landi</p>}
+      </Card>
+
+      <Card className="space-y-2">
+        <h2 className="font-semibold text-gray-800 dark:text-white">Boshlang'ich to'lov / LTV</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Aktivning o'zi garov — narx garov qiymatidan olinadi. Boshlang'ich = narx − qarz.</p>
+        <div className="grid gap-2 text-sm sm:grid-cols-2">
+          <div className="text-gray-600 dark:text-gray-300">Aktiv narxi: <b className="text-gray-900 dark:text-white">{price != null ? formatMoney(price) : '—'}</b></div>
+          <div className="text-gray-600 dark:text-gray-300">Qarz (MMT): <b className="text-gray-900 dark:text-white">{loan != null ? formatMoney(loan) : '—'}</b></div>
+          <div className="text-gray-600 dark:text-gray-300">Boshlang'ich to'lov: <b className="text-gray-900 dark:text-white">{down != null ? formatMoney(down) : '—'}{downPct != null ? ` (${downPct.toFixed(1)}%)` : ''}</b></div>
+          <div className="text-gray-600 dark:text-gray-300">LTV: <b className="text-gray-900 dark:text-white">{ltv != null ? `${ltv.toFixed(1)}%` : '—'}</b></div>
+        </div>
+        {belowMin && <p className="text-sm font-medium text-warning-700 dark:text-warning-400">⚠ Boshlang'ich to'lov {minDown}% dan past — tekshiring (bloklamaydi).</p>}
+      </Card>
+    </div>
   );
 }
