@@ -24,6 +24,7 @@ import { DeadlinesModule } from './deadlines/deadlines.module';
 import { AuditModule } from './audit/audit.module';
 import { SigningModule } from './signing/signing.module';
 import { PassportModule } from './passport/passport.module';
+import { SellersModule } from './sellers/sellers.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PassportModule } from './passport/passport.module';
     UsersModule,
     BranchesModule,
     CreditCasesModule,
+    SellersModule,
     ImportModule,
     OutputModule,
     KatmModule,
