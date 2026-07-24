@@ -26,6 +26,7 @@ class UpsertSellerDto {
   @IsOptional() @IsString() bankName?: string;
   @IsOptional() @IsString() mfoCode?: string;
   @IsOptional() @IsString() ownershipDoc?: string;
+  @IsOptional() @IsString() category?: string;
   @IsOptional() @IsBoolean() isCatalog?: boolean;
 }
 

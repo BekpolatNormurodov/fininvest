@@ -585,6 +585,10 @@ export function StepSeller({ f }: { f: OriginationForm }) {
 
   const product = (f.form.product ?? null) as LoanProduct | null;
   const minDown = product ? loanProductProfile(product).minDownPayment * 100 : 0;
+  // Firm catalog is product-specific: avtosalons for AVTO, builders for IPOTEKA.
+  const firmCategory = product === 'AVTO' ? 'AUTO' : product === 'IPOTEKA' ? 'REALTY' : null;
+  const firmList = firmCategory ? firms.filter((s) => s.category === firmCategory) : firms;
+  const firmLabel = product === 'AVTO' ? 'Avtosalon' : product === 'IPOTEKA' ? 'Quruvchi firma' : 'Firma';
   const insLabel = product
     ? ({ CAR: "KASKO (mashina sug'urtasi)", PROPERTY: "Mulk sug'urtasi", LOAN_RISK: "Qarz xavfi sug'urtasi" } as const)[loanProductProfile(product).insurance]
     : '';
@@ -650,11 +654,12 @@ export function StepSeller({ f }: { f: OriginationForm }) {
           <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => setKind('INDIVIDUAL')}>Jismoniy shaxs (egasi)</Button>
         </div>
         {kind === 'LEGAL' ? (
-          <Field label="Firma (avtosalon / quruvchi)">
+          <Field label={firmLabel}>
             <Select
+              searchable
               value={f.form.sellerId ?? ''}
               onChange={(v) => f.patch({ sellerId: v || null })}
-              options={[{ value: '', label: '— tanlang —' }, ...firms.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))]}
+              options={[{ value: '', label: '— tanlang —' }, ...firmList.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))]}
             />
           </Field>
         ) : (

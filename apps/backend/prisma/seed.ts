@@ -66,6 +66,7 @@ async function main() {
       bankName: 'АЖ «ANORBANK»',
       mfoCode: '01183',
       ownershipDoc: 'DDU / ulushli qurilish',
+      category: 'REALTY',
       isCatalog: true,
     },
     {
@@ -80,6 +81,7 @@ async function main() {
       bankName: 'АЖ «ANORBANK»',
       mfoCode: '01183',
       ownershipDoc: 'Proforma-invoys',
+      category: 'AUTO',
       isCatalog: true,
     },
   ];
@@ -100,14 +102,27 @@ async function main() {
     'Elite Motors', 'Grand Auto', 'Silk Road Motors', 'Buxoro Avto',
   ];
   for (let i = 0; i < AUTO_SALONS.length; i++) {
-    const data = { id: `seller-salon-${i + 1}`, kind: SellerKind.LEGAL, orgName: AUTO_SALONS[i], isCatalog: true };
+    const data = { id: `seller-salon-${i + 1}`, kind: SellerKind.LEGAL, orgName: AUTO_SALONS[i], category: 'AUTO', isCatalog: true };
+    await prisma.seller.upsert({ where: { id: data.id }, update: data, create: data });
+  }
+
+  // Builder / developer catalog for IPOTEKA — names only for now.
+  const BUILDERS = [
+    'Xonsaroy', 'Golden House', 'Murad Buildings', 'Akfa Group', 'Orient Group',
+    'Nawoiy Konstruksiya', 'Uzbek Development', 'Grand Nasaf', 'Poytaxt Builders',
+    'Yangi Uzbekiston Qurilish', 'Bella Casa', 'Amir Temur Qurilish', 'Metropol Invest',
+    'City Group qurilish', 'Elite Home', 'Toshkent City Builders', 'Nur Qurilish',
+    'Zomin Development',
+  ];
+  for (let i = 0; i < BUILDERS.length; i++) {
+    const data = { id: `seller-builder-${i + 1}`, kind: SellerKind.LEGAL, orgName: BUILDERS[i], category: 'REALTY', isCatalog: true };
     await prisma.seller.upsert({ where: { id: data.id }, update: data, create: data });
   }
 
   // eslint-disable-next-line no-console
   console.log('✅ Seed tayyor. Login: operator/moderator/director/admin — parol: parol123');
   // eslint-disable-next-line no-console
-  console.log(`✅ ${catalogSellers.length + AUTO_SALONS.length} ta katalog sotuvchi (${AUTO_SALONS.length} avtosalon) qo'shildi.`);
+  console.log(`✅ Katalog: ${AUTO_SALONS.length} avtosalon (AUTO) + ${BUILDERS.length} quruvchi (REALTY).`);
 }
 
 main()

@@ -18,6 +18,7 @@ export interface SellerDto {
   bankName?: string | null;
   mfoCode?: string | null;
   ownershipDoc?: string | null;
+  category?: string | null; // 'AUTO' (avtosalon) | 'REALTY' (quruvchi) — for catalog firms
   isCatalog?: boolean;
 }
 export type SellerInput = Omit<SellerDto, 'id'>;

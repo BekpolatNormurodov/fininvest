@@ -769,6 +769,8 @@ model Seller {
   mfoCode      String? // МФО
   ownershipDoc String? // kadastr / tex passport ref (egaligini isbot)
 
+  // Which asset market a catalog firm serves: 'AUTO' (avtosalon) or 'REALTY' (quruvchi/builder).
+  category  String? // null for individuals
   isCatalog Boolean @default(false) // saved for reuse (legal sellers)
 
   cases CreditCase[]
