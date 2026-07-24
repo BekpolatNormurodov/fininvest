@@ -547,15 +547,42 @@ export function StepSeller({ f }: { f: OriginationForm }) {
   const [kind, setKind] = useState<'LEGAL' | 'INDIVIDUAL'>('LEGAL');
   const [indiv, setIndiv] = useState({ fullName: '', phone: '', bankAccount: '', ownershipDoc: '' });
   const [saving, setSaving] = useState(false);
+  const [downInput, setDownInput] = useState('');
 
   const product = (f.form.product ?? null) as LoanProduct | null;
   const minDown = product ? loanProductProfile(product).minDownPayment * 100 : 0;
+  const insLabel = product
+    ? ({ CAR: "KASKO (mashina sug'urtasi)", PROPERTY: "Mulk sug'urtasi", LOAN_RISK: "Qarz xavfi sug'urtasi" } as const)[loanProductProfile(product).insurance]
+    : '';
   const price = f.form.collaterals?.[0]?.agreedValue ?? null;
   const loan = f.form.creditLine?.amountTotal ?? f.form.amount ?? null;
   const down = price != null && loan != null ? price - loan : null;
   const ltv = price && loan != null ? (loan / price) * 100 : null;
   const downPct = price && down != null ? (down / price) * 100 : null;
   const belowMin = downPct != null && downPct < minDown;
+
+  // Down payment DRIVES the loan: the operator types the percent, the financed amount is the rest
+  // (loan = price × (1 − down%)). Seeded once from any existing loan/price so edits show up.
+  useEffect(() => {
+    if (downInput === '' && price && loan != null && price > 0) {
+      const d = ((price - loan) / price) * 100;
+      if (d >= 0 && d < 100) setDownInput(String(Math.round(d)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [price, loan]);
+
+  const applyDown = (v: string) => {
+    setDownInput(v);
+    const pct = Number(v);
+    if (price && v !== '' && !isNaN(pct) && pct >= 0 && pct < 100) {
+      const newLoan = Math.round(price * (1 - pct / 100));
+      f.patch(
+        f.form.creditLine
+          ? { amount: newLoan, creditLine: { ...f.form.creditLine, amountAuto: newLoan, amountPolis: 0, amountTotal: newLoan } }
+          : { amount: newLoan },
+      );
+    }
+  };
 
   const saveIndiv = async () => {
     if (!indiv.fullName.trim()) { toast.error('Tekshiring', 'Sotuvchi F.I.Sh. sini kiriting'); return; }
@@ -605,16 +632,28 @@ export function StepSeller({ f }: { f: OriginationForm }) {
         {f.form.sellerId && <p className="text-sm font-medium text-success-700 dark:text-success-400">✓ Sotuvchi bog'landi</p>}
       </Card>
 
-      <Card className="space-y-2">
+      <Card className="space-y-3">
         <h2 className="font-semibold text-gray-800 dark:text-white">Boshlang'ich to'lov / LTV</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Aktivning o'zi garov — narx garov qiymatidan olinadi. Boshlang'ich = narx − qarz.</p>
-        <div className="grid gap-2 text-sm sm:grid-cols-2">
-          <div className="text-gray-600 dark:text-gray-300">Aktiv narxi: <b className="text-gray-900 dark:text-white">{price != null ? formatMoney(price) : '—'}</b></div>
-          <div className="text-gray-600 dark:text-gray-300">Qarz (MMT): <b className="text-gray-900 dark:text-white">{loan != null ? formatMoney(loan) : '—'}</b></div>
-          <div className="text-gray-600 dark:text-gray-300">Boshlang'ich to'lov: <b className="text-gray-900 dark:text-white">{down != null ? formatMoney(down) : '—'}{downPct != null ? ` (${downPct.toFixed(1)}%)` : ''}</b></div>
-          <div className="text-gray-600 dark:text-gray-300">LTV: <b className="text-gray-900 dark:text-white">{ltv != null ? `${ltv.toFixed(1)}%` : '—'}</b></div>
-        </div>
-        {belowMin && <p className="text-sm font-medium text-warning-700 dark:text-warning-400">⚠ Boshlang'ich to'lov {minDown}% dan past — tekshiring (bloklamaydi).</p>}
+        <p className="text-xs text-gray-500 dark:text-gray-400">Aktivning o'zi garov. Boshlang'ich to'lovni kiriting — qarz avtomatik hisoblanadi (qarz = narx − boshlang'ich).</p>
+        {price == null ? (
+          <p className="text-sm font-medium text-warning-700 dark:text-warning-400">Avval «Garov» bosqichida aktiv (uy / mashina) narxini kiriting.</p>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label={`Boshlang'ich to'lov (%) — min ${minDown}%`}>
+                <Input type="number" value={downInput} onChange={(e) => applyDown(e.target.value)} placeholder={String(minDown)} />
+              </Field>
+              <div className="self-end text-sm text-gray-600 dark:text-gray-300">Qarz (MMT): <b className="text-gray-900 dark:text-white">{loan != null ? formatMoney(loan) : '—'}</b></div>
+            </div>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <div className="text-gray-600 dark:text-gray-300">Aktiv narxi: <b className="text-gray-900 dark:text-white">{formatMoney(price)}</b></div>
+              <div className="text-gray-600 dark:text-gray-300">Boshlang'ich (so'm): <b className="text-gray-900 dark:text-white">{down != null ? formatMoney(down) : '—'}</b></div>
+              <div className="text-gray-600 dark:text-gray-300">LTV: <b className="text-gray-900 dark:text-white">{ltv != null ? `${ltv.toFixed(1)}%` : '—'}</b></div>
+              <div className="text-gray-600 dark:text-gray-300">Sug'urta: <b className="text-gray-900 dark:text-white">{insLabel || '—'}</b></div>
+            </div>
+            {belowMin && <p className="text-sm font-medium text-warning-700 dark:text-warning-400">⚠ Boshlang'ich {minDown}% dan past — tekshiring (bloklamaydi).</p>}
+          </>
+        )}
       </Card>
     </div>
   );
