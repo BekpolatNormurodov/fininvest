@@ -1,5 +1,5 @@
 import { CaseStatus, DocumentType, ProductType, Role, SellerKind, WorkflowDecision } from './enums';
-import type { LoanProduct } from './loan-product';
+import type { LoanProduct, TermBand } from './loan-product';
 
 /** Seller / distributor (firm or individual owner) for asset-purchase products. */
 export interface SellerDto {
@@ -403,6 +403,12 @@ export interface CreditCaseDto {
   id: string;
   number: string;
   productType: ProductType;
+  /** fin-invest: the loan product (ADM_TEAM/OSON/AVTO/IPOTEKA); null on legacy cases. */
+  product?: LoanProduct | null;
+  termBand?: TermBand | null;
+  ltvPct?: number | null;
+  downPaymentPct?: number | null;
+  sellerId?: string | null;
   status: CaseStatus;
   amount: number | null;
   termMonths: number | null;

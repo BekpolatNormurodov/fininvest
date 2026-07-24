@@ -7,7 +7,7 @@ import {
 import { api, downloadBlob, viewDocument, documentInlineUrl, getErrorMessage } from '@credit-core/api-client';
 import {
   CaseStatus, computeLoan, DocumentType, DOCUMENT_LABEL, originationCalc, PRODUCT_LABEL, Role, ROLE_LABEL,
-  TRANSITIONS, WorkflowDecision, resolveOwners, ownerIsImplied, type ScorableCase, type CreditCaseDto, type DocumentDto,
+  TRANSITIONS, WorkflowDecision, resolveOwners, ownerIsImplied, loanProductProfile, type ScorableCase, type CreditCaseDto, type DocumentDto,
 } from '@credit-core/shared';
 import { useAuth } from '../lib/auth';
 import { Button, Card, Field, Input, Skeleton, StatusBadge } from '../components/primitives';
@@ -1041,7 +1041,9 @@ function CapturePanel({ c, role, onChange }: { c: CreditCaseDto; role: Role; onC
           </Button>
         )}
       </div>
-      {row('Kredit turi', line?.loanType ? (line.loanType === 'MICROCREDIT' ? 'Mikrokredit' : 'Mikroqarz') : '—')}
+      {row('Kredit turi', c.product ? loanProductProfile(c.product).label.uz : line?.loanType ? (line.loanType === 'MICROCREDIT' ? 'Mikrokredit' : 'Mikroqarz') : '—')}
+      {c.downPaymentPct != null && row('Boshlang‘ich to‘lov', `${c.downPaymentPct}%`)}
+      {c.ltvPct != null && row('LTV (qarz / aktiv)', `${c.ltvPct}%`)}
       {row('Summa — mol-mulk', line?.amountAuto != null ? formatMoney(line.amountAuto) : '—')}
       {row('Summa — sug‘urta', line?.amountPolis != null ? formatMoney(line.amountPolis) : '—')}
       {row('Jami summa', (line?.amountTotal ?? c.amount) != null ? formatMoney((line?.amountTotal ?? c.amount)!) : '—')}

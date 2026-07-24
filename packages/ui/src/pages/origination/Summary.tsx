@@ -1,4 +1,4 @@
-import { originationCalc, loanTypeFor, type ScorableCase, type UpsertCasePayload } from '@credit-core/shared';
+import { originationCalc, loanTypeFor, loanProductProfile, type LoanProduct, type ScorableCase, type UpsertCasePayload } from '@credit-core/shared';
 import { Card } from '../../components/primitives';
 import { ScorePanel } from '../../components/ScorePanel';
 import { formatMoney } from '../../lib/cn';
@@ -18,6 +18,10 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
     amountTotal, collateralTotal,
   });
   const loanType = loanTypeFor(amountTotal);
+  // The 4 products ARE the credit type. Show the product; fall back to the micro label only for
+  // legacy cases with no product.
+  const product = (form.product ?? null) as LoanProduct | null;
+  const typeLabel = product ? loanProductProfile(product).label.uz : loanType === 'MICROCREDIT' ? 'Mikrokredit' : 'Mikroqarz';
 
   const row = (label: string, value: string, danger = false) => (
     <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
@@ -29,13 +33,9 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
   return (
     <Card className="sticky top-4 space-y-0.5">
       <h3 className="mb-2 font-semibold text-gray-800 dark:text-white">Xulosa</h3>
-      <div className={`mb-2 flex items-center justify-between rounded-xl px-3 py-2 ${loanType === 'MICROCREDIT'
-        ? 'bg-warning-50 dark:bg-warning-500/10'
-        : 'bg-brand-50 dark:bg-brand-500/10'}`}>
+      <div className="mb-2 flex items-center justify-between rounded-xl bg-brand-50 px-3 py-2 dark:bg-brand-500/10">
         <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Kredit turi</span>
-        <span className={`text-base font-bold ${loanType === 'MICROCREDIT' ? 'text-warning-700 dark:text-warning-400' : 'text-brand-700 dark:text-brand-400'}`}>
-          {loanType === 'MICROCREDIT' ? 'Mikrokredit' : 'Mikroqarz'}
-        </span>
+        <span className="text-base font-bold text-brand-700 dark:text-brand-400">{typeLabel}</span>
       </div>
       {row('Jami summa', amountTotal ? formatMoney(amountTotal) : '—')}
       {row('Transh muddati', form.creditLine?.tranche?.termMonths ? `${form.creditLine.tranche.termMonths} oy` : '—')}
