@@ -11,3 +11,4 @@ export * from './collateral-owner';
 export * from './scoring';
 export * from './loan-product';
 export * from './seller';
+export * from './product-documents';
