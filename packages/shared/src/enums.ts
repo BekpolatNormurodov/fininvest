@@ -69,6 +69,13 @@ export type LoanType = (typeof LoanType)[keyof typeof LoanType];
 export const RepaymentMethod = { ANNUITY: 'ANNUITY', DIFFERENTIATED: 'DIFFERENTIATED' } as const;
 export type RepaymentMethod = (typeof RepaymentMethod)[keyof typeof RepaymentMethod];
 
+/** Seller / distributor party type for asset-purchase products (mirrors Prisma `SellerKind`). */
+export const SellerKind = {
+  INDIVIDUAL: 'INDIVIDUAL', // used-car owner, flat owner
+  LEGAL: 'LEGAL', // avtosalon, quruvchi firma
+} as const;
+export type SellerKind = (typeof SellerKind)[keyof typeof SellerKind];
+
 /** KATM report kinds — placeholder for the future integration (2–3 reports). */
 export const KatmReportType = {
   CREDIT_HISTORY: 'CREDIT_HISTORY',

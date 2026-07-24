@@ -10,3 +10,4 @@ export * from './nationality';
 export * from './collateral-owner';
 export * from './scoring';
 export * from './loan-product';
+export * from './seller';
