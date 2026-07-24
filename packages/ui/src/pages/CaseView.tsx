@@ -1044,6 +1044,7 @@ function CapturePanel({ c, role, onChange }: { c: CreditCaseDto; role: Role; onC
       {row('Kredit turi', c.product ? loanProductProfile(c.product).label.uz : line?.loanType ? (line.loanType === 'MICROCREDIT' ? 'Mikrokredit' : 'Mikroqarz') : '—')}
       {c.downPaymentPct != null && row('Boshlang‘ich to‘lov', `${c.downPaymentPct}%`)}
       {c.ltvPct != null && row('LTV (qarz / aktiv)', `${c.ltvPct}%`)}
+      {c.seller && row('Sotuvchi', c.seller.orgName || c.seller.fullName || '—')}
       {row('Summa — mol-mulk', line?.amountAuto != null ? formatMoney(line.amountAuto) : '—')}
       {row('Summa — sug‘urta', line?.amountPolis != null ? formatMoney(line.amountPolis) : '—')}
       {row('Jami summa', (line?.amountTotal ?? c.amount) != null ? formatMoney((line?.amountTotal ?? c.amount)!) : '—')}

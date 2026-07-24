@@ -409,6 +409,7 @@ export interface CreditCaseDto {
   ltvPct?: number | null;
   downPaymentPct?: number | null;
   sellerId?: string | null;
+  seller?: SellerDto | null;
   status: CaseStatus;
   amount: number | null;
   termMonths: number | null;

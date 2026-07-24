@@ -13,6 +13,7 @@ export const caseInclude = {
   creditHistory: true,
   creditLine: { include: { insurance: true, tranches: { orderBy: { trancheNo: 'asc' } } } },
   disbursement: true,
+  seller: true,
   documents: { include: { uploadedBy: true }, orderBy: { createdAt: 'asc' } },
   events: { include: { actor: true }, orderBy: { createdAt: 'asc' } },
 } satisfies Prisma.CreditCaseInclude;
@@ -99,6 +100,7 @@ export function toCaseDto(c: CaseWithRelations): CreditCaseDto {
     ltvPct: num(c.ltvPct),
     downPaymentPct: num(c.downPaymentPct),
     sellerId: c.sellerId ?? null,
+    seller: c.seller ?? null,
     status: c.status,
     amount: num(c.amount),
     termMonths: c.termMonths,
