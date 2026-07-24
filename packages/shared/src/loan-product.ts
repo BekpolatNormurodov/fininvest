@@ -132,6 +132,32 @@ export function ltvOf(loanAmount: number, assetValue: number): number {
   return loanAmount / assetValue;
 }
 
+/** Cash products: pledged value must cover the loan by at least this ratio. */
+export const CASH_COVERAGE_TARGET = 1.4;
+
+/**
+ * Whether the collateral requirement is met — product-aware, used by the score-report gate.
+ * The 20 scoring factors are unchanged; only this gate branches by product.
+ *
+ * - Cash (OSON, ADM TEAM): a separate pledge must cover the loan by >= 140%.
+ * - Asset (AVTO, IPOTEKA): the asset IS the collateral, so instead the client's down payment
+ *   must reach the product minimum (equivalently loan <= (1 - minDown) x asset value).
+ *
+ * `downPayment` is a fraction (0.30 = 30%), matching profile.minDownPayment.
+ */
+export function collateralRequirementMet(
+  product: LoanProduct,
+  input: { pledgedValue?: number; loanBase?: number; downPayment?: number },
+): boolean {
+  const profile = loanProductProfile(product);
+  if (profile.collateralRule === CollateralRule.LTV) {
+    return (input.downPayment ?? 0) >= profile.minDownPayment;
+  }
+  const base = input.loanBase ?? 0;
+  const pledged = input.pledgedValue ?? 0;
+  return base > 0 && pledged / base >= CASH_COVERAGE_TARGET;
+}
+
 /** Display order for the "new application" product picker. */
 export const LOAN_PRODUCT_ORDER: LoanProduct[] = [
   LoanProduct.ADM_TEAM,

@@ -10,6 +10,7 @@ import {
   LOAN_PRODUCT_PROFILES,
   LOAN_PRODUCT_ORDER,
   ltvOf,
+  collateralRequirementMet,
 } from '@credit-core/shared';
 
 describe('loan-product profiles', () => {
@@ -72,5 +73,25 @@ describe('ltv', () => {
 
   it('is zero when the asset value is missing', () => {
     expect(ltvOf(70, 0)).toBe(0);
+  });
+});
+
+describe('collateral requirement gate (product-aware)', () => {
+  it('cash products need pledge coverage of at least 140%', () => {
+    expect(collateralRequirementMet(LoanProduct.ADM_TEAM, { pledgedValue: 140, loanBase: 100 })).toBe(true);
+    expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 139, loanBase: 100 })).toBe(false);
+    expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 0, loanBase: 0 })).toBe(false);
+  });
+
+  it('asset products need the down payment to reach the product minimum', () => {
+    expect(collateralRequirementMet(LoanProduct.AVTO, { downPayment: 0.3 })).toBe(true);
+    expect(collateralRequirementMet(LoanProduct.AVTO, { downPayment: 0.29 })).toBe(false);
+    expect(collateralRequirementMet(LoanProduct.IPOTEKA, { downPayment: 0.4 })).toBe(true);
+    expect(collateralRequirementMet(LoanProduct.IPOTEKA, { downPayment: 0 })).toBe(false);
+  });
+
+  it('does not judge an asset product by pledge coverage', () => {
+    // A big pledge value with no down payment still fails — asset products gate on the down payment.
+    expect(collateralRequirementMet(LoanProduct.AVTO, { pledgedValue: 999, loanBase: 1 })).toBe(false);
   });
 });
