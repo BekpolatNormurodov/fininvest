@@ -1,5 +1,5 @@
 import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { COLLATERAL_COVERAGE_TARGET } from '@credit-core/shared';
+import { COLLATERAL_COVERAGE_TARGET, collateralRequirementMet } from '@credit-core/shared';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
@@ -109,7 +109,15 @@ export function scoreReportTemplate(c: CaseDocData): TDocumentDefinitions {
 
   const collateralTotal = c.collaterals.reduce((sum, col) => sum + Number(col.agreedValue ?? 0), 0);
   const collateralBase = Number(line?.amountAuto ?? line?.amountTotal ?? amount ?? 0);
-  const collateralOk = collateralBase > 0 && collateralTotal / collateralBase >= COLLATERAL_COVERAGE_TARGET;
+  // Product-aware: cash products need >=140% pledge coverage; asset products (AVTO/IPOTEKA) gate on
+  // the down payment reaching the product minimum. Legacy no-product cases keep the coverage rule.
+  const collateralOk = c.product
+    ? collateralRequirementMet(c.product, {
+        pledgedValue: collateralTotal,
+        loanBase: collateralBase,
+        downPayment: c.downPaymentPct != null ? Number(c.downPaymentPct) / 100 : undefined,
+      })
+    : collateralBase > 0 && collateralTotal / collateralBase >= COLLATERAL_COVERAGE_TARGET;
 
   /*
     B19 = IF(балл!C31<0, G22, H22) — «Даромадларнинг етарлилиги», where C31 is income minus the
