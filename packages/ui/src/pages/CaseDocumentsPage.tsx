@@ -5,7 +5,7 @@ import {
   ArrowRight, Calculator, Download, Eye, FileText, Lock, ShieldCheck, Trash2, Upload,
 } from '../lib/icons';
 import { api, downloadBlob, viewDocument, documentInlineUrl, getErrorMessage, type CaseDocumentMeta } from '@credit-core/api-client';
-import { CaseStatus, DocumentType, DOCUMENT_LABEL, Role, type DocumentDto, PRODUCT_LABEL } from '@credit-core/shared';
+import { CaseStatus, DocumentType, DOCUMENT_LABEL, Role, type DocumentDto, PRODUCT_LABEL, productExtraDocs } from '@credit-core/shared';
 import { useAuth } from '../lib/auth';
 import { Button, Card, Skeleton, StatusBadge } from '../components/primitives';
 import { Select } from '../components/forms';
@@ -113,6 +113,25 @@ export function CaseDocumentsPage() {
           <span className="text-gray-400 dark:text-gray-500"> · {PRODUCT_LABEL[c.productType]}</span>
         </p>
       </div>
+
+      {c.product && productExtraDocs(c.product).length > 0 && (
+        <Card className="space-y-2 border-brand-200 bg-brand-50/40 dark:border-brand-500/20 dark:bg-brand-500/5">
+          <SectionHeading title="Kutilayotgan hujjatlar (asset kredit)" />
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Bu hujjatlar tashqi tomondan tayyorlanadi (notarius / kadastr / sug‘urta kompaniyasi) va «Qo‘shimcha hujjatlar» bo‘limiga yuklanadi.
+          </p>
+          <ul className="grid gap-1.5 sm:grid-cols-2">
+            {productExtraDocs(c.product).map((d) => (
+              <li key={d.key} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+                  <FileText className="h-3 w-3" />
+                </span>
+                {d.title.uz}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card className="space-y-3">
         <SectionHeading title="Umumiy hujjatlar" hint={c.status !== CaseStatus.DRAFT ? `${mainDocs.length} ta` : undefined} />
