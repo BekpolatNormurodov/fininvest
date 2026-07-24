@@ -89,7 +89,7 @@ export class CreditCasesService {
     };
   }
 
-  private creditLineNested(l: CreditLineInput, rate: number) {
+  private creditLineNested(l: CreditLineInput, rate: number, product?: LoanProduct | null) {
     const t = l.tranche ?? null;
     const ins = l.insurance ?? null;
     // Insurance rules are server-authoritative: the policy-backed portion (amountPolis) is the loan
@@ -107,13 +107,18 @@ export class CreditCasesService {
       trancheMonthlyPayment: t?.monthlyPayment ?? null,
       requiredInsuredAmount: l.requiredInsuredAmount ?? null,
     });
+    // Asset products (AVTO/IPOTEKA) insure the asset itself — keep the operator-entered insured sum
+    // and premium; the loan-risk derivation (d.*) is for cash cover only.
+    const isAssetIns = product ? loanProductProfile(product).kind === LoanProductKind.ASSET : false;
+    const finalInsuredSum = isAssetIns ? (ins?.insuredSum ?? null) : d.insuredSum;
+    const finalPremium = isAssetIns ? (ins?.premium ?? null) : d.premium;
     return {
       lineNumber: l.lineNumber ?? null, loanType: d.loanType,
       amountAuto: l.amountAuto ?? null, amountPolis: l.amountPolis ?? null, amountTotal: l.amountTotal ?? null,
       termMonths: l.termMonths ?? null, lineDate: parseDate(l.lineDate), lineMaturity: parseDate(l.lineMaturity),
       interestRate: rate, penaltyRate: l.penaltyRate ?? 1.05, orderNumber: l.orderNumber ?? null,
       requiredCollateralAmount: l.requiredCollateralAmount ?? null, requiredInsuredAmount: l.requiredInsuredAmount ?? null,
-      ...(ins ? { insurance: { create: { insured, company: ins.company ?? null, genAgreementNo: ins.genAgreementNo ?? null, genAgreementDate: parseDate(ins.genAgreementDate), policyNo: ins.policyNo ?? null, policyIssueDate: parseDate(ins.policyIssueDate), policyTermMonths: insMonths, policyExpiry: parseDate(ins.policyExpiry), loanUnderPolicy: insLoan, insuredSum: d.insuredSum, insuranceRate: insRate, premium: d.premium } } } : {}),
+      ...(ins ? { insurance: { create: { insured, company: ins.company ?? null, genAgreementNo: ins.genAgreementNo ?? null, genAgreementDate: parseDate(ins.genAgreementDate), policyNo: ins.policyNo ?? null, policyIssueDate: parseDate(ins.policyIssueDate), policyTermMonths: insMonths, policyExpiry: parseDate(ins.policyExpiry), loanUnderPolicy: insLoan, insuredSum: finalInsuredSum, insuranceRate: insRate, premium: finalPremium } } } : {}),
       ...(t ? { tranches: { create: [{ trancheNo: t.trancheNo ?? 1, applicationNo: t.applicationNo ?? null, applicationDate: parseDate(t.applicationDate), contractNo: t.contractNo ?? null, contractDate: parseDate(t.contractDate), principal: t.principal ?? null, termMonths: t.termMonths ?? null, maturity: parseDate(t.maturity), scheduleType: t.scheduleType ?? null, monthlyPayment: t.monthlyPayment ?? null, paymentDay: paymentDayFor(t.applicationDate), insurancePayment: t.insurancePayment ?? null }] } } : {}),
     };
   }
@@ -205,7 +210,7 @@ export class CreditCasesService {
         ...(dto.employment ? { employment: { create: this.employmentData(dto.employment) } } : {}),
         ...(dto.affordability ? { affordability: { create: this.affordabilityData(dto.affordability) } } : {}),
         ...(dto.creditHistory ? { creditHistory: { create: this.creditHistoryData(dto.creditHistory) } } : {}),
-        ...(dto.creditLine ? { creditLine: { create: this.creditLineNested(dto.creditLine, min) } } : {}),
+        ...(dto.creditLine ? { creditLine: { create: this.creditLineNested(dto.creditLine, min, dto.product ?? null) } } : {}),
       },
       include: caseInclude,
     });
@@ -362,7 +367,7 @@ export class CreditCasesService {
       ...(dto.employment ? [this.prisma.employment.upsert({ where: { caseId: id }, create: { caseId: id, ...this.employmentData(dto.employment) }, update: this.employmentData(dto.employment) })] : []),
       ...(dto.affordability ? [this.prisma.affordability.upsert({ where: { caseId: id }, create: { caseId: id, ...this.affordabilityData(dto.affordability) }, update: this.affordabilityData(dto.affordability) })] : []),
       ...(dto.creditHistory ? [this.prisma.creditHistory.upsert({ where: { caseId: id }, create: { caseId: id, ...this.creditHistoryData(dto.creditHistory) }, update: this.creditHistoryData(dto.creditHistory) })] : []),
-      ...(dto.creditLine ? [this.prisma.creditLine.deleteMany({ where: { caseId: id } }), this.prisma.creditLine.create({ data: { caseId: id, ...this.creditLineNested(dto.creditLine, lineRate) } })] : []),
+      ...(dto.creditLine ? [this.prisma.creditLine.deleteMany({ where: { caseId: id } }), this.prisma.creditLine.create({ data: { caseId: id, ...this.creditLineNested(dto.creditLine, lineRate, effProduct) } })] : []),
     ]);
 
     await this.persistScoring(id);
