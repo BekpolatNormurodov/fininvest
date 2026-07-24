@@ -158,6 +158,22 @@ export function collateralRequirementMet(
   return base > 0 && pledged / base >= CASH_COVERAGE_TARGET;
 }
 
+/**
+ * LTV and down-payment % for an asset product, from the loan and the purchased asset's value.
+ * Returns nulls for cash products or when either figure is missing. Down payment = price − loan,
+ * so downPaymentPct = (1 − loan/price)×100 and ltvPct = (loan/price)×100. Rounded to 2 decimals.
+ */
+export function assetFinancials(
+  product: LoanProduct | null,
+  loan: number | null,
+  assetValue: number | null,
+): { ltvPct: number | null; downPaymentPct: number | null } {
+  const isAsset = product ? loanProductProfile(product).kind === LoanProductKind.ASSET : false;
+  if (!isAsset || !loan || !assetValue || assetValue <= 0) return { ltvPct: null, downPaymentPct: null };
+  const round2 = (x: number) => Math.round(x * 100) / 100;
+  return { ltvPct: round2((loan / assetValue) * 100), downPaymentPct: round2((1 - loan / assetValue) * 100) };
+}
+
 /** Display order for the "new application" product picker. */
 export const LOAN_PRODUCT_ORDER: LoanProduct[] = [
   LoanProduct.ADM_TEAM,

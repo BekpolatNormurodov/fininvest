@@ -11,6 +11,7 @@ import {
   LOAN_PRODUCT_ORDER,
   ltvOf,
   collateralRequirementMet,
+  assetFinancials,
 } from '@credit-core/shared';
 
 describe('loan-product profiles', () => {
@@ -73,6 +74,24 @@ describe('ltv', () => {
 
   it('is zero when the asset value is missing', () => {
     expect(ltvOf(70, 0)).toBe(0);
+  });
+});
+
+describe('assetFinancials', () => {
+  it('derives LTV and down payment for asset products', () => {
+    expect(assetFinancials(LoanProduct.AVTO, 70, 100)).toEqual({ ltvPct: 70, downPaymentPct: 30 });
+    expect(assetFinancials(LoanProduct.IPOTEKA, 60, 100)).toEqual({ ltvPct: 60, downPaymentPct: 40 });
+  });
+
+  it('is null for cash products', () => {
+    expect(assetFinancials(LoanProduct.OSON, 70, 100)).toEqual({ ltvPct: null, downPaymentPct: null });
+    expect(assetFinancials(LoanProduct.ADM_TEAM, 70, 100)).toEqual({ ltvPct: null, downPaymentPct: null });
+  });
+
+  it('is null when a product, loan, or asset value is missing', () => {
+    expect(assetFinancials(null, 70, 100)).toEqual({ ltvPct: null, downPaymentPct: null });
+    expect(assetFinancials(LoanProduct.AVTO, null, 100)).toEqual({ ltvPct: null, downPaymentPct: null });
+    expect(assetFinancials(LoanProduct.AVTO, 70, 0)).toEqual({ ltvPct: null, downPaymentPct: null });
   });
 });
 

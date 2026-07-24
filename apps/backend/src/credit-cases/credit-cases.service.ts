@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, ScoringVerdict } from '@prisma/client';
-import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, type LoanProduct, type ScorableCase } from '@credit-core/shared';
+import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, type LoanProduct, type ScorableCase } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -169,14 +169,6 @@ export class CreditCasesService {
     return { repaidLoansCount: h.repaidLoansCount ?? null, activeLoansCount: h.activeLoansCount ?? null, overdueSubstandardFlag: h.overdueSubstandardFlag ?? null, otherObligations: h.otherObligations ?? null, loansOver5MFlag: h.loansOver5MFlag ?? null, priorMfiPawnshopFlag: h.priorMfiPawnshopFlag ?? null, totalOutstandingDebt: h.totalOutstandingDebt ?? null, avgMonthlyPaymentExisting: h.avgMonthlyPaymentExisting ?? null, committeeProtocolRef: h.committeeProtocolRef ?? null, committeeDecisionDate: parseDate(h.committeeDecisionDate) };
   }
 
-  /** Asset products: derive LTV and down-payment % from the loan and the purchased asset's value. */
-  private assetFinancials(product: LoanProduct | null, amount: number | null, assetValue: number | null) {
-    const isAsset = product ? loanProductProfile(product).kind === LoanProductKind.ASSET : false;
-    if (!isAsset || !amount || !assetValue || assetValue <= 0) return { ltvPct: null, downPaymentPct: null };
-    const round2 = (x: number) => Math.round(x * 100) / 100;
-    return { ltvPct: round2((amount / assetValue) * 100), downPaymentPct: round2((1 - amount / assetValue) * 100) };
-  }
-
   async createCase(user: RequestUser, dto: UpsertCaseDto) {
     const branch = user.branchId
       ? await this.prisma.branch.findUnique({ where: { id: user.branchId } })
@@ -188,7 +180,7 @@ export class CreditCasesService {
     const { min } = await this.loadRates();
     const amount = dto.creditLine?.amountTotal ?? dto.amount ?? null;
     const termForBand = dto.creditLine?.termMonths ?? dto.termMonths ?? null;
-    const fin = this.assetFinancials(dto.product ?? null, amount, dto.collaterals?.[0]?.agreedValue ?? null);
+    const fin = assetFinancials(dto.product ?? null, amount, dto.collaterals?.[0]?.agreedValue ?? null);
 
     const created = await this.prisma.creditCase.create({
       data: {
@@ -324,7 +316,7 @@ export class CreditCasesService {
       const col = await this.prisma.collateral.findFirst({ where: { caseId: id }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: { agreedValue: true } });
       effAssetVal = col?.agreedValue != null ? Number(col.agreedValue) : null;
     }
-    const finU = this.assetFinancials(effProduct, effAmount, effAssetVal);
+    const finU = assetFinancials(effProduct, effAmount, effAssetVal);
     await this.prisma.$transaction([
       this.prisma.creditCase.update({
         where: { id },
