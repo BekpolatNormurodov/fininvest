@@ -59,9 +59,9 @@ export function LoginPage({ role, title }: { role: Role; title: string }) {
         <div className="relative z-[2] px-12 text-center">
           <div className="flex items-center justify-center gap-3">
             <LogoMark className="h-14 w-14" />
-            <span className="font-heading text-3xl font-bold tracking-tight text-white">credit-core</span>
+            <span className="font-heading text-3xl font-bold tracking-tight text-white">Fin<span className="text-sky-300">Invest</span></span>
           </div>
-          <h2 className="mt-9 font-heading text-2xl font-semibold text-white">Garov kreditlari — yagona panelda.</h2>
+          <h2 className="mt-9 font-heading text-2xl font-semibold text-white">Moliyaviy yechimlar — yagona panelda.</h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-gray-300">
             Arizalar, moderatsiya, tahlil va hisobotlar — bitta xavfsiz boshqaruv tizimida.
           </p>
@@ -109,7 +109,7 @@ export function LoginPage({ role, title }: { role: Role; title: string }) {
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">credit-core • garov tizimi</p>
+          <p className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">FinInvest • moliyaviy tizim</p>
         </motion.div>
       </div>
     </div>

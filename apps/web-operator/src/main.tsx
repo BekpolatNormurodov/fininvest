@@ -6,6 +6,6 @@ import '@credit-core/ui/styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RoleApp role={Role.OPERATOR} title="credit-core • Operator" />
+    <RoleApp role={Role.OPERATOR} title="FinInvest • Operator" />
   </React.StrictMode>,
 );
