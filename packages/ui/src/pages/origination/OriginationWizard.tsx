@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   type CaseSectionKey,
@@ -39,6 +40,12 @@ export function OriginationWizard() {
   const prod = product && product in LOAN_PRODUCT_PROFILES ? (product as LoanProduct) : null;
   const termM = f.form.creditLine?.termMonths ?? f.form.termMonths ?? null;
   const band = prod && termM ? termBandFor(termM) : null;
+
+  // On a fresh application, stamp the chosen product onto the form so it is saved with the case.
+  useEffect(() => {
+    if (prod && !id) f.patch({ product: prod });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prod, id]);
 
   const next = async () => {
     if (f.stepHasErrors(f.step)) { f.setAttempted(true); toast.error('Tekshiring', 'Majburiy maydonlarni to‘ldiring'); return; }

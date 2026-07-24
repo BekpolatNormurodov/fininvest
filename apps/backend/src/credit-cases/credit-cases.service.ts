@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, ScoringVerdict } from '@prisma/client';
-import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, type ScorableCase } from '@credit-core/shared';
+import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, type ScorableCase } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -174,11 +174,14 @@ export class CreditCasesService {
     this.fillDerived(dto);
     const { min } = await this.loadRates();
     const amount = dto.creditLine?.amountTotal ?? dto.amount ?? null;
+    const termForBand = dto.creditLine?.termMonths ?? dto.termMonths ?? null;
 
     const created = await this.prisma.creditCase.create({
       data: {
         number,
         productType,
+        product: dto.product ?? null,
+        termBand: termForBand ? termBandFor(termForBand) : null,
         status: CaseStatus.DRAFT,
         amount,
         termMonths: dto.termMonths ?? null,
@@ -295,6 +298,7 @@ export class CreditCasesService {
     const existingLine = await this.prisma.creditLine.findUnique({ where: { caseId: id }, select: { interestRate: true } });
     const lineRate = existingLine?.interestRate != null ? Number(existingLine.interestRate) : min;
 
+    const newTermForBand = dto.creditLine?.termMonths ?? dto.termMonths ?? existing.termMonths;
     await this.prisma.$transaction([
       this.prisma.creditCase.update({
         where: { id },
@@ -302,6 +306,9 @@ export class CreditCasesService {
           // amount mirrors the credit line exactly (and stays clearable); only touched when that section is saved.
           ...(dto.creditLine ? { amount: dto.creditLine.amountTotal ?? null } : {}),
           termMonths: dto.termMonths ?? existing.termMonths,
+          // fin-invest: keep the product when a section save omits it; re-derive the band from the term.
+          ...(dto.product !== undefined ? { product: dto.product } : {}),
+          termBand: newTermForBand ? termBandFor(newTermForBand) : existing.termBand,
           ...(dto.collaterals !== undefined ? { productType: dto.collaterals[0]?.type ?? existing.productType } : {}),
         },
       }),

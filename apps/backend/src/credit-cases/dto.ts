@@ -13,7 +13,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { ProductType, WorkflowDecision } from '@credit-core/shared';
+import { LoanProduct, ProductType, WorkflowDecision } from '@credit-core/shared';
 
 /**
  * Empty string → null, before validation runs.
@@ -208,6 +208,7 @@ export class CreditHistoryInput {
 export class UpsertCaseDto {
   @IsOptional() @BlankToNull() @IsNumber() @Min(0) amount?: number | null;
   @IsOptional() @BlankToNull() @IsInt() @Min(1) @Max(600) termMonths?: number | null;
+  @IsOptional() @IsEnum(LoanProduct) product?: LoanProduct | null;
 
   @ValidateNested()
   @Type(() => BorrowerInput)

@@ -1,4 +1,5 @@
 import { CaseStatus, DocumentType, ProductType, Role, WorkflowDecision } from './enums';
+import type { LoanProduct } from './loan-product';
 
 export interface AuthUser {
   id: string;
@@ -473,6 +474,8 @@ export interface AppConfigDto {
 export interface UpsertCasePayload {
   amount: number | null;
   termMonths: number | null;
+  /** fin-invest: chosen product (ADM_TEAM/OSON/AVTO/IPOTEKA); null on legacy/credit-core cases. */
+  product?: LoanProduct | null;
   borrower: BorrowerDto;
   guarantors: GuarantorDto[];
   collaterals: CollateralDto[];
