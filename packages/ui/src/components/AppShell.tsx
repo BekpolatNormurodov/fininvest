@@ -186,7 +186,7 @@ export function AppShell({ title, nav, children }: { title: string; nav: NavItem
         <div className={cn('mb-7 flex shrink-0 items-center gap-2.5', rail && 'xl:justify-center')}>
           <LogoMark className="h-10 w-10 shrink-0" />
           <div className={cn('leading-tight', rail && 'xl:hidden')}>
-            <p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white">credit<span className="text-brand-700 dark:text-brand-400">-core</span></p>
+            <p className="text-sm font-bold tracking-tight text-gray-900 dark:text-white">Fin<span className="text-brand-700 dark:text-brand-400">Invest</span></p>
             <p className="text-xs text-gray-400">{user ? ROLE_LABEL[user.role] : ''}</p>
           </div>
           <button

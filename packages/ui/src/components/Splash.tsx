@@ -88,7 +88,7 @@ export function Splash({ title, subtitle }: { title: string; subtitle: string })
         transition={{ delay: reduce ? 0 : 0.18, duration: 0.4 }}
         className="mt-7 font-heading text-3xl font-bold tracking-tight text-gray-900 dark:text-white"
       >
-        credit<span className="text-brand-500 dark:text-brand-400">-core</span>
+        Fin<span className="text-brand-500 dark:text-brand-400">Invest</span>
       </motion.h1>
 
       {/* Subtitle (role portal) */}
