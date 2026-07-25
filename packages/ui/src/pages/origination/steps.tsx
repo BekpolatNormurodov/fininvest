@@ -721,20 +721,22 @@ export function StepSeller({ f }: { f: OriginationForm }) {
           </Field>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="F.I.Sh."><Input value={indiv.fullName} onChange={(e) => setIndiv({ ...indiv, fullName: e.target.value })} /></Field>
-            <Field label="JSHSHIR (PINFL)"><Input value={indiv.pinfl} onChange={(e) => setIndiv({ ...indiv, pinfl: e.target.value })} /></Field>
-            <Field label="Passport (seriya va raqam)"><Input value={indiv.passport} onChange={(e) => setIndiv({ ...indiv, passport: e.target.value })} placeholder="AA 1234567" /></Field>
+            <Field label="F.I.Sh." required><Input value={indiv.fullName} onChange={(e) => setIndiv({ ...indiv, fullName: e.target.value })} /></Field>
+            <Field label="JSHSHIR (PINFL)" required><Input value={indiv.pinfl} onChange={(e) => setIndiv({ ...indiv, pinfl: e.target.value })} /></Field>
+            <Field label="Passport (seriya va raqam)" required><Input value={indiv.passport} onChange={(e) => setIndiv({ ...indiv, passport: e.target.value })} placeholder="AA 1234567" /></Field>
             <Field label="Manzil"><Input value={indiv.address} onChange={(e) => setIndiv({ ...indiv, address: e.target.value })} /></Field>
             <Field label="Telefon"><Input value={indiv.phone} onChange={(e) => setIndiv({ ...indiv, phone: e.target.value })} /></Field>
             <Field label="Karta / hisob raqami"><Input value={indiv.bankAccount} onChange={(e) => setIndiv({ ...indiv, bankAccount: e.target.value })} /></Field>
-            <Field label="Egalik hujjati (kadastr / tex passport)"><Input value={indiv.ownershipDoc} onChange={(e) => setIndiv({ ...indiv, ownershipDoc: e.target.value })} /></Field>
+            <Field label="Egalik hujjati (kadastr / tex passport)" required><Input value={indiv.ownershipDoc} onChange={(e) => setIndiv({ ...indiv, ownershipDoc: e.target.value })} /></Field>
             <div className="sm:col-span-2 text-xs text-gray-500 dark:text-gray-400">Passport rasmlari va egalik hujjatlari (kadastr / tex passport) «Hujjatlar» bo‘limiga yuklanadi.</div>
             <div className="sm:col-span-2"><Button onClick={saveIndiv} disabled={saving}>{saving ? '…' : 'Sotuvchini saqlash'}</Button></div>
           </div>
         )}
         {f.form.sellerId
           ? <p className="text-sm font-medium text-success-700 dark:text-success-400">✓ Sotuvchi bog'landi</p>
-          : <p className="text-sm font-medium text-error-600 dark:text-error-500">Sotuvchini tanlang — majburiy.</p>}
+          : kind === 'INDIVIDUAL' && indiv.fullName.trim()
+            ? <p className="text-sm font-medium text-warning-700 dark:text-warning-400">Ma'lumotlar tayyor — «Sotuvchini saqlash» tugmasini bosing.</p>
+            : <p className="text-sm font-medium text-error-600 dark:text-error-500">Sotuvchini tanlang — majburiy.</p>}
       </Card>
     </div>
   );

@@ -1,4 +1,4 @@
-import { originationCalc, loanTypeFor, loanProductProfile, type LoanProduct, type ScorableCase, type UpsertCasePayload } from '@credit-core/shared';
+import { originationCalc, loanTypeFor, loanProductProfile, LoanProductKind, type LoanProduct, type ScorableCase, type UpsertCasePayload } from '@credit-core/shared';
 import { Card } from '../../components/primitives';
 import { ScorePanel } from '../../components/ScorePanel';
 import { formatMoney } from '../../lib/cn';
@@ -22,6 +22,12 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
   // legacy cases with no product.
   const product = (form.product ?? null) as LoanProduct | null;
   const typeLabel = product ? loanProductProfile(product).label.uz : loanType === 'MICROCREDIT' ? 'Mikrokredit' : 'Mikroqarz';
+  // For asset products (AVTO/IPOTEKA) the asset IS the purchase — «garov qoplami» is meaningless.
+  // Show the asset price and the derived down payment (price − loan) instead.
+  const isAsset = product ? loanProductProfile(product).kind === LoanProductKind.ASSET : false;
+  const assetPrice = form.collaterals?.[0]?.agreedValue ?? null;
+  const downPayment = assetPrice != null && amountTotal != null ? Math.max(0, assetPrice - amountTotal) : null;
+  const downPct = assetPrice && downPayment != null ? Math.round((downPayment / assetPrice) * 100) : null;
 
   const row = (label: string, value: string, danger = false) => (
     <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
@@ -52,7 +58,12 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
         </>
       )}
       {row('Sug‘urta puli', formatMoney(calc.premium))}
-      {row('Garov qoplami', amountTotal ? `${(calc.coverageRatio * 100).toFixed(0)}%` : '—')}
+      {isAsset
+        ? <>
+            {row('Aktiv qiymati', assetPrice ? formatMoney(assetPrice) : '—')}
+            {row('Boshlang‘ich to‘lov', downPayment != null && downPct != null ? `${formatMoney(downPayment)} · ${downPct}%` : '—')}
+          </>
+        : row('Garov qoplami', amountTotal ? `${(calc.coverageRatio * 100).toFixed(0)}%` : '—')}
       {!calc.affordabilityOk && (calc.totalIncome > 0) && (
         <p className="mt-2 rounded-lg bg-error-50 px-3 py-2 text-xs font-medium text-error-700 dark:bg-error-600/10 dark:text-error-400">
           Daromad yetarli emas (surplus manfiy yoki 2.2× dan past) — ko‘rib chiqing.
