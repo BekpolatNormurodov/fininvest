@@ -822,8 +822,10 @@ export function StepSeller({ f }: { f: OriginationForm }) {
             <Field label="Manzil"><Input value={indiv.address} onChange={(e) => setIndiv({ ...indiv, address: e.target.value })} /></Field>
             <Field label="Telefon"><Input value={indiv.phone} onChange={(e) => setIndiv({ ...indiv, phone: e.target.value })} /></Field>
             <Field label="Karta / hisob raqami"><Input value={indiv.bankAccount} onChange={(e) => setIndiv({ ...indiv, bankAccount: e.target.value })} /></Field>
-            <Field label="Egalik hujjati (kadastr / tex passport)" required><Input value={indiv.ownershipDoc} onChange={(e) => setIndiv({ ...indiv, ownershipDoc: e.target.value })} /></Field>
-            <div className="sm:col-span-2 text-xs text-gray-500 dark:text-gray-400">Passport rasmlari va egalik hujjatlari (kadastr / tex passport) «Hujjatlar» bo‘limiga yuklanadi.</div>
+            <Field label={product === 'AVTO' ? 'Tex passport (AAS №)' : product === 'IPOTEKA' ? 'Kadastr №' : 'Egalik hujjati'} required>
+              <Input value={indiv.ownershipDoc} onChange={(e) => setIndiv({ ...indiv, ownershipDoc: e.target.value })} placeholder={product === 'AVTO' ? 'AAS 1234567' : product === 'IPOTEKA' ? '10:01:05:03:01:1234' : ''} />
+            </Field>
+            <div className="sm:col-span-2 text-xs text-gray-500 dark:text-gray-400">Passport rasmlari va egalik hujjati ({product === 'AVTO' ? 'tex passport' : product === 'IPOTEKA' ? 'kadastr' : 'kadastr / tex passport'}) «Hujjatlar» bo‘limiga yuklanadi.</div>
             <div className="sm:col-span-2"><Button onClick={saveIndiv} disabled={saving}>{saving ? '…' : 'Sotuvchini saqlash'}</Button></div>
           </div>
         )}
