@@ -461,9 +461,10 @@ export function StepGarov({ f }: { f: OriginationForm }) {
             onRemove={() => setDelIdx(active)}
             canRemove
             isPurchase={gIsAsset}
+            firmNew={gRelax}
             mediaSlot={<>
               <CollateralAttachments f={f} colIndex={active} type={DocumentType.COLLATERAL_PHOTO} accept="image/*,video/*" title="Rasm / video" max={10} />
-              <CollateralAttachments f={f} colIndex={active} type={DocumentType.GEN_DOVERNOST} accept="image/*,application/pdf" title="Ishonchnoma" max={5} />
+              {!gIsAsset && <CollateralAttachments f={f} colIndex={active} type={DocumentType.GEN_DOVERNOST} accept="image/*,application/pdf" title="Ishonchnoma" max={5} />}
             </>}
             texSlot={<TexScan
               storeKey={`tex:${f.caseId ?? 'new'}:${active}`}

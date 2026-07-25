@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Plus, Trash2, House, Car, IdCard, Hashtag, Location,
   Money, Clock, Ruler, Tag, Calendar, Palette, Upload, FileText, Check,
@@ -56,7 +56,7 @@ function KadastrCard({ cadastreNo }: { cadastreNo: string }) {
 // A per-collateral staged attachment (image/file + name + free text), bound by collateral index.
 export type StagedColDoc = { localId: string; colIndex: number; file: File; type: DocumentType; title: string; description: string };
 
-export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove, docs, onAddDocs, onRemoveDoc, onSetDocField, hideDocs = false, isPurchase = false, mediaSlot, texSlot, borrowerName }: {
+export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove, docs, onAddDocs, onRemoveDoc, onSetDocField, hideDocs = false, isPurchase = false, firmNew = false, mediaSlot, texSlot, borrowerName }: {
   index: number; c: CollateralDto; errors?: Partial<Record<CollateralField, string>>; onChange: (p: Partial<CollateralDto>) => void; onRemove: () => void; canRemove: boolean;
   docs: StagedColDoc[]; onAddDocs: (files: FileList | File[] | null) => void; onRemoveDoc: (localId: string) => void;
   onSetDocField: (localId: string, patch: Partial<Pick<StagedColDoc, 'title' | 'description'>>) => void;
@@ -64,6 +64,9 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
   hideDocs?: boolean;
   /** Asset-purchase products: the buyer (borrower) becomes the owner, so the pledge-owner block is hidden. */
   isPurchase?: boolean;
+  /** New asset bought from a firm: plate number & tex-passport come only after registration, so they
+   *  aren't required yet; a new car's mileage defaults to 0 with a «yangi» badge. */
+  firmNew?: boolean;
   /** When provided (wizard), replaces the staged doc block with a working media uploader. */
   mediaSlot?: ReactNode;
   /** When provided (wizard, AUTO), the tex-passport scanner — so it can also save the scanned images. */
@@ -75,6 +78,12 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
   const setOwners = (owners: CollateralDto['owners']) => onChange({ owners });
   const docRef = useRef<HTMLInputElement>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // A brand-new car from a firm starts at 0 km — seed it once so the «yangi» badge shows.
+  useEffect(() => {
+    if (firmNew && isAuto && c.mileage == null) onChange({ mileage: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firmNew, isAuto]);
 
   return (
     <Card className="space-y-4">
@@ -96,8 +105,8 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
             <Select<string> value={c.model ?? ''} onChange={(v) => onChange({ model: v })} searchable placeholder="— mashinani tanlang —"
               options={CAR_MODELS.map((m) => ({ value: m, label: m }))} />
           </Field>
-          <Field label="Davlat raqami" required icon={Hashtag} error={errors?.stateNumber}><PlateInput value={c.stateNumber ?? null} onChange={(v) => onChange({ stateNumber: v })} /></Field>
-          <Field label="Tex passport (AAS №)" required icon={IdCard} error={errors?.techPassportNo}><Input value={c.techPassportNo ?? ''} onChange={(e) => onChange({ techPassportNo: e.target.value })} /></Field>
+          <Field label="Davlat raqami" required={!firmNew} icon={Hashtag} error={errors?.stateNumber} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><PlateInput value={c.stateNumber ?? null} onChange={(v) => onChange({ stateNumber: v })} /></Field>
+          <Field label="Tex passport (AAS №)" required={!firmNew} icon={IdCard} error={errors?.techPassportNo} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><Input value={c.techPassportNo ?? ''} onChange={(e) => onChange({ techPassportNo: e.target.value })} /></Field>
           <Field label="Kuzov turi" icon={Car}><Input value={c.bodyType ?? ''} onChange={(e) => onChange({ bodyType: e.target.value })} placeholder="YENGIL SEDAN" /></Field>
           <Field label="Kuzov №" icon={Hashtag}><Input value={c.bodyNo ?? ''} onChange={(e) => onChange({ bodyNo: e.target.value })} /></Field>
           <Field label="Dvigatel №" icon={Hashtag}><Input value={c.engineNo ?? ''} onChange={(e) => onChange({ engineNo: e.target.value })} /></Field>
@@ -107,7 +116,12 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
               options={CAR_COLORS.map((col) => ({ value: col.name, label: col.name, swatch: col.hex }))} />
           </Field>
           <Field label="Yil" icon={Calendar}><Input type="number" value={c.year ?? ''} onChange={(e) => onChange({ year: num(e.target.value) })} /></Field>
-          <Field label="Probeg (km)" icon={Clock}><Input type="number" value={c.mileage ?? ''} onChange={(e) => onChange({ mileage: num(e.target.value) })} /></Field>
+          <Field label="Probeg (km)" icon={Clock}>
+            <div className="relative">
+              <Input type="number" value={c.mileage ?? ''} onChange={(e) => onChange({ mileage: num(e.target.value) })} />
+              {c.mileage === 0 && <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-success-100 px-2 py-0.5 text-[10px] font-semibold text-success-700 dark:bg-success-500/15 dark:text-success-400">yangi</span>}
+            </div>
+          </Field>
         </div>
         </>
       ) : (
