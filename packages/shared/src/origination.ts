@@ -306,14 +306,17 @@ export function caseSubmitErrors(c: CreditCaseDto): string[] {
     out.push(`Liniya muddati majburiy (1..${LINE_TERM_CAP})`);
   }
 
-  const purchase = c.product === 'AVTO' || c.product === 'IPOTEKA';
-  if (purchase && !c.sellerId) out.push('Sotuvchi majburiy');
+  const isAsset = c.product === 'AVTO' || c.product === 'IPOTEKA';
+  if (isAsset && !c.sellerId) out.push('Sotuvchi majburiy');
+  // Registration docs (plate / tex passport / cadastre) are missing only for a NEW asset bought from
+  // a firm; an existing asset from an individual owner already has them.
+  const newFromFirm = isAsset && (c.seller?.kind === 'LEGAL' || c.sellerKind === 'LEGAL');
   const cs = c.collaterals;
   if (cs.length === 0) {
     out.push('Kamida 1 ta garov majburiy');
   } else {
-    const i = cs.findIndex((col) => !collateralComplete(col, purchase));
-    if (i >= 0) out.push(`Garov ${i + 1}: ${collateralMissing(cs[i], purchase).map((m) => m.label).join(', ')} majburiy`);
+    const i = cs.findIndex((col) => !collateralComplete(col, newFromFirm));
+    if (i >= 0) out.push(`Garov ${i + 1}: ${collateralMissing(cs[i], newFromFirm).map((m) => m.label).join(', ')} majburiy`);
     // Every document names an owner. With none entered the borrower stands in, so this only fires
     // when the borrower has no name either — a case that could reach the director with «—» printed
     // where the pledgor belongs.

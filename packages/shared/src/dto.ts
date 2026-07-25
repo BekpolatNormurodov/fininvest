@@ -410,6 +410,7 @@ export interface CreditCaseDto {
   ltvPct?: number | null;
   downPaymentPct?: number | null;
   sellerId?: string | null;
+  sellerKind?: SellerKind | null;
   seller?: SellerDto | null;
   status: CaseStatus;
   amount: number | null;
@@ -507,6 +508,8 @@ export interface UpsertCasePayload {
   product?: LoanProduct | null;
   /** fin-invest: seller/distributor for asset-purchase products (AVTO/IPOTEKA). */
   sellerId?: string | null;
+  /** Seller kind, kept on the form so the wizard knows whether the asset is new (firm) or existing. */
+  sellerKind?: SellerKind | null;
   borrower: BorrowerDto;
   guarantors: GuarantorDto[];
   collaterals: CollateralDto[];

@@ -384,6 +384,8 @@ export function StepGarov({ f }: { f: OriginationForm }) {
   const gProduct = (f.form.product ?? null) as LoanProduct | null;
   const gIsAsset = gProduct ? loanProductProfile(gProduct).kind === 'ASSET' : false;
   const gAssetType = gProduct === 'AVTO' ? ProductType.AUTO : gProduct === 'IPOTEKA' ? ProductType.REAL_ESTATE : null;
+  // Registration docs (plate/tex passport/cadastre) are relaxed only for a NEW asset from a firm.
+  const gRelax = gIsAsset && f.form.sellerKind === 'LEGAL';
 
   return (
     <div className="space-y-6">
@@ -403,7 +405,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
             Only the selected collateral is shown below. */}
         <ol className="mb-3 flex flex-wrap gap-2">
           {cols.map((c, i) => {
-            const done = collateralComplete(c, gIsAsset);
+            const done = collateralComplete(c, gRelax);
             const cur = active === i;
             return (
               <li key={i}>
@@ -443,7 +445,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
             index={active}
             c={cols[active]}
             borrowerName={f.form.borrower.fullName}
-            errors={f.attempted ? collateralErrors(cols[active], gIsAsset) : undefined}
+            errors={f.attempted ? collateralErrors(cols[active], gRelax) : undefined}
             onChange={(p) => f.setCol(active, p)}
             onRemove={() => setDelIdx(active)}
             canRemove
@@ -640,7 +642,7 @@ export function AssetDownPayment({ f }: { f: OriginationForm }) {
 export function StepSeller({ f }: { f: OriginationForm }) {
   const toast = useToast();
   const { data: firms = [] } = useQuery({ queryKey: ['sellersCatalog'], queryFn: () => api.sellersCatalog() });
-  const [kind, setKind] = useState<'LEGAL' | 'INDIVIDUAL'>('LEGAL');
+  const [kind, setKind] = useState<'LEGAL' | 'INDIVIDUAL'>(f.form.sellerKind === 'INDIVIDUAL' ? 'INDIVIDUAL' : 'LEGAL');
   const [indiv, setIndiv] = useState({ fullName: '', pinfl: '', passport: '', address: '', phone: '', bankAccount: '', ownershipDoc: '' });
   const [saving, setSaving] = useState(false);
   const [downInput, setDownInput] = useState('');
@@ -702,7 +704,7 @@ export function StepSeller({ f }: { f: OriginationForm }) {
         bankAccount: indiv.bankAccount || null,
         ownershipDoc: indiv.ownershipDoc || null,
       });
-      f.patch({ sellerId: s.id });
+      f.patch({ sellerId: s.id, sellerKind: 'INDIVIDUAL' });
       toast.success('Saqlandi', 'Sotuvchi (jismoniy shaxs)');
     } catch {
       toast.error('Xatolik', 'Sotuvchi saqlanmadi');
@@ -719,15 +721,15 @@ export function StepSeller({ f }: { f: OriginationForm }) {
           <span className="rounded-md bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">Majburiy</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant={kind === 'LEGAL' ? 'primary' : 'secondary'} onClick={() => setKind('LEGAL')}>Firma</Button>
-          <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => setKind('INDIVIDUAL')}>Jismoniy shaxs (egasi)</Button>
+          <Button variant={kind === 'LEGAL' ? 'primary' : 'secondary'} onClick={() => { setKind('LEGAL'); f.patch({ sellerKind: 'LEGAL', sellerId: null }); }}>Firma</Button>
+          <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => { setKind('INDIVIDUAL'); f.patch({ sellerKind: 'INDIVIDUAL', sellerId: null }); }}>Jismoniy shaxs (egasi)</Button>
         </div>
         {kind === 'LEGAL' ? (
           <Field label={firmLabel}>
             <Select
               searchable
               value={f.form.sellerId ?? ''}
-              onChange={(v) => f.patch({ sellerId: v || null })}
+              onChange={(v) => f.patch({ sellerId: v || null, sellerKind: 'LEGAL' })}
               options={[{ value: '', label: '— tanlang —' }, ...firmList.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))]}
             />
           </Field>
