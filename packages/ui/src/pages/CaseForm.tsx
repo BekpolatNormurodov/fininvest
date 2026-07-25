@@ -25,6 +25,11 @@ const PROPERTY_TYPES = [
   "NOTURAR-JOY BINOSI",
 ];
 
+// Standard vehicle body types (kuzov turi) — searchable Select; a free-text legacy value still shows.
+const BODY_TYPES = [
+  'YENGIL SEDAN', 'UNIVERSAL', 'XETCHBEK', 'KUPE', 'KROSSOVER (SUV)', 'MINIVEN', 'PIKAP', 'FURGON',
+];
+
 /**
  * Kadastr agency lookup card — a dropdown-style card under the cadastre number. Shown once the
  * number is fully typed, with a green check. Currently a SIMULATION (fields are placeholders);
@@ -129,7 +134,10 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
           </Field>
           <Field label="Davlat raqami" required={!firmNew} icon={Hashtag} error={errors?.stateNumber} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><PlateInput value={c.stateNumber ?? null} onChange={(v) => onChange({ stateNumber: v })} /></Field>
           <Field label="Tex passport (AAS №)" required={!firmNew} icon={IdCard} error={errors?.techPassportNo} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><Input value={c.techPassportNo ?? ''} onChange={(e) => onChange({ techPassportNo: e.target.value })} /></Field>
-          <Field label="Kuzov turi" icon={Car}><Input value={c.bodyType ?? ''} onChange={(e) => onChange({ bodyType: e.target.value })} placeholder="YENGIL SEDAN" /></Field>
+          <Field label="Kuzov turi" icon={Car}>
+            <Select<string> value={c.bodyType ?? ''} onChange={(v) => onChange({ bodyType: v })} searchable placeholder="— kuzov turini tanlang —"
+              options={BODY_TYPES.map((b) => ({ value: b, label: b }))} />
+          </Field>
           <Field label="Kuzov №" icon={Hashtag}><Input value={c.bodyNo ?? ''} onChange={(e) => onChange({ bodyNo: e.target.value })} /></Field>
           <Field label="Dvigatel №" icon={Hashtag}><Input value={c.engineNo ?? ''} onChange={(e) => onChange({ engineNo: e.target.value })} /></Field>
           <Field label="Shassi" icon={Hashtag}><Input value={c.chassis ?? ''} onChange={(e) => onChange({ chassis: e.target.value })} /></Field>
