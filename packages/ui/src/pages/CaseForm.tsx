@@ -99,6 +99,14 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firmNew, isAuto]);
 
+  // Realty: seed «Mulk turi» from the Kvartira/Hovli kind when empty, so it is never blank and stays
+  // consistent with the toggle. The operator can still pick another type from the dropdown.
+  useEffect(() => {
+    if (isAuto || c.propertyType) return;
+    onChange({ propertyType: (c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? "YAKKA TARTIBDAGI TURAR JOY" : "KO'P QAVATLI UYDAGI XONADON" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuto]);
+
   return (
     <Card className="space-y-4">
       <div className="flex items-center justify-between">
@@ -146,7 +154,7 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
               <button
                 key={k}
                 type="button"
-                onClick={() => onChange({ realtyKind: k })}
+                onClick={() => onChange({ realtyKind: k, propertyType: k === 'HOUSE' ? "YAKKA TARTIBDAGI TURAR JOY" : "KO'P QAVATLI UYDAGI XONADON" })}
                 className={cn('rounded-md px-3 py-1.5 text-sm font-medium transition', (c.realtyKind ?? 'APARTMENT') === k ? 'bg-brand-700 text-white' : 'text-gray-600 hover:text-gray-800 dark:text-gray-300')}
               >
                 {label}
