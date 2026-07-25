@@ -68,6 +68,26 @@ describe('contractTemplate', () => {
     expect(text).toContain(c.contractNumber!);
   });
 
+  it('cash products keep the sheet wording: the pledge is NOT insured', () => {
+    const text = flattenDocText(contractTemplate(mockCaseDoc()));
+    expect(text).toContain('сугурталанмайди');
+    expect(text).not.toContain('КАСКО');
+  });
+
+  it('AVTO states the purchased asset is insured (KASKO), never "not insured"', () => {
+    const c = mockCaseDoc({ product: 'AVTO' as unknown as never });
+    const text = flattenDocText(contractTemplate(c));
+    expect(text).toContain('КАСКО');
+    expect(text).not.toContain('сугурталанмайди');
+  });
+
+  it('IPOTEKA states the purchased asset is insured (property)', () => {
+    const c = mockCaseDoc({ product: 'IPOTEKA' as unknown as never });
+    const text = flattenDocText(contractTemplate(c));
+    expect(text).toContain('мол-мулк суғуртаси');
+    expect(text).not.toContain('сугурталанмайди');
+  });
+
   it('does not leak a raw Date toString/ISO value anywhere (no GMT, no HH:MM:SS)', () => {
     const c = mockCaseDoc();
     const text = flattenDocText(contractTemplate(c));

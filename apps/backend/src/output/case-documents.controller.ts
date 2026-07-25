@@ -4,8 +4,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PdfService } from './pdf.service';
 import { loadCaseForDocs } from './documents/case-document.loader';
+import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { docBadgeForStatus, watermarkForStatus } from './documents/doc-layout';
-import { DOC_REGISTRY } from './documents/registry';
+import { DOC_REGISTRY, type DocAppliesTo } from './documents/registry';
+
+/** A document applies unless it is pinned to the other product family. Cash/legacy see 'both'+'cash'. */
+function docApplies(appliesTo: DocAppliesTo | undefined, isAsset: boolean): boolean {
+  const a = appliesTo ?? 'both';
+  return a === 'both' || (a === 'asset') === isAsset;
+}
 import { exportScheduleToExcel } from './excel-export.util';
 import { SignedDocsStore } from '../signing/signed-docs.store';
 
@@ -20,8 +27,9 @@ export class CaseDocumentsController {
 
   @Get()
   async list(@Param('id') id: string) {
-    const c = await this.prisma.creditCase.findUnique({ where: { id }, select: { status: true } });
+    const c = await this.prisma.creditCase.findUnique({ where: { id }, select: { status: true, product: true } });
     if (!c) throw new NotFoundException('case not found');
+    const isAsset = assetInsuranceLabelCyr(c.product as LoanProduct | null) !== null;
     // 'review' docs make sense as soon as the case leaves DRAFT; 'approved' docs (notary copies,
     // monitoring acts) only make sense once the director has signed off — FINALIZED, or the legacy
     // ADMIN_FINALIZE status that predates the current terminal-at-director-approval workflow.
@@ -29,7 +37,7 @@ export class CaseDocumentsController {
     const approvedAvailable = c.status === 'FINALIZED' || (c.status as string) === 'ADMIN_FINALIZE';
     // Badge shown per document: "Tasdiqlanmagan" under review → "Tasdiqlangan" once the director signs.
     const badge = docBadgeForStatus(c.status);
-    return Object.entries(DOC_REGISTRY).map(([key, d]) => {
+    return Object.entries(DOC_REGISTRY).filter(([, d]) => docApplies(d.appliesTo, isAsset)).map(([key, d]) => {
       const available = d.stage === 'approved' ? approvedAvailable : reviewAvailable;
       return {
         key,
@@ -55,6 +63,10 @@ export class CaseDocumentsController {
     const c = await loadCaseForDocs(this.prisma, id);
     if (!c) throw new NotFoundException('case not found');
     if (c.status === 'DRAFT') throw new ConflictException('hujjat hali mavjud emas (qoralama)');
+    // Product gate mirrors list(): a direct URL can't fetch a doc that doesn't apply to this product.
+    if (!docApplies(tpl.appliesTo, assetInsuranceLabelCyr(c.product as LoanProduct | null) !== null)) {
+      throw new NotFoundException('Bu hujjat ushbu kredit turi uchun mavjud emas');
+    }
 
     /*
       Once the director has signed, the frozen file IS the issued document — it is the bytes their

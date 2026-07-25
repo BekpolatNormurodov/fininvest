@@ -29,7 +29,14 @@ export type DocCategory = 'main' | 'notary' | 'accountant';
  */
 export type DocStage = 'review' | 'approved';
 
-export const DOC_REGISTRY: Record<string, { title: string; lang: 'uz' | 'ru'; category: DocCategory; stage: DocStage; build: DocTemplate }> = {
+/**
+ * Which loan products a document applies to. Default 'both'. Asset products (AVTO/IPOTEKA) don't need
+ * the separate pledge-valuation act — the purchased asset's appraisal is an uploaded paper instead —
+ * so those entries are 'cash'. Cash/legacy cases are unaffected (they still see every 'both'/'cash' doc).
+ */
+export type DocAppliesTo = 'cash' | 'asset' | 'both';
+
+export const DOC_REGISTRY: Record<string, { title: string; lang: 'uz' | 'ru'; category: DocCategory; stage: DocStage; appliesTo?: DocAppliesTo; build: DocTemplate }> = {
   contract: { title: 'Mikroqarz shartnomasi', lang: 'uz', category: 'main', stage: 'review', build: contractTemplate },
   petition: { title: 'Murojaatnoma (Ходатайство)', lang: 'uz', category: 'main', stage: 'review', build: petitionTemplate },
   creditApplication: { title: 'Kredit arizasi', lang: 'uz', category: 'main', stage: 'review', build: creditApplicationTemplate },
@@ -37,7 +44,7 @@ export const DOC_REGISTRY: Record<string, { title: string; lang: 'uz' | 'ru'; ca
   protokol: { title: 'Protokol (Протокол)', lang: 'uz', category: 'main', stage: 'review', build: protokolTemplate },
   scoreReport: { title: 'Score hisoboti (Score отчет)', lang: 'uz', category: 'main', stage: 'review', build: scoreReportTemplate },
   rklGen: { title: 'Bosh kelishuv (РКЛ Ген)', lang: 'uz', category: 'main', stage: 'review', build: rklGenTemplate },
-  act: { title: 'Kelishuv akti (Акт согласования)', lang: 'uz', category: 'main', stage: 'review', build: actTemplate },
+  act: { title: 'Kelishuv akti (Акт согласования)', lang: 'uz', category: 'main', stage: 'review', appliesTo: 'cash', build: actTemplate },
   obloshka: { title: 'Ish obloshkasi (Обложка)', lang: 'uz', category: 'main', stage: 'review', build: obloshkaTemplate },
   // Two different forms, long conflated under one name. `cheklist` is the перечень — the office's
   // list of papers in the dossier. `borrowerChecklist` is the Чек-лист the CLIENT signs, confirming
@@ -58,7 +65,7 @@ export const DOC_REGISTRY: Record<string, { title: string; lang: 'uz' | 'ru'; ca
   monitoring1: { title: 'Мониторинг далолатномаси (1-6 ой)', lang: 'uz', category: 'main', stage: 'review', build: (c) => monitoringTemplate(c, 6) },
   monitoring2: { title: 'Мониторинг далолатномаси (7-12 ой)', lang: 'uz', category: 'main', stage: 'review', build: (c) => monitoringTemplate(c, 12) },
   monitoring3: { title: 'Мониторинг далолатномаси (13-18 ой)', lang: 'uz', category: 'main', stage: 'review', build: (c) => monitoringTemplate(c, 18) },
-  actNotary: { title: 'Акт согласования (нотариал нусха)', lang: 'uz', category: 'notary', stage: 'approved', build: (c) => actTemplate(c, true) },
+  actNotary: { title: 'Акт согласования (нотариал нусха)', lang: 'uz', category: 'notary', stage: 'approved', appliesTo: 'cash', build: (c) => actTemplate(c, true) },
   prikazNotary: { title: 'Приказ на сделку (нотариал нусха)', lang: 'uz', category: 'notary', stage: 'approved', build: (c) => prikazTemplate(c, true) },
   rklGenNotary: { title: 'Бош келишув — РКЛ Ген (нотариал нусха)', lang: 'uz', category: 'notary', stage: 'approved', build: (c) => rklGenTemplate(c, true) },
 };
