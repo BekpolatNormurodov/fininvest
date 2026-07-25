@@ -146,11 +146,11 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Manzil" required className="sm:col-span-2" icon={Location} error={errors?.address}><Input value={c.address ?? ''} onChange={(e) => onChange({ address: e.target.value })} /></Field>
-            <Field label="Reestr №" icon={Hashtag}><Input value={c.registryNo ?? ''} onChange={(e) => onChange({ registryNo: e.target.value })} /></Field>
-            <Field label="Kadastr №" required icon={Hashtag} hint="10:01:05:03:01:1234" error={errors?.cadastreNo}><KadastrInput value={c.cadastreNo ?? null} onChange={(v) => onChange({ cadastreNo: v })} /></Field>
+            <Field label="Reestr №" icon={Hashtag} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><Input value={c.registryNo ?? ''} onChange={(e) => onChange({ registryNo: e.target.value })} /></Field>
+            <Field label="Kadastr №" required={!firmNew} icon={Hashtag} hint={firmNew ? 'yangi bino — ro‘yxatdan o‘tgach' : '10:01:05:03:01:1234'} error={errors?.cadastreNo}><KadastrInput value={c.cadastreNo ?? null} onChange={(v) => onChange({ cadastreNo: v })} /></Field>
             <KadastrCard cadastreNo={c.cadastreNo ?? ''} />
             <Field label="Mulk turi" icon={House}><Input value={c.propertyType ?? ''} onChange={(e) => onChange({ propertyType: e.target.value })} placeholder={(c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? "YAKKA TARTIBDAGI TURAR JOY" : "KO'P QAVATLI UYDAGI XONADON"} /></Field>
-            <Field label="Ko'chirma sanasi" icon={Calendar}><DatePicker value={c.registrationDate ?? null} onChange={(iso) => onChange({ registrationDate: iso })} /></Field>
+            <Field label="Ko'chirma sanasi" icon={Calendar} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><DatePicker value={c.registrationDate ?? null} onChange={(iso) => onChange({ registrationDate: iso })} /></Field>
             {(c.realtyKind ?? 'APARTMENT') === 'HOUSE' && (
               <Field label="Yer maydoni (m²)" icon={Ruler}><Input type="number" value={c.landAreaM2 ?? ''} onChange={(e) => onChange({ landAreaM2: num(e.target.value) })} /></Field>
             )}
