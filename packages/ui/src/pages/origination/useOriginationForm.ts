@@ -133,9 +133,11 @@ export function useOriginationForm(id?: string) {
   const collateralError = (() => {
     const cs = form.collaterals;
     if (cs.length === 0) return 'Kamida 1 ta garov qo‘shing';
-    const i = cs.findIndex((c) => !collateralComplete(c));
+    // Newly purchased assets (AVTO/IPOTEKA) relax plate/tex-passport/cadastre requirements.
+    const purchase = form.product === 'AVTO' || form.product === 'IPOTEKA';
+    const i = cs.findIndex((c) => !collateralComplete(c, purchase));
     return i >= 0
-      ? `Garov ${i + 1}: ${collateralMissing(cs[i]).map((m) => m.label).join(', ')} majburiy`
+      ? `Garov ${i + 1}: ${collateralMissing(cs[i], purchase).map((m) => m.label).join(', ')} majburiy`
       : undefined;
   })();
   const errors = {

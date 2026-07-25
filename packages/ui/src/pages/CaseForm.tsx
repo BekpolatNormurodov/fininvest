@@ -83,7 +83,7 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
           <span className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white', isAuto ? 'bg-warning-600' : 'bg-brand-700')}>
             {isAuto ? <Car className="h-4 w-4" /> : <House className="h-4 w-4" />}
           </span>
-          <h3 className="font-semibold text-gray-800 dark:text-white">Garov {index + 1} — {isAuto ? 'Avtotransport' : `Uy-joy · ${(c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? 'Hovli' : 'Kvartira'}`}</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-white">{hideOwners ? `Sotib olinayotgan ${isAuto ? 'mashina' : 'uy-joy'}` : `Garov ${index + 1} — ${isAuto ? 'Avtotransport' : `Uy-joy · ${(c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? 'Hovli' : 'Kvartira'}`}`}</h3>
         </div>
         {canRemove && <Button variant="ghost" onClick={onRemove}><Trash2 className="h-4 w-4" /> O'chirish</Button>}
       </div>

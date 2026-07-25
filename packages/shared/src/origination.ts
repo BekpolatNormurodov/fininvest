@@ -251,28 +251,32 @@ export type CollateralField = 'agreedValue' | 'address' | 'cadastreNo' | 'model'
 
 /** Missing required fields for one collateral, as {field, Uz label}. Single source of truth for
  *  both the wizard submit gate and the per-collateral tab colour. */
-export function collateralMissing(c: CollateralDto): { field: CollateralField; label: string }[] {
+export function collateralMissing(c: CollateralDto, purchase = false): { field: CollateralField; label: string }[] {
   const out: { field: CollateralField; label: string }[] = [];
   const need = (ok: boolean, field: CollateralField, label: string) => { if (!ok) out.push({ field, label }); };
   need((c.agreedValue ?? 0) > 0, 'agreedValue', 'Kelishilgan qiymat');
   if (c.type === ProductType.AUTO) {
     need(!!c.model?.trim(), 'model', 'Model');
-    need(!!c.stateNumber?.trim(), 'stateNumber', 'Davlat raqami');
-    need(!!c.techPassportNo?.trim(), 'techPassportNo', 'Tex passport №');
+    // A newly purchased car has no plate / tech passport yet — required only for an existing pledge.
+    if (!purchase) {
+      need(!!c.stateNumber?.trim(), 'stateNumber', 'Davlat raqami');
+      need(!!c.techPassportNo?.trim(), 'techPassportNo', 'Tex passport №');
+    }
   } else {
     need(!!c.address?.trim(), 'address', 'Manzil');
-    need(!!c.cadastreNo?.trim(), 'cadastreNo', 'Kadastr №');
+    // A new build (from a developer) may not have a cadastre yet.
+    if (!purchase) need(!!c.cadastreNo?.trim(), 'cadastreNo', 'Kadastr №');
   }
   return out;
 }
 
 /** A collateral is complete when it has no missing required fields. */
-export const collateralComplete = (c: CollateralDto): boolean => collateralMissing(c).length === 0;
+export const collateralComplete = (c: CollateralDto, purchase = false): boolean => collateralMissing(c, purchase).length === 0;
 
 /** Per-field error map for the CollateralCard (field → "<Label> majburiy"). */
-export function collateralErrors(c: CollateralDto): Partial<Record<CollateralField, string>> {
+export function collateralErrors(c: CollateralDto, purchase = false): Partial<Record<CollateralField, string>> {
   const out: Partial<Record<CollateralField, string>> = {};
-  for (const { field, label } of collateralMissing(c)) out[field] = `${label} majburiy`;
+  for (const { field, label } of collateralMissing(c, purchase)) out[field] = `${label} majburiy`;
   return out;
 }
 
@@ -302,12 +306,13 @@ export function caseSubmitErrors(c: CreditCaseDto): string[] {
     out.push(`Liniya muddati majburiy (1..${LINE_TERM_CAP})`);
   }
 
+  const purchase = c.product === 'AVTO' || c.product === 'IPOTEKA';
   const cs = c.collaterals;
   if (cs.length === 0) {
     out.push('Kamida 1 ta garov majburiy');
   } else {
-    const i = cs.findIndex((col) => !collateralComplete(col));
-    if (i >= 0) out.push(`Garov ${i + 1}: ${collateralMissing(cs[i]).map((m) => m.label).join(', ')} majburiy`);
+    const i = cs.findIndex((col) => !collateralComplete(col, purchase));
+    if (i >= 0) out.push(`Garov ${i + 1}: ${collateralMissing(cs[i], purchase).map((m) => m.label).join(', ')} majburiy`);
     // Every document names an owner. With none entered the borrower stands in, so this only fires
     // when the borrower has no name either — a case that could reach the director with «—» printed
     // where the pledgor belongs.

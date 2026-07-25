@@ -389,7 +389,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
     <div className="space-y-6">
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800 dark:text-white">{gIsAsset ? 'Sotib olinayotgan aktiv (garov)' : 'Garovlar'} <span className="text-gray-500 dark:text-gray-400">({cols.length})</span></h2>
+          <h2 className="font-semibold text-gray-800 dark:text-white">{gIsAsset ? 'Sotib olinayotgan aktiv' : 'Garovlar'} <span className="text-gray-500 dark:text-gray-400">({cols.length})</span></h2>
           {/* Add-a-collateral buttons — hidden for asset products, whose single asset is auto-added. */}
           {!gIsAsset && (
             <div className="flex gap-2">
@@ -398,12 +398,12 @@ export function StepGarov({ f }: { f: OriginationForm }) {
             </div>
           )}
         </div>
-        {gIsAsset && <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Sotib olinayotgan {gProduct === 'AVTO' ? 'mashina' : 'uy-joy'} — u avtomatik garov bo‘ladi. Narxini (kelishilgan qiymat) kiriting; boshlang‘ich to‘lov «Sotuvchi» bosqichida shundan hisoblanadi.</p>}
+        {gIsAsset && <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Sotib olinayotgan {gProduct === 'AVTO' ? 'mashina' : 'uy-joy'} — aktivning o‘zi ta‘minot bo‘ladi. Narxini (kelishilgan qiymat) kiriting; boshlang‘ich to‘lov quyida shundan hisoblanadi.</p>}
         {/* One tab per collateral — green ✓ when complete, red ! when a required field is missing.
             Only the selected collateral is shown below. */}
         <ol className="mb-3 flex flex-wrap gap-2">
           {cols.map((c, i) => {
-            const done = collateralComplete(c);
+            const done = collateralComplete(c, gIsAsset);
             const cur = active === i;
             return (
               <li key={i}>
@@ -443,7 +443,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
             index={active}
             c={cols[active]}
             borrowerName={f.form.borrower.fullName}
-            errors={f.attempted ? collateralErrors(cols[active]) : undefined}
+            errors={f.attempted ? collateralErrors(cols[active], gIsAsset) : undefined}
             onChange={(p) => f.setCol(active, p)}
             onRemove={() => setDelIdx(active)}
             canRemove
@@ -465,6 +465,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
         )}
       </div>
       {gIsAsset && <AssetDownPayment f={f} />}
+      {gIsAsset && <StepSeller f={f} />}
       {!gIsAsset && (amountAuto || amountTotal) != null && (
         <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
           {amountAuto != null && amountAuto > 0 && (() => {

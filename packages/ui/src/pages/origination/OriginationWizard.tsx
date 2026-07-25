@@ -16,7 +16,7 @@ import { useToast } from '../../components/Toast';
 import { Check } from '../../lib/icons';
 import { cn } from '../../lib/cn';
 import { useOriginationForm } from './useOriginationForm';
-import { Step1, Step2, Step3, StepSugurta, StepGarov, Step4, Step5, StepSeller } from './steps';
+import { Step1, Step2, Step3, StepSugurta, StepGarov, Step4, Step5 } from './steps';
 import { Summary } from './Summary';
 
 type WizardStep = { key: string; title: string; section: CaseSectionKey; Comp: (p: { f: ReturnType<typeof useOriginationForm> }) => JSX.Element };
@@ -48,11 +48,11 @@ export function OriginationWizard() {
   const assetStepTitle = effProduct === 'AVTO' ? 'Mashina' : effProduct === 'IPOTEKA' ? 'Uy-joy' : 'Aktiv';
   const steps = useMemo<WizardStep[]>(() => {
     if (!isAsset) return BASE_STEPS;
-    // Asset products lead with the purchased item (car/house), then the usual steps, then the seller.
+    // Asset products lead with the purchased item (car/house) — that step also holds the down payment
+    // and the seller, so there is no separate Sotuvchi step.
     const asset = { ...BASE_STEPS.find((s) => s.key === 'garov')!, title: assetStepTitle };
     const rest = BASE_STEPS.filter((s) => s.key !== 'garov');
-    const seller: WizardStep = { key: 'seller', title: 'Sotuvchi', section: 'creditLine', Comp: StepSeller };
-    return [asset, ...rest, seller];
+    return [asset, ...rest];
   }, [isAsset, assetStepTitle]);
   const { Comp } = steps[f.step] ?? steps[0];
   const termM = f.form.creditLine?.termMonths ?? f.form.termMonths ?? null;
