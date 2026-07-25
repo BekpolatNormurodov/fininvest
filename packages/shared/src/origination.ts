@@ -307,6 +307,7 @@ export function caseSubmitErrors(c: CreditCaseDto): string[] {
   }
 
   const purchase = c.product === 'AVTO' || c.product === 'IPOTEKA';
+  if (purchase && !c.sellerId) out.push('Sotuvchi majburiy');
   const cs = c.collaterals;
   if (cs.length === 0) {
     out.push('Kamida 1 ta garov majburiy');

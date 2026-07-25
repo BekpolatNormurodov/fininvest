@@ -447,7 +447,7 @@ export function StepGarov({ f }: { f: OriginationForm }) {
             onChange={(p) => f.setCol(active, p)}
             onRemove={() => setDelIdx(active)}
             canRemove
-            hideOwners={gIsAsset}
+            isPurchase={gIsAsset}
             mediaSlot={<>
               <CollateralAttachments f={f} colIndex={active} type={DocumentType.COLLATERAL_PHOTO} accept="image/*,video/*" title="Rasm / video" max={10} />
               <CollateralAttachments f={f} colIndex={active} type={DocumentType.GEN_DOVERNOST} accept="image/*,application/pdf" title="Ishonchnoma" max={5} />
@@ -464,7 +464,6 @@ export function StepGarov({ f }: { f: OriginationForm }) {
           <p className="mt-2 text-xs font-medium text-error-600 dark:text-error-500">{f.errors.collateral}</p>
         )}
       </div>
-      {gIsAsset && <AssetDownPayment f={f} />}
       {gIsAsset && <StepSeller f={f} />}
       {!gIsAsset && (amountAuto || amountTotal) != null && (
         <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
@@ -644,12 +643,50 @@ export function StepSeller({ f }: { f: OriginationForm }) {
   const [kind, setKind] = useState<'LEGAL' | 'INDIVIDUAL'>('LEGAL');
   const [indiv, setIndiv] = useState({ fullName: '', pinfl: '', passport: '', address: '', phone: '', bankAccount: '', ownershipDoc: '' });
   const [saving, setSaving] = useState(false);
+  const [downInput, setDownInput] = useState('');
 
   const product = (f.form.product ?? null) as LoanProduct | null;
+  const minDown = product ? loanProductProfile(product).minDownPayment * 100 : 30;
+  const insLabel = product
+    ? ({ CAR: "KASKO (mashina sug'urtasi)", PROPERTY: "Mulk sug'urtasi", LOAN_RISK: "Qarz xavfi sug'urtasi" } as const)[loanProductProfile(product).insurance]
+    : '';
   // Firm catalog is product-specific: avtosalons for AVTO, builders for IPOTEKA.
   const firmCategory = product === 'AVTO' ? 'AUTO' : product === 'IPOTEKA' ? 'REALTY' : null;
   const firmList = firmCategory ? firms.filter((s) => s.category === firmCategory) : firms;
   const firmLabel = product === 'AVTO' ? 'Avtosalon' : product === 'IPOTEKA' ? 'Quruvchi firma' : 'Firma';
+  const isFirm = kind === 'LEGAL';
+
+  const price = f.form.collaterals?.[0]?.agreedValue ?? null;
+  const loan = f.form.creditLine?.amountTotal ?? f.form.amount ?? null;
+  const down = price != null && loan != null ? price - loan : null;
+  const ltv = price && loan != null ? (loan / price) * 100 : null;
+  const downPct = price && down != null ? (down / price) * 100 : null;
+  const belowMin = downPct != null && downPct < minDown;
+
+  const applyDownPct = (pct: number) => {
+    if (price && price > 0 && !isNaN(pct) && pct >= 0 && pct < 100) {
+      const newLoan = Math.round(price * (1 - pct / 100));
+      f.patch(
+        f.form.creditLine
+          ? { amount: newLoan, creditLine: { ...f.form.creditLine, amountAuto: newLoan, amountPolis: 0, amountTotal: newLoan } }
+          : { amount: newLoan },
+      );
+    }
+  };
+  // Firm: the down payment is fixed at the product minimum, set automatically by the system.
+  useEffect(() => {
+    if (isFirm && price && price > 0) applyDownPct(minDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFirm, price, minDown]);
+  // Individual: seed the manual input once from any existing loan/price.
+  useEffect(() => {
+    if (!isFirm && downInput === '' && price && loan != null && price > 0) {
+      const d = ((price - loan) / price) * 100;
+      if (d >= 0 && d < 100) setDownInput(String(Math.round(d)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFirm, price, loan]);
+  const onDownInput = (v: string) => { setDownInput(v); applyDownPct(Number(v)); };
 
   const saveIndiv = async () => {
     if (!indiv.fullName.trim()) { toast.error('Tekshiring', 'Sotuvchi F.I.Sh. sini kiriting'); return; }
@@ -677,7 +714,10 @@ export function StepSeller({ f }: { f: OriginationForm }) {
   return (
     <div className="space-y-6">
       <Card className="space-y-4">
-        <h2 className="font-semibold text-gray-800 dark:text-white">Sotuvchi (distributor)</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-800 dark:text-white">Sotuvchi (distributor)</h2>
+          <span className="rounded-md bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">Majburiy</span>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button variant={kind === 'LEGAL' ? 'primary' : 'secondary'} onClick={() => setKind('LEGAL')}>Firma</Button>
           <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => setKind('INDIVIDUAL')}>Jismoniy shaxs (egasi)</Button>
@@ -704,7 +744,38 @@ export function StepSeller({ f }: { f: OriginationForm }) {
             <div className="sm:col-span-2"><Button onClick={saveIndiv} disabled={saving}>{saving ? '…' : 'Sotuvchini saqlash'}</Button></div>
           </div>
         )}
-        {f.form.sellerId && <p className="text-sm font-medium text-success-700 dark:text-success-400">✓ Sotuvchi bog'landi</p>}
+        {f.form.sellerId
+          ? <p className="text-sm font-medium text-success-700 dark:text-success-400">✓ Sotuvchi bog'landi</p>
+          : <p className="text-sm font-medium text-error-600 dark:text-error-500">Sotuvchini tanlang — majburiy.</p>}
+      </Card>
+
+      <Card className="space-y-3">
+        <h2 className="font-semibold text-gray-800 dark:text-white">Boshlang'ich to'lov / LTV</h2>
+        {price == null ? (
+          <p className="text-sm font-medium text-warning-700 dark:text-warning-400">Avval yuqorida aktiv narxini (kelishilgan summa) kiriting.</p>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {isFirm ? (
+                <Field label="Boshlang'ich to'lov (%)" hint="firma uchun avtomatik">
+                  <Input readOnly value={`${minDown}%`} className="bg-gray-50 dark:bg-white/5" />
+                </Field>
+              ) : (
+                <Field label={`Boshlang'ich to'lov (%) — min ${minDown}%`}>
+                  <Input type="number" value={downInput} onChange={(e) => onDownInput(e.target.value)} placeholder={String(minDown)} />
+                </Field>
+              )}
+              <div className="self-end text-sm text-gray-600 dark:text-gray-300">Qarz (MMT): <b className="text-gray-900 dark:text-white">{loan != null ? formatMoney(loan) : '—'}</b></div>
+            </div>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <div className="text-gray-600 dark:text-gray-300">Aktiv narxi: <b className="text-gray-900 dark:text-white">{formatMoney(price)}</b></div>
+              <div className="text-gray-600 dark:text-gray-300">Boshlang'ich (so'm): <b className="text-gray-900 dark:text-white">{down != null ? formatMoney(down) : '—'}</b></div>
+              <div className="text-gray-600 dark:text-gray-300">LTV: <b className="text-gray-900 dark:text-white">{ltv != null ? `${ltv.toFixed(1)}%` : '—'}</b></div>
+              <div className="text-gray-600 dark:text-gray-300">Sug'urta: <b className="text-gray-900 dark:text-white">{insLabel || '—'}</b></div>
+            </div>
+            {!isFirm && belowMin && <p className="text-sm font-medium text-warning-700 dark:text-warning-400">⚠ Boshlang'ich {minDown}% dan past — tekshiring (bloklamaydi).</p>}
+          </>
+        )}
       </Card>
     </div>
   );

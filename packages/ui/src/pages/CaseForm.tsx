@@ -56,14 +56,14 @@ function KadastrCard({ cadastreNo }: { cadastreNo: string }) {
 // A per-collateral staged attachment (image/file + name + free text), bound by collateral index.
 export type StagedColDoc = { localId: string; colIndex: number; file: File; type: DocumentType; title: string; description: string };
 
-export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove, docs, onAddDocs, onRemoveDoc, onSetDocField, hideDocs = false, hideOwners = false, mediaSlot, texSlot, borrowerName }: {
+export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove, docs, onAddDocs, onRemoveDoc, onSetDocField, hideDocs = false, isPurchase = false, mediaSlot, texSlot, borrowerName }: {
   index: number; c: CollateralDto; errors?: Partial<Record<CollateralField, string>>; onChange: (p: Partial<CollateralDto>) => void; onRemove: () => void; canRemove: boolean;
   docs: StagedColDoc[]; onAddDocs: (files: FileList | File[] | null) => void; onRemoveDoc: (localId: string) => void;
   onSetDocField: (localId: string, patch: Partial<Pick<StagedColDoc, 'title' | 'description'>>) => void;
   /** In the wizard, photos/videos are attached in the case view after saving (needs a collateral id). */
   hideDocs?: boolean;
   /** Asset-purchase products: the buyer (borrower) becomes the owner, so the pledge-owner block is hidden. */
-  hideOwners?: boolean;
+  isPurchase?: boolean;
   /** When provided (wizard), replaces the staged doc block with a working media uploader. */
   mediaSlot?: ReactNode;
   /** When provided (wizard, AUTO), the tex-passport scanner — so it can also save the scanned images. */
@@ -83,7 +83,7 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
           <span className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white', isAuto ? 'bg-warning-600' : 'bg-brand-700')}>
             {isAuto ? <Car className="h-4 w-4" /> : <House className="h-4 w-4" />}
           </span>
-          <h3 className="font-semibold text-gray-800 dark:text-white">{hideOwners ? `Sotib olinayotgan ${isAuto ? 'mashina' : 'uy-joy'}` : `Garov ${index + 1} — ${isAuto ? 'Avtotransport' : `Uy-joy · ${(c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? 'Hovli' : 'Kvartira'}`}`}</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-white">{isPurchase ? `Sotib olinayotgan ${isAuto ? 'mashina' : 'uy-joy'}` : `Garov ${index + 1} — ${isAuto ? 'Avtotransport' : `Uy-joy · ${(c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? 'Hovli' : 'Kvartira'}`}`}</h3>
         </div>
         {canRemove && <Button variant="ghost" onClick={onRemove}><Trash2 className="h-4 w-4" /> O'chirish</Button>}
       </div>
@@ -149,11 +149,11 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
       )}
 
       <div className="grid gap-4 border-t border-gray-200 pt-4 dark:border-gray-800 sm:grid-cols-2">
-        <Field label="Kelishilgan garov qiymati" required icon={Money} error={errors?.agreedValue}><MoneyInput value={c.agreedValue ?? null} onChange={(v) => onChange({ agreedValue: v })} /></Field>
-        <Field label="Qiymat (prописью)" icon={Tag}><Input value={c.agreedValueWords ?? ''} onChange={(e) => onChange({ agreedValueWords: e.target.value })} /></Field>
+        <Field label={isPurchase ? 'Kelishilgan summa (narx)' : 'Kelishilgan garov qiymati'} required icon={Money} error={errors?.agreedValue}><MoneyInput value={c.agreedValue ?? null} onChange={(v) => onChange({ agreedValue: v })} /></Field>
+        {!isPurchase && <Field label="Qiymat (prописью)" icon={Tag}><Input value={c.agreedValueWords ?? ''} onChange={(e) => onChange({ agreedValueWords: e.target.value })} /></Field>}
       </div>
 
-      {!hideOwners && (
+      {!isPurchase && (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Egalik huquqi (3 shaxsgacha)</h4>

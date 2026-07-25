@@ -135,6 +135,7 @@ export function useOriginationForm(id?: string) {
     if (cs.length === 0) return 'Kamida 1 ta garov qo‘shing';
     // Newly purchased assets (AVTO/IPOTEKA) relax plate/tex-passport/cadastre requirements.
     const purchase = form.product === 'AVTO' || form.product === 'IPOTEKA';
+    if (purchase && !form.sellerId) return 'Sotuvchi majburiy';
     const i = cs.findIndex((c) => !collateralComplete(c, purchase));
     return i >= 0
       ? `Garov ${i + 1}: ${collateralMissing(cs[i], purchase).map((m) => m.label).join(', ')} majburiy`
