@@ -27,12 +27,37 @@ import type { OriginationForm } from './useOriginationForm';
 const numv = (s: string): number | null => (s === '' ? null : Number(s));
 const opt = (vals: string[]) => vals.map((v) => ({ value: v, label: v }));
 
-// Seller-firm branch (filial) options — Uzbekistan regions. The catalog carries no per-firm branch
-// list, so the operator picks a region here (optional); a previously saved free-text value still shows.
-const SELLER_BRANCH_REGIONS = [
+// Seller-firm branches (filiallar). The catalog has no real branch list yet, so each firm gets a
+// SAMPLE set derived deterministically from its id — a firm always shows the same branches, but the
+// count varies firm to firm (1 to 10), each with a concrete region + street address. Swap for real
+// data once the catalog carries it.
+const BRANCH_REGIONS = [
   'Toshkent shahar', 'Toshkent viloyati', 'Andijon', 'Buxoro', 'Farg‘ona', 'Jizzax', 'Xorazm',
   'Namangan', 'Navoiy', 'Qashqadaryo', 'Qoraqalpog‘iston', 'Samarqand', 'Sirdaryo', 'Surxondaryo',
 ];
+const BRANCH_STREETS = [
+  'Bunyodkor', 'Amir Temur', 'Mustaqillik', 'Navoiy', 'Chilonzor', 'Yunusobod',
+  'Shota Rustaveli', 'Bobur', 'Farobiy', 'Nukus', 'Sayilgoh', 'Beruniy',
+];
+/** Stable 32-bit FNV-1a hash of a string — seeds the per-firm branch set. */
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+/** Deterministic sample branches for a firm: 1–10 entries, each «<Region> filiali — <street> ko‘chasi <n>». */
+function firmBranches(firmId: string): string[] {
+  const seed = hashStr(firmId);
+  const count = 1 + (seed % 10);
+  const out = new Set<string>();
+  for (let i = 0; i < count; i++) {
+    const region = BRANCH_REGIONS[(seed + i * 7) % BRANCH_REGIONS.length];
+    const street = BRANCH_STREETS[(seed + i * 5) % BRANCH_STREETS.length];
+    const num = 1 + (((seed >>> (i % 12)) + i * 13) % 140);
+    out.add(`${region} filiali — ${street} ko‘chasi ${num}`);
+  }
+  return [...out];
+}
 
 type Borrower = UpsertCasePayload['borrower'];
 type Emp = NonNullable<UpsertCasePayload['employment']>;
@@ -739,17 +764,20 @@ export function StepSeller({ f }: { f: OriginationForm }) {
               />
             </Field>
             {selectedFirm && <FirmInfo firm={selectedFirm} />}
-            {selectedFirm && (
-              <Field label="Filial / bo‘lim" hint="ixtiyoriy">
-                <Select
-                  searchable
-                  placeholder="— filialni tanlang —"
-                  value={f.form.sellerBranch ?? ''}
-                  onChange={(v) => f.patch({ sellerBranch: v || null })}
-                  options={SELLER_BRANCH_REGIONS.map((r) => ({ value: `${r} filiali`, label: `${r} filiali` }))}
-                />
-              </Field>
-            )}
+            {selectedFirm && (() => {
+              const branches = firmBranches(selectedFirm.id);
+              return (
+                <Field label="Filial / bo‘lim" hint={`ixtiyoriy — ${branches.length} ta filial`}>
+                  <Select
+                    searchable
+                    placeholder="— filialni tanlang —"
+                    value={f.form.sellerBranch ?? ''}
+                    onChange={(v) => f.patch({ sellerBranch: v || null })}
+                    options={branches.map((b) => ({ value: b, label: b }))}
+                  />
+                </Field>
+              );
+            })()}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
