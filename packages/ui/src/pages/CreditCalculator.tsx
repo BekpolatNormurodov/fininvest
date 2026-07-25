@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { Calculator } from '../lib/icons';
+import { LOAN_PRODUCT_ORDER, loanProductProfile, type LoanProduct } from '@credit-core/shared';
+import { Calculator, FileDown } from '../lib/icons';
 import { Card, Field, Input } from '../components/primitives';
 import { MoneyInput } from '../components/forms';
 import { DataTable, type Column } from '../components/DataTable';
 import { useTheme } from '../lib/theme';
-import { formatMoney } from '../lib/cn';
+import { formatMoney, cn } from '../lib/cn';
 import { chartSeries, chartAxis } from '../lib/chartColors';
 
 /** Themed donut tooltip (slice name + money). */
@@ -57,6 +58,15 @@ export function CreditCalculator() {
   const [rate, setRate] = useState(24);
   const [months, setMonths] = useState(18);
   const [method, setMethod] = useState<'annuity' | 'diff'>('annuity');
+  const [product, setProduct] = useState<LoanProduct | null>(null);
+
+  // Picking a credit type seeds its default rate and caps the term — both still editable after.
+  const selectProduct = (p: LoanProduct) => {
+    const pr = loanProductProfile(p);
+    setProduct(p);
+    setRate(pr.rateMinPct);
+    setMonths((m) => Math.min(m || pr.maxTermMonths, pr.maxTermMonths));
+  };
 
   const schedule = useMemo(
     () => (amount > 0 && months > 0 ? (method === 'annuity' ? annuity(amount, rate, months) : differentiated(amount, rate, months)) : []),
@@ -79,6 +89,51 @@ export function CreditCalculator() {
     { name: 'Foiz (ustama)', value: Math.round(totalInterest), fill: series.warning },
   ];
 
+  // Print a clean, self-contained schedule (no app chrome) via a new window.
+  const printSchedule = () => {
+    if (!schedule.length) return;
+    const w = window.open('', '_blank', 'width=820,height=920');
+    if (!w) return;
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const title = product ? loanProductProfile(product).label.uz : 'Kredit';
+    const rows = schedule
+      .map((r) => `<tr><td>${r.n}</td><td class="r">${esc(formatMoney(Math.round(r.payment)))}</td><td class="r">${esc(formatMoney(Math.round(r.principal)))}</td><td class="r">${esc(formatMoney(Math.round(r.interest)))}</td><td class="r">${esc(formatMoney(Math.round(r.balance)))}</td></tr>`)
+      .join('');
+    w.document.write(`<!doctype html><html lang="uz"><head><meta charset="utf-8"><title>Kredit jadvali — ${esc(title)}</title>
+<style>
+  *{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}
+  body{margin:28px;color:#111}
+  h1{font-size:18px;margin:0 0 2px} .sub{color:#666;font-size:12px;margin:0 0 16px}
+  .grid{display:flex;flex-wrap:wrap;gap:10px 28px;margin:0 0 16px;font-size:13px}
+  .grid div span{color:#666} .grid div b{margin-left:6px}
+  .stats{display:flex;gap:14px;margin:0 0 16px}
+  .stat{flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px}
+  .stat p{margin:0} .stat .k{color:#666;font-size:11px;text-transform:uppercase} .stat .v{font-size:15px;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border:1px solid #e5e7eb;padding:5px 8px;text-align:left} th{background:#f8fafc}
+  td.r,th.r{text-align:right}
+  @media print{body{margin:12mm}}
+</style></head><body>
+  <h1>Kredit kalkulyatori — ${esc(title)}</h1>
+  <p class="sub">To'lov jadvali · FinInvest</p>
+  <div class="grid">
+    <div><span>Summa:</span><b>${esc(formatMoney(amount))}</b></div>
+    <div><span>Yillik foiz:</span><b>${rate}%</b></div>
+    <div><span>Muddat:</span><b>${months} oy</b></div>
+    <div><span>Usul:</span><b>${method === 'annuity' ? 'Annuitet' : 'Differensial'}</b></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><p class="k">${method === 'annuity' ? 'Oylik to‘lov' : '1-oy to‘lovi'}</p><p class="v">${esc(formatMoney(Math.round(firstPay)))}</p></div>
+    <div class="stat"><p class="k">Jami ustama</p><p class="v">${esc(formatMoney(Math.round(totalInterest)))}</p></div>
+    <div class="stat"><p class="k">Jami to‘lov</p><p class="v">${esc(formatMoney(Math.round(totalPay)))}</p></div>
+  </div>
+  <table><thead><tr><th>#</th><th class="r">To'lov</th><th class="r">Asosiy qarz</th><th class="r">Foiz</th><th class="r">Qoldiq</th></tr></thead><tbody>${rows}</tbody></table>
+</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -87,10 +142,29 @@ export function CreditCalculator() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Kredit kalkulyatori</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">To‘lov jadvali va ustama hisobi</p>
         </div>
+        <button type="button" onClick={printSchedule} disabled={!schedule.length}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 outline-none transition hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-brand-600/30 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5">
+          <FileDown className="h-4 w-4" /> Chop etish
+        </button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="space-y-4 lg:col-span-1">
+          <Field label="Kredit turi" hint="default foiz va muddat qo‘yiladi">
+            <div className="grid grid-cols-2 gap-2">
+              {LOAN_PRODUCT_ORDER.map((p) => {
+                const on = product === p;
+                return (
+                  <button key={p} type="button" onClick={() => selectProduct(p)} aria-pressed={on}
+                    className={cn('rounded-lg border px-2.5 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/30',
+                      on ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400'
+                         : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5')}>
+                    {loanProductProfile(p).label.uz}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
           <Field label="Kredit summasi"><MoneyInput value={amount} onChange={(v) => setAmount(v ?? 0)} /></Field>
           <Field label="Yillik foiz stavkasi (%)"><Input type="number" value={rate} onChange={(e) => setRate(Number(e.target.value) || 0)} /></Field>
           <Field label="Muddat (oy)"><Input type="number" value={months} onChange={(e) => setMonths(Number(e.target.value) || 0)} /></Field>

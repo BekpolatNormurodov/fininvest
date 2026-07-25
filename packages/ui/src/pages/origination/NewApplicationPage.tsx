@@ -59,8 +59,12 @@ export function NewApplicationPage() {
           const profile = loanProductProfile(p);
           const Icon = ICON[p];
           const isAsset = profile.kind === LoanProductKind.ASSET;
+          // OSON is owner-capped «up to 50%»; the others read as a floor «from 32%».
+          const rateText = p === 'OSON'
+            ? `${profile.rateMaxPct}%${lang === 'ru' ? ' макс' : 'gacha'}`
+            : `${profile.rateMinPct}%${lang === 'ru' ? '+' : 'dan'}`;
           const facts: { label: string; value: string }[] = [
-            { label: lang === 'ru' ? 'Ставка' : 'Foiz', value: `${profile.rateMinPct}–${profile.rateMaxPct}%` },
+            { label: lang === 'ru' ? 'Ставка' : 'Foiz', value: rateText },
             { label: lang === 'ru' ? 'Срок' : 'Muddat', value: `${profile.maxTermMonths} ${lang === 'ru' ? 'мес' : 'oygacha'}` },
             ...(isAsset
               ? [{ label: lang === 'ru' ? 'Взнос' : 'Boshlang‘ich', value: `${Math.round(profile.minDownPayment * 100)}%${lang === 'ru' ? '' : 'dan'}` }]
