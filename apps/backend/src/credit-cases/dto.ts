@@ -25,7 +25,10 @@ import { LoanProduct, ProductType, SellerKind, WorkflowDecision } from '@credit-
 const BlankToNull = () => Transform(({ value }) => (value === '' ? null : value));
 
 export class BorrowerInput {
-  @IsString() @MinLength(1) fullName!: string;
+  // Draft-lenient: the wizard saves steps progressively (on the asset flow the borrower step comes
+  // after the asset/seller step), so an empty name must pass a section save. Submit is strict —
+  // caseSubmitErrors requires a non-empty F.I.O before the case can leave DRAFT.
+  @IsString() fullName!: string;
   @IsOptional() @IsString() passportSeries?: string | null;
   @IsOptional() @IsString() passportNumber?: string | null;
   @IsOptional() @IsString() pinfl?: string | null;
