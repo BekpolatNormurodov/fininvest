@@ -1,13 +1,17 @@
 {
-  "name": "credit-core",
+  "name": "fininvest",
   "private": true,
   "version": "0.1.0",
-  "description": "Garov (collateral) loan-file system — monorepo (4 web + 1 backend)",
+  "description": "FinInvest — multi-product lending file system (ADM TEAM / OSON / Avto kredit / Ipoteka). Monorepo: 4 web + 1 backend.",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
+    "up": "bash scripts/dev.sh",
+    "up:seed": "bash scripts/dev.sh --seed",
+    "setup": "bash scripts/dev.sh --no-run",
+    "db:push": "npm run db:push -w @credit-core/backend",
     "predev": "npm run build -w @credit-core/shared",
     "dev": "concurrently -n backend,operator,moderator,director,admin -c green,blue,magenta,yellow,cyan \"npm:dev:backend\" \"npm:dev:operator\" \"npm:dev:moderator\" \"npm:dev:director\" \"npm:dev:admin\"",
     "dev:backend": "npm run start:dev -w @credit-core/backend",

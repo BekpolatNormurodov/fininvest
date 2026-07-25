@@ -1,5 +1,5 @@
 # Production compose — NOT used in local dev (dev runs against the local MySQL80).
-# Subdomains: operator/moderator/director/admin.creditcore.uz + api.creditcore.uz
+# Subdomains: operator/moderator/director/admin.fininvest.uz + api.fininvest.uz
 # nginx terminates TLS itself and is published directly on the host's 80 (HTTP) + 443 (HTTPS).
 # Usage: docker compose --env-file deploy/.env up -d --build
 #
@@ -21,7 +21,7 @@ services:
       --innodb-buffer-pool-size=${MYSQL_BUFFER_POOL:-512M}
       --max-connections=${MYSQL_MAX_CONN:-150}
     environment:
-      MYSQL_DATABASE: credit_core
+      MYSQL_DATABASE: fininvest
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     volumes:
       - mysql_data:/var/lib/mysql
@@ -114,19 +114,19 @@ services:
         condition: service_completed_successfully
 
   web-operator:
-    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-operator, VITE_API_URL: "${VITE_API_URL:-https://api.creditcore.uz}" } }
+    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-operator, VITE_API_URL: "${VITE_API_URL:-https://api.fininvest.uz}" } }
     image: credit-core-web-operator
     restart: unless-stopped
     deploy:
       replicas: 3
   web-moderator:
-    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-moderator, VITE_API_URL: "${VITE_API_URL:-https://api.creditcore.uz}" } }
+    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-moderator, VITE_API_URL: "${VITE_API_URL:-https://api.fininvest.uz}" } }
     restart: unless-stopped
   web-director:
-    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-director, VITE_API_URL: "${VITE_API_URL:-https://api.creditcore.uz}" } }
+    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-director, VITE_API_URL: "${VITE_API_URL:-https://api.fininvest.uz}" } }
     restart: unless-stopped
   web-admin:
-    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-admin, VITE_API_URL: "${VITE_API_URL:-https://api.creditcore.uz}" } }
+    build: { context: ., dockerfile: deploy/Dockerfile.web, args: { APP: web-admin, VITE_API_URL: "${VITE_API_URL:-https://api.fininvest.uz}" } }
     restart: unless-stopped
 
   nginx:

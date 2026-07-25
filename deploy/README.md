@@ -1,4 +1,4 @@
-# Deploy — credit-core (creditcore.uz)
+# Deploy — FinInvest (fininvest.uz)
 
 Production runs the stack with Docker Compose: **MySQL + backend + 4 role web apps + nginx + certbot**.
 nginx **terminates TLS itself**, published on **`8080` (HTTP)** + **`9443` (HTTPS)**. An **edge box
@@ -14,13 +14,13 @@ nginx **terminates TLS itself**, published on **`8080` (HTTP)** + **`9443` (HTTP
 ## 0. Server setup (one time — Ubuntu 22.04 or 24.04)
 
 ```bash
-git clone https://github.com/khurshid28/credit-core.git
-cd credit-core
+git clone https://github.com/khurshid28/fininvest.git
+cd fininvest
 sudo bash deploy/server-setup.sh   # installs Docker + Compose plugin, opens firewall (22/8080/9443)
 ```
 
 - **DNS A-records** (you manage these) all point at the **edge IP `87.x`**:
-  `api`, `operator`, `moderator`, `director`, `admin` `.creditcore.uz`.
+  `api`, `operator`, `moderator`, `director`, `admin` `.fininvest.uz`.
   (apex / `www` / `mail` / `ftp` are not used by the app.)
 - **Edge port-forward** (you configure on `87.x`): public `80 → <app-host>:8080`,
   public `443 → <app-host>:9443`. Both must be a plain L4 forward — the edge must **not**
@@ -62,11 +62,11 @@ bash deploy/update.sh        # git pull → rebuild → restart (schema re-synce
 |---|---|
 | `MYSQL_ROOT_PASSWORD` | MySQL root password (internal network only) |
 | `JWT_SECRET` | backend JWT signing secret (long random) |
-| `DATABASE_URL` | `mysql://root:<pw>@mysql:3306/credit_core` |
-| `VITE_API_URL` | baked into web builds — `https://api.creditcore.uz` |
+| `DATABASE_URL` | `mysql://root:<pw>@mysql:3306/fininvest` |
+| `VITE_API_URL` | baked into web builds — `https://api.fininvest.uz` |
 | `CORS_ORIGINS` | the 4 role origins, comma-separated |
 | `CERTBOT_EMAIL` | Let's Encrypt contact (nginx terminates TLS in-stack) |
-| `PUBLIC_VERIFY_URL` | origin the printed QR points at — `https://api.creditcore.uz` |
+| `PUBLIC_VERIFY_URL` | origin the printed QR points at — `https://api.fininvest.uz` |
 
 `deploy/.env` is gitignored — never commit it.
 
@@ -105,8 +105,8 @@ TLS and splits by `Host`:
 
 | Host | → |
 |---|---|
-| `api.creditcore.uz` | backend (NestJS :3000) |
-| `operator/moderator/director/admin.creditcore.uz` | the matching role web app |
+| `api.fininvest.uz` | backend (NestJS :3000) |
+| `operator/moderator/director/admin.fininvest.uz` | the matching role web app |
 
 ## 6. Ops
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time server provisioning for credit-core. Tested on Ubuntu 22.04 LTS (jammy)
+# One-time server provisioning for FinInvest. Tested on Ubuntu 22.04 LTS (jammy)
 # and 24.04; get.docker.com supports both. Installs Docker Engine + Compose plugin,
 # opens the firewall. Run as root:
 #   sudo bash deploy/server-setup.sh
