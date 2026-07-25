@@ -403,7 +403,7 @@ export function CaseView() {
           {isDirectorReview && <AdminPanel c={c} onChange={refresh} katm={katm} setKatm={setKatm} />}
           <CapturePanel c={c} role={role} onChange={refresh} />
           {(c.product === 'AVTO' || c.product === 'IPOTEKA') && (
-            <DownPaymentReceiptPanel c={c} canUpload={role === Role.OPERATOR || role === Role.ADMIN} onChange={refresh} />
+            <DownPaymentReceiptPanel c={c} canUpload={role === Role.OPERATOR || role === Role.ADMIN || role === Role.DIRECTOR} onChange={refresh} />
           )}
           <DisbursementPanel c={c} onChange={refresh} />
         </div>
