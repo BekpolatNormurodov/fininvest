@@ -804,6 +804,7 @@ function Detail({ c, canUpload, canManage }: { c: CreditCaseDto; canUpload: bool
                     docs={c.documents.filter((d) => d.collateralId === col.id)}
                     canUpload={canUpload}
                     canManage={canManage}
+                    isPurchase={isPurchase}
                   />
                 </>
               )}
@@ -889,8 +890,8 @@ const COLLATERAL_DOC_TYPES: DocumentType[] = [
 ];
 
 function CollateralDocs({
-  caseId, collateralId, docs, canUpload, canManage,
-}: { caseId: string; collateralId: string; docs: CreditCaseDto['documents']; canUpload: boolean; canManage: boolean }) {
+  caseId, collateralId, docs, canUpload, canManage, isPurchase = false,
+}: { caseId: string; collateralId: string; docs: CreditCaseDto['documents']; canUpload: boolean; canManage: boolean; isPurchase?: boolean }) {
   const qc = useQueryClient();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -915,7 +916,7 @@ function CollateralDocs({
   return (
     <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-800">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Garov hujjatlari ({otherDocs.length})</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{isPurchase ? 'Aktiv hujjatlari' : 'Garov hujjatlari'} ({otherDocs.length})</p>
         {canUpload && !open && (
           <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-brand-700 outline-none transition hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-600/30 dark:text-brand-400 dark:hover:bg-brand-500/10">
             <Upload className="h-3.5 w-3.5" /> Hujjat biriktirish
