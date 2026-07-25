@@ -8,7 +8,7 @@ import {
   collateralComplete, collateralErrors,
   monthlyPaymentFor, termCapFor, isTermValid, paymentDayFor, DocumentType, type RepaymentMethod,
   type UpsertCasePayload,
-  loanProductProfile, SellerKind, type LoanProduct, type SellerDto,
+  loanProductProfile, LoanProductKind, SellerKind, type LoanProduct, type SellerDto,
 } from '@credit-core/shared';
 import { Button, Card, Field, Input } from '../../components/primitives';
 import { MoneyInput, DatePicker, PhoneInput, Select } from '../../components/forms';
@@ -244,6 +244,11 @@ export function Step3({ f }: { f: OriginationForm }) {
     if (prodForRate && l.interestRate == null) setLine({ interestRate: loanProductProfile(prodForRate).rateMinPct / 100 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prodForRate]);
+  // Asset products: the loan is DERIVED from the asset step (price − down payment), not entered as an
+  // auto/polis split, and there is no «kerakli qoplama» (that is a cash-product concept).
+  const isAssetProduct = prodForRate ? loanProductProfile(prodForRate).kind === LoanProductKind.ASSET : false;
+  const assetPrice = f.form.collaterals?.[0]?.agreedValue ?? null;
+  const assetDown = assetPrice != null && amountTotal != null ? Math.max(0, assetPrice - amountTotal) : null;
   /*
     Liniya sanasi defaults to today (optional, editable); maturity is DERIVED = lineDate + termMonths.
 
@@ -303,16 +308,29 @@ export function Step3({ f }: { f: OriginationForm }) {
             </div>
           );
         })()}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Liniya №, Jami summa, Yillik foiz, Jarima foizi, Shartnoma raqami — bu yerda ko'rsatilmaydi:
-              jami summa va foizlar yuqoridagi kartada; liniya № va shartnoma raqami submit'da avtomatik beriladi. */}
-          <Field label="Summa — avto/ko‘chmas"><MoneyInput value={l.amountAuto ?? null} onChange={(v) => setLine({ amountAuto: v })} /></Field>
-          <Field label="Summa — polis"><MoneyInput value={l.amountPolis ?? null} onChange={(v) => setLine({ amountPolis: v })} /></Field>
-          <Field label="Liniya muddati (oy)" required hint={`max ${LINE_TERM_CAP} oy (bosh kelishuv)`} error={(l.termMonths ?? 0) > LINE_TERM_CAP ? `Liniya muddati ${LINE_TERM_CAP} oydan oshmasligi kerak` : f.attempted ? f.errors.lineTerm : undefined}><Input type="number" min={1} max={LINE_TERM_CAP} value={l.termMonths ?? ''} onChange={(e) => setLine({ termMonths: numv(e.target.value) })} /></Field>
-          <Field label="Liniya sanasi"><DatePicker value={l.lineDate ?? null} onChange={(iso) => setLine({ lineDate: iso })} /></Field>
-        </div>
+        {isAssetProduct ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Asset loan is set on the asset step (price − down payment); shown read-only here. */}
+            <Field label="Aktiv narxi" hint="aktiv bosqichidan"><Input readOnly value={assetPrice != null ? formatMoney(assetPrice) : '—'} className="nums bg-gray-50 dark:bg-white/5" /></Field>
+            <Field label="Boshlang‘ich to‘lov" hint="mijoz to‘laydi"><Input readOnly value={assetDown != null ? formatMoney(assetDown) : '—'} className="nums bg-gray-50 dark:bg-white/5" /></Field>
+            <Field label="Kredit summasi" hint="narx − boshlang‘ich"><Input readOnly value={amountTotal != null ? formatMoney(amountTotal) : '—'} className="nums bg-gray-50 dark:bg-white/5" /></Field>
+            <Field label="Liniya muddati (oy)" required hint={`max ${LINE_TERM_CAP} oy (bosh kelishuv)`} error={(l.termMonths ?? 0) > LINE_TERM_CAP ? `Liniya muddati ${LINE_TERM_CAP} oydan oshmasligi kerak` : f.attempted ? f.errors.lineTerm : undefined}><Input type="number" min={1} max={LINE_TERM_CAP} value={l.termMonths ?? ''} onChange={(e) => setLine({ termMonths: numv(e.target.value) })} /></Field>
+            <Field label="Liniya sanasi"><DatePicker value={l.lineDate ?? null} onChange={(iso) => setLine({ lineDate: iso })} /></Field>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Liniya №, Jami summa, Yillik foiz, Jarima foizi, Shartnoma raqami — bu yerda ko'rsatilmaydi:
+                jami summa va foizlar yuqoridagi kartada; liniya № va shartnoma raqami submit'da avtomatik beriladi. */}
+            <Field label="Summa — avto/ko‘chmas"><MoneyInput value={l.amountAuto ?? null} onChange={(v) => setLine({ amountAuto: v })} /></Field>
+            <Field label="Summa — polis"><MoneyInput value={l.amountPolis ?? null} onChange={(v) => setLine({ amountPolis: v })} /></Field>
+            <Field label="Liniya muddati (oy)" required hint={`max ${LINE_TERM_CAP} oy (bosh kelishuv)`} error={(l.termMonths ?? 0) > LINE_TERM_CAP ? `Liniya muddati ${LINE_TERM_CAP} oydan oshmasligi kerak` : f.attempted ? f.errors.lineTerm : undefined}><Input type="number" min={1} max={LINE_TERM_CAP} value={l.termMonths ?? ''} onChange={(e) => setLine({ termMonths: numv(e.target.value) })} /></Field>
+            <Field label="Liniya sanasi"><DatePicker value={l.lineDate ?? null} onChange={(iso) => setLine({ lineDate: iso })} /></Field>
+          </div>
+        )}
         {f.attempted && f.errors.amountTotal && <p className="text-xs font-medium text-error-600 dark:text-error-500">{f.errors.amountTotal}</p>}
       </Card>
+      {/* «Kerakli qoplama» is a cash-product concept (pledge ×140% / policy ×130%) — hidden for assets. */}
+      {!isAssetProduct && (
       <Card className="space-y-4">
         <div>
           <h2 className="font-semibold text-gray-800 dark:text-white">Kerakli qoplama</h2>
@@ -327,6 +345,7 @@ export function Step3({ f }: { f: OriginationForm }) {
           </Field>
         </div>
       </Card>
+      )}
     </div>
   );
 }

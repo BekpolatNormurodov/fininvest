@@ -23,12 +23,14 @@ import { Summary } from './Summary';
 // creditHistory), so `sections` is a list the wizard loops over on save.
 type WizardStep = { key: string; title: string; sections: CaseSectionKey[]; Comp: (p: { f: ReturnType<typeof useOriginationForm> }) => JSX.Element };
 
+// Cash products (OSON / ADM TEAM): identity → pledge → employment/KATM → credit parameters →
+// insurance. Credit parameters and insurance sit at the end; insurance is always the last step.
 const BASE_STEPS: WizardStep[] = [
   { key: 'borrower', title: 'Qarz oluvchi', sections: ['borrower'], Comp: Step1 },
-  { key: 'parametrlar', title: 'Kredit parametrlar', sections: ['creditLine'], Comp: StepParametrlar },
-  { key: 'sugurta', title: 'Sug‘urta', sections: ['creditLine'], Comp: StepSugurta },
   { key: 'garov', title: 'Garov', sections: ['creditLine'], Comp: StepGarov },
   { key: 'ishkatm', title: 'Ish, daromad & KATM', sections: ['employment', 'creditHistory'], Comp: StepIshKatm },
+  { key: 'parametrlar', title: 'Kredit parametrlar', sections: ['creditLine'], Comp: StepParametrlar },
+  { key: 'sugurta', title: 'Sug‘urta', sections: ['creditLine'], Comp: StepSugurta },
 ];
 
 export function OriginationWizard() {
