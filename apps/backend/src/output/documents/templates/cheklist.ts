@@ -1,4 +1,5 @@
 import type { TDocumentDefinitions, TableCell } from 'pdfmake/interfaces';
+import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 
@@ -31,6 +32,18 @@ const ITEMS: { name: string; copies: string }[] = [
   { name: 'Претензионный', copies: '1' },
 ];
 
+// Asset products (AVTO/IPOTEKA): the purchased asset is the collateral, so the filing set swaps the
+// cash-pledge rows for the asset-purchase papers. Cash keeps ITEMS exactly.
+const ASSET_ITEMS: { name: string; copies: string }[] = [
+  { name: 'Олди-сотди шартномаси', copies: '1' },
+  { name: 'Тех. паспорт / кадастр', copies: '1' },
+  { name: 'Бахолаш далолатномаси', copies: '1' },
+  { name: 'Суғурта полиси (КАСКО / мол-мулк)', copies: '1' },
+  { name: 'Бошланғич тўлов квитанцияси', copies: '1' },
+];
+// Cash-pledge-only rows dropped for asset filings.
+const CASH_ONLY_ROWS = new Set(['Гаров Шартномаси', 'Таъкик варақаси', 'Бахолаш далолатномаси']);
+
 const HEADER_ROW: TableCell[] = [
   { text: '№ т/р', bold: true, alignment: 'center' },
   { text: 'Хужжат номланиши', bold: true, alignment: 'center' },
@@ -42,9 +55,12 @@ const HEADER_ROW: TableCell[] = [
  * перечень — «МФЛ бўйича хужжатлар кетма кетлиги»: the fixed 16-row filing checklist, matching the
  * reference sheet (no org letterhead, «Варок» left blank for hand-fill, credit-manager signature).
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function cheklistTemplate(_c: CaseDocData): TDocumentDefinitions {
-  const rows: TableCell[][] = ITEMS.map((item, i) => [
+export function cheklistTemplate(c: CaseDocData): TDocumentDefinitions {
+  const isAsset = assetInsuranceLabelCyr(c.product as LoanProduct | null) !== null;
+  const items = isAsset
+    ? [...ITEMS.filter((i) => !CASH_ONLY_ROWS.has(i.name)), ...ASSET_ITEMS]
+    : ITEMS;
+  const rows: TableCell[][] = items.map((item, i) => [
     { text: String(i + 1), alignment: 'center' },
     { text: item.name },
     { text: item.copies, alignment: item.copies === '1' ? 'center' : 'left', fontSize: item.copies === '1' ? 9 : 7 },

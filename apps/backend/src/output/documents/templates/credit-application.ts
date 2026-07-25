@@ -2,6 +2,7 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import {
   moneyWithWordsCyr, integerToUzbekWordsCyrillic, dateToRuCyrillic,
 } from '../../../common/sum-to-words.util';
+import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { CaseDocData } from '../case-document.loader';
 import { docTitle, shortDate, plainMoney, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { autoDescription, realtyDescription, isAutoOnly } from './_collateral';
@@ -90,7 +91,12 @@ export function creditApplicationTemplate(c: CaseDocData): TDocumentDefinitions 
     ...collateralLines,
   ];
 
-  if (!isAutoOnly(c)) {
+  // Asset products (AVTO/IPOTEKA): the purchased asset is insured (KASKO / property). Cash keeps the
+  // loan-risk policy line, still hidden for an auto-only pledge exactly as before.
+  const appInsCyr = assetInsuranceLabelCyr(c.product as LoanProduct | null);
+  if (appInsCyr) {
+    content.push(p(`Гаров объекти ${appInsCyr} бўйича суғурталанади.`, 8)); // TODO(legal)
+  } else if (!isAutoOnly(c)) {
     content.push(
       p(
         `Суғурта компаниясининг кредит қайтмаслилиги хавфи полиси. Суғурта полисининг қиймати ${moneyWithWordsCyr(insuredSum)}.`,

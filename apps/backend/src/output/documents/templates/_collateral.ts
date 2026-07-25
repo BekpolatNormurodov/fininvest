@@ -1,4 +1,5 @@
 import type { Content, TableCell } from 'pdfmake/interfaces';
+import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, shortDate } from '../doc-layout';
@@ -277,6 +278,13 @@ export function contractCollateralProse(
   const actDate = opts.actDateStr ?? '—';
   const borrower = c.borrower?.fullName ?? '—';
 
+  // Asset products (AVTO/IPOTEKA): the purchased asset IS insured (KASKO / property). Cash and legacy
+  // cases return null → the sheet's own «сугурталанмайди» is preserved byte-for-byte.
+  const insCyr = assetInsuranceLabelCyr(c.product as LoanProduct | null);
+  const insuranceSentence = insCyr
+    ? `Гаров объекти ${insCyr} бўйича суғурталанади.` // TODO(legal): yakuniy so'zlashuvni tasdiqlang
+    : 'Гаров объекти сугурталанмайди.';
+
   return cols.map((col) => {
     const pledgor = col.owners?.[0]?.fullName ?? borrower;
     const opening =
@@ -304,7 +312,7 @@ export function contractCollateralProse(
         `ва келишилган гаров қиймати ${actDate}даги №${actNo} гаров предмети қийматини тасдиқлаш ` +
         `далолатномасига мувофиқ ${moneyWithWordsCyr(col.agreedValue)}ни ташкил қилади. ` +
         `Гаровнинг аниқ шартлари тегишли тарзда нотариал тасдиқланган ${deed} билан белгиланади. ` +
-        `Гаров объекти сугурталанмайди.`,
+        insuranceSentence,
       alignment: 'justify',
       margin: [0, 2, 0, 4],
     } as Content;

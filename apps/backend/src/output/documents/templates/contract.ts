@@ -1,4 +1,5 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { sectionTitle } from '../doc-layout';
@@ -152,7 +153,10 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
       p(
         insurance?.insured
           ? `3.1.2  ${insurance.company ?? '—'} суғурта компаниясининг кредит қайтмаслилиги хавфи полиси. Сугурта полисининг киймати ${amountWithWords(insuredSum)}. Тулик шартлари Сугурта компания ва Микромолия ташкилоти уртасида имзоланган келишувда курсатилиб утилган.`
-          : '3.1.2  Кредит бўйича суғурта расмийлаштирилмаган. Гаров объекти сугурталанмайди.',
+          // Asset products: the purchased asset is insured (KASKO / property). Cash/legacy keep the sheet's own text.
+          : assetInsuranceLabelCyr(c.product as LoanProduct | null)
+            ? `3.1.2  Гаров объекти ${assetInsuranceLabelCyr(c.product as LoanProduct | null)} бўйича суғурталанади.` // TODO(legal)
+            : '3.1.2  Кредит бўйича суғурта расмийлаштирилмаган. Гаров объекти сугурталанмайди.',
       ),
       p(
         '3.2. Қонун ҳужжатларига мувофиқ расмийлаштирилган, «Гаров предмети» ҳисобланган нотариал тасдиқланган гаров шартномаси Қарз олувчи томонидан ушбу шартнома тузилгандан сўнг 10 банк куни мобайнида Микромолия ташкилотига тақдим этилиши лозим. Гаров шартномаси белгиланган муддатда тақдим этилмаган ҳолларда, Микромолия ташкилоти Қарз олувчининг манзилига ёзма билдиришнома юбориш орқали микроқарз беришни рад этиш ва / ёки ушбу шартномани бир томонлама бекор қилиш ҳуқуқига эгадир. Бунда ушбу шартнома Қарз олувчи томонидан талабнома олинган вақтда ёки талабнома почта хизмати орқали юборилгандан кейин учинчи куни бекор қилинган ҳисобланади.',

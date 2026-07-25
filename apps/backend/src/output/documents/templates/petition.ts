@@ -2,6 +2,7 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { shortDate, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { p, lineTerms } from './_shared';
 import { autoDescription, realtyDescription, isAutoOnly } from './_collateral';
 
@@ -49,7 +50,12 @@ export function petitionTemplate(c: CaseDocData): TDocumentDefinitions {
     ...collateralLines,
   ];
 
-  if (!isAutoOnly(c)) {
+  // Asset products (AVTO/IPOTEKA): the purchased asset is insured (KASKO / property). Cash keeps the
+  // sheet's loan-risk line, still hidden for an auto-only pledge exactly as before.
+  const petInsCyr = assetInsuranceLabelCyr(c.product as LoanProduct | null);
+  if (petInsCyr) {
+    content.push({ text: `- Гаров объекти ${petInsCyr} бўйича суғурталанади`, margin: [0, 3, 0, 0] }); // TODO(legal)
+  } else if (!isAutoOnly(c)) {
     // Verbatim from the sheet — it names no company and no sum on this line.
     content.push({ text: '- Суғурта компаниясининг кредит қайтмаслик риски полиси', margin: [0, 3, 0, 0] });
   }
