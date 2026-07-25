@@ -48,11 +48,13 @@ export function OriginationWizard() {
   const assetStepTitle = effProduct === 'AVTO' ? 'Mashina' : effProduct === 'IPOTEKA' ? 'Uy-joy' : 'Aktiv';
   const steps = useMemo<WizardStep[]>(() => {
     if (!isAsset) return BASE_STEPS;
-    // Asset products lead with the purchased item (car/house) — that step also holds the down payment
-    // and the seller, so there is no separate Sotuvchi step.
-    const asset = { ...BASE_STEPS.find((s) => s.key === 'garov')!, title: assetStepTitle };
-    const rest = BASE_STEPS.filter((s) => s.key !== 'garov');
-    return [asset, ...rest];
+    // Asset flow order (owner-requested): the purchased item first (it holds the seller + down
+    // payment), then the buyer, employment/KATM, and finally the credit parameters and insurance.
+    // On an asset purchase the borrower IS the buyer — «Xaridor», not «Qarz oluvchi».
+    const byKey = (k: string) => BASE_STEPS.find((s) => s.key === k)!;
+    const asset = { ...byKey('garov'), title: assetStepTitle };
+    const buyer = { ...byKey('borrower'), title: 'Xaridor' };
+    return [asset, buyer, byKey('ishkatm'), byKey('parametrlar'), byKey('sugurta')];
   }, [isAsset, assetStepTitle]);
   const { Comp } = steps[f.step] ?? steps[0];
   const termM = f.form.creditLine?.termMonths ?? f.form.termMonths ?? null;

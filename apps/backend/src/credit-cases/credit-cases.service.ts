@@ -38,6 +38,12 @@ export class CreditCasesService {
     return { min: cfg?.minRate ?? 0.55, max: cfg?.maxRate ?? 0.6 };
   }
 
+  /** Default lending rate: the product's own floor (ADM TEAM 32%, OSON …) when a product is set,
+   *  otherwise the config minimum. Each of the four products carries its own rate — not a shared 55%. */
+  private rateForProduct(product: LoanProduct | null | undefined, fallback: number): number {
+    return product ? loanProductProfile(product).rateMinPct / 100 : fallback;
+  }
+
   /** Server-authoritative loan-rule guard (term caps). Throws on violation. */
   private assertRules(dto: UpsertCaseDto) {
     const l = dto.creditLine;
@@ -202,7 +208,7 @@ export class CreditCasesService {
         ...(dto.employment ? { employment: { create: this.employmentData(dto.employment) } } : {}),
         ...(dto.affordability ? { affordability: { create: this.affordabilityData(dto.affordability) } } : {}),
         ...(dto.creditHistory ? { creditHistory: { create: this.creditHistoryData(dto.creditHistory) } } : {}),
-        ...(dto.creditLine ? { creditLine: { create: this.creditLineNested(dto.creditLine, min, dto.product ?? null) } } : {}),
+        ...(dto.creditLine ? { creditLine: { create: this.creditLineNested(dto.creditLine, this.rateForProduct(dto.product ?? null, min), dto.product ?? null) } } : {}),
       },
       include: caseInclude,
     });
@@ -304,8 +310,11 @@ export class CreditCasesService {
 
     const { min } = await this.loadRates();
     // Preserve a moderator-raised rate across a later DRAFT re-save (operator never sets the rate).
+    // A never-rated case falls back to the product's own floor, not the shared config minimum.
     const existingLine = await this.prisma.creditLine.findUnique({ where: { caseId: id }, select: { interestRate: true } });
-    const lineRate = existingLine?.interestRate != null ? Number(existingLine.interestRate) : min;
+    const lineRate = existingLine?.interestRate != null
+      ? Number(existingLine.interestRate)
+      : this.rateForProduct((dto.product ?? existing.product) as LoanProduct | null, min);
 
     const newTermForBand = dto.creditLine?.termMonths ?? dto.termMonths ?? existing.termMonths;
     // Recompute asset financials from the effective loan + purchased-asset value (dto wins, else saved).

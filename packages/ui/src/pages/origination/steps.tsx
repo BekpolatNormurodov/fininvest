@@ -246,7 +246,8 @@ export function Step3({ f }: { f: OriginationForm }) {
         {(() => {
           const product = (f.form.product ?? null) as LoanProduct | null;
           const isBig = loanTypeFor(amountTotal) === 'MICROCREDIT';
-          const annual = Math.round((l.interestRate ?? minRate) * 100);
+          // Each product carries its own rate — fall back to the product floor, not the shared 55%.
+          const annual = Math.round((l.interestRate ?? (product ? loanProductProfile(product).rateMinPct / 100 : minRate)) * 100);
           const penalty = Math.round((l.penaltyRate ?? 1.05) * 100);
           // The product IS the credit type; the >100M warning colour is kept only for legacy
           // cases that carry no product.
