@@ -24,6 +24,7 @@ import { Button } from './components/primitives';
 import { Dashboard } from './pages/Dashboard';
 import { CaseView } from './pages/CaseView';
 import { CaseDocumentsPage } from './pages/CaseDocumentsPage';
+import { CaseDisbursementPage } from './pages/CaseDisbursementPage';
 import { OriginationWizard } from './pages/origination/OriginationWizard';
 import { NewApplicationPage } from './pages/origination/NewApplicationPage';
 import { ReMflPage } from './pages/ReMflPage';
@@ -84,6 +85,7 @@ function Shell({ role, title }: { role: Role; title: string }) {
         {(role === Role.OPERATOR || role === Role.ADMIN) && <Route path="/cases/:id/origination" element={<OriginationWizard />} />}
         <Route path="/cases/:id" element={<CaseView />} />
         <Route path="/cases/:id/hujjatlar" element={<CaseDocumentsPage />} />
+        <Route path="/cases/:id/pul-otkazish" element={<CaseDisbursementPage />} />
         <Route path="/calculator" element={<CreditCalculator />} />
         <Route path="/chats" element={<ChatsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />

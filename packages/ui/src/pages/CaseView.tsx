@@ -292,6 +292,18 @@ export function CaseView() {
                 onClick={() => navigate(`/chats?case=${c.id}`)}
                 trailing={<ArrowRight className="h-4 w-4 shrink-0 text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400" />}
               />
+              {/* «Pul o'tkazish» is cash-only (ADM TEAM / OSON, and legacy). Asset products pay the
+                  seller and carry the down-payment receipt instead. */}
+              {c.product !== 'AVTO' && c.product !== 'IPOTEKA' && (
+                <LauncherTile
+                  icon={Banknote}
+                  label="Pul o‘tkazish"
+                  hint="Rekvizitlar (buxgalteriya)"
+                  ariaLabel="Pul o‘tkazish rekvizitlari sahifasiga o‘tish"
+                  onClick={() => navigate(`/cases/${c.id}/pul-otkazish`)}
+                  trailing={<ArrowRight className="h-4 w-4 shrink-0 text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400" />}
+                />
+              )}
             </div>
           </Card>
 
@@ -405,7 +417,6 @@ export function CaseView() {
           {(c.product === 'AVTO' || c.product === 'IPOTEKA') && (
             <DownPaymentReceiptPanel c={c} canUpload={role === Role.OPERATOR || role === Role.ADMIN || role === Role.DIRECTOR} onChange={refresh} />
           )}
-          <DisbursementPanel c={c} onChange={refresh} />
         </div>
       </div>
 
@@ -1181,7 +1192,7 @@ function DownPaymentReceiptPanel({ c, canUpload, onChange }: { c: CreditCaseDto;
 }
 
 /** Beneficiary bank requisites for the disbursement application ("Пул ўтказиш аризаси"). */
-function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => void }) {
+export function DisbursementPanel({ c, onChange, standalone = false }: { c: CreditCaseDto; onChange: () => void; standalone?: boolean }) {
   const toast = useToast();
   const d = c.disbursement;
   const [holderName, setHolderName] = useState(d?.holderName ?? '');
@@ -1190,11 +1201,9 @@ function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => 
   const [bankMfo, setBankMfo] = useState(d?.bankMfo ?? '');
   const [holderInn, setHolderInn] = useState(d?.holderInn ?? '');
   const [bankName, setBankName] = useState(d?.bankName ?? '');
-  // Requisites are only central to asset products (money goes to the seller). For cash (OSON / ADM
-  // TEAM) the panel starts collapsed so it doesn't crowd the case view — expand to fill it in.
-  const isAsset = c.product === 'AVTO' || c.product === 'IPOTEKA';
   const filled = !!(d?.holderName || d?.cardNumber || d?.accountNumber);
-  const [open, setOpen] = useState(isAsset);
+  // On its own page it is always expanded; inside the case view it is collapsible.
+  const [open, setOpen] = useState(standalone);
 
   const save = useMutation({
     mutationFn: () => api.saveDisbursement(c.id, {
@@ -1211,7 +1220,7 @@ function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => 
 
   return (
     <Card className="space-y-4">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-start gap-3 text-left outline-none">
+      <button type="button" onClick={standalone ? undefined : () => setOpen((o) => !o)} className={cn('flex w-full items-start gap-3 text-left outline-none', standalone && 'cursor-default')}>
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
           <Banknote className="h-5 w-5" />
         </span>
@@ -1224,7 +1233,7 @@ function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => 
             Buxgalteriya hujjatlariga kiradi — «Mablag‘ taqsimoti» va «Pul o‘tkazish arizasi». Hisob egasi qarz oluvchidan boshqa shaxs bo‘lishi mumkin.
           </p>
         </div>
-        <ChevronDown className={cn('mt-1 h-4 w-4 shrink-0 text-gray-400 transition', open && 'rotate-180')} />
+        {!standalone && <ChevronDown className={cn('mt-1 h-4 w-4 shrink-0 text-gray-400 transition', open && 'rotate-180')} />}
       </button>
 
       {open && <>
