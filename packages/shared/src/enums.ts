@@ -54,6 +54,7 @@ export const DocumentType = {
   COLLATERAL_PHOTO: 'COLLATERAL_PHOTO', // zalog rasm
   TECH_PASSPORT: 'TECH_PASSPORT', // tex passport
   GEN_DOVERNOST: 'GEN_DOVERNOST', // gen doverennost (umumiy ishonchnoma) — PDF yoki rasm(lar)
+  DOWN_PAYMENT_RECEIPT: 'DOWN_PAYMENT_RECEIPT', // boshlang'ich to'lov bank kvitansiyasi (rasm) — AVTO/IPOTEKA
   DIRECTOR_FINAL: 'DIRECTOR_FINAL', // 1–2 final docs the director uploads
   GENERATED_PDF: 'GENERATED_PDF', // PDF produced by the system
   CHAT: 'CHAT', // file shared inside case chat
