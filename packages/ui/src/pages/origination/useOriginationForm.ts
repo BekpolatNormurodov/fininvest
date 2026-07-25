@@ -176,13 +176,17 @@ export function useOriginationForm(id?: string) {
   // reorder steps per product (e.g. put the asset first for AVTO/IPOTEKA) without misaligning them.
   const STEP_ERRORS: Record<string, ErrKey[]> = {
     borrower: ['fullName', 'pinfl', 'passportSeries', 'passportNumber', 'phone', 'contacts'],
-    employment: ['employment'],
-    creditLine: ['amountTotal', 'lineTerm'],
+    // Merged wizard steps: «Kredit parametrlar» = liniya + transh; «Ish, daromad & KATM» = employment + katm.
+    parametrlar: ['amountTotal', 'lineTerm', 'scheduleType', 'trancheTerm', 'principal'],
+    ishkatm: ['employment', 'katm'],
     sugurta: [],
     garov: ['collateral'],
+    seller: [],
+    // Legacy single-section keys, kept for any caller that still references them.
+    employment: ['employment'],
+    creditLine: ['amountTotal', 'lineTerm'],
     transh: ['scheduleType', 'trancheTerm', 'principal'],
     katm: ['katm'],
-    seller: [],
   };
   const stepHasErrors = (key: string) => (STEP_ERRORS[key] ?? []).some((k) => errors[k]);
   // A step is "complete" (green ✓) only when it actually HAS required fields and all are satisfied.

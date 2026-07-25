@@ -205,6 +205,13 @@ export function Step3({ f }: { f: OriginationForm }) {
     f.patch({ creditLine: { ...merged, amountTotal, insurance, loanType: loanTypeFor(amountTotal), penaltyRate: merged.penaltyRate ?? 1.05 } });
   };
   const amountTotal = l.amountTotal ?? null;
+  // The annual rate is fixed/defaulted per product: seed it from the product's floor once, so the
+  // operator sees the product rate (ADM TEAM 32%, OSON …) instead of the legacy micro default.
+  const prodForRate = (f.form.product ?? null) as LoanProduct | null;
+  useEffect(() => {
+    if (prodForRate && l.interestRate == null) setLine({ interestRate: loanProductProfile(prodForRate).rateMinPct / 100 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prodForRate]);
   /*
     Liniya sanasi defaults to today (optional, editable); maturity is DERIVED = lineDate + termMonths.
 
@@ -738,6 +745,32 @@ export function StepSeller({ f }: { f: OriginationForm }) {
             ? <p className="text-sm font-medium text-warning-700 dark:text-warning-400">Ma'lumotlar tayyor — «Sotuvchini saqlash» tugmasini bosing.</p>
             : <p className="text-sm font-medium text-error-600 dark:text-error-500">Sotuvchini tanlang — majburiy.</p>}
       </Card>
+    </div>
+  );
+}
+
+/**
+ * Merged step — «Kredit parametrlar»: the credit line (РКЛ) and the tranche schedule in one
+ * scroll. They share the `creditLine` section, so a single save persists both. Fewer, denser steps.
+ */
+export function StepParametrlar({ f }: { f: OriginationForm }) {
+  return (
+    <div className="space-y-6">
+      <Step3 f={f} />
+      <Step4 f={f} />
+    </div>
+  );
+}
+
+/**
+ * Merged step — «Ish, daromad & KATM»: employment/affordability followed by the credit-history
+ * (KATM) block, sequentially. Two sections (`employment`, `creditHistory`) — the wizard saves both.
+ */
+export function StepIshKatm({ f }: { f: OriginationForm }) {
+  return (
+    <div className="space-y-6">
+      <Step2 f={f} />
+      <Step5 f={f} />
     </div>
   );
 }

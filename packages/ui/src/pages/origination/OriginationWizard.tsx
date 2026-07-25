@@ -16,19 +16,19 @@ import { useToast } from '../../components/Toast';
 import { Check } from '../../lib/icons';
 import { cn } from '../../lib/cn';
 import { useOriginationForm } from './useOriginationForm';
-import { Step1, Step2, Step3, StepSugurta, StepGarov, Step4, Step5 } from './steps';
+import { Step1, StepSugurta, StepGarov, StepParametrlar, StepIshKatm } from './steps';
 import { Summary } from './Summary';
 
-type WizardStep = { key: string; title: string; section: CaseSectionKey; Comp: (p: { f: ReturnType<typeof useOriginationForm> }) => JSX.Element };
+// Each step can persist more than one section (e.g. «Ish, daromad & KATM» saves employment AND
+// creditHistory), so `sections` is a list the wizard loops over on save.
+type WizardStep = { key: string; title: string; sections: CaseSectionKey[]; Comp: (p: { f: ReturnType<typeof useOriginationForm> }) => JSX.Element };
 
 const BASE_STEPS: WizardStep[] = [
-  { key: 'borrower', title: 'Qarz oluvchi', section: 'borrower', Comp: Step1 },
-  { key: 'employment', title: 'Ish & daromad', section: 'employment', Comp: Step2 },
-  { key: 'creditLine', title: 'Liniya', section: 'creditLine', Comp: Step3 },
-  { key: 'sugurta', title: 'Sug‘urta', section: 'creditLine', Comp: StepSugurta },
-  { key: 'garov', title: 'Garov', section: 'creditLine', Comp: StepGarov },
-  { key: 'transh', title: 'Transh', section: 'creditLine', Comp: Step4 },
-  { key: 'katm', title: 'KATM', section: 'creditHistory', Comp: Step5 },
+  { key: 'borrower', title: 'Qarz oluvchi', sections: ['borrower'], Comp: Step1 },
+  { key: 'parametrlar', title: 'Kredit parametrlar', sections: ['creditLine'], Comp: StepParametrlar },
+  { key: 'sugurta', title: 'Sug‘urta', sections: ['creditLine'], Comp: StepSugurta },
+  { key: 'garov', title: 'Garov', sections: ['creditLine'], Comp: StepGarov },
+  { key: 'ishkatm', title: 'Ish, daromad & KATM', sections: ['employment', 'creditHistory'], Comp: StepIshKatm },
 ];
 
 export function OriginationWizard() {
@@ -67,7 +67,7 @@ export function OriginationWizard() {
   const next = async () => {
     if (f.stepHasErrors(steps[f.step].key)) { f.setAttempted(true); toast.error('Tekshiring', 'Majburiy maydonlarni to‘ldiring'); return; }
     try {
-      await f.saveSection(steps[f.step].section);
+      for (const section of steps[f.step].sections) await f.saveSection(section);
       if (f.step < steps.length - 1) f.setStep(f.step + 1);
     } catch (err) {
       /*
@@ -82,7 +82,7 @@ export function OriginationWizard() {
   // only once the case exists, to avoid creating empty drafts from stray clicks.
   const goTo = async (i: number) => {
     if (i === f.step) return;
-    if (f.caseId) { try { await f.saveSection(steps[f.step].section); } catch { /* keep draft in memory */ } }
+    if (f.caseId) { try { for (const section of steps[f.step].sections) await f.saveSection(section); } catch { /* keep draft in memory */ } }
     f.setStep(i);
   };
   const finish = async () => {
