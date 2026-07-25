@@ -1141,35 +1141,37 @@ function DownPaymentReceiptPanel({ c, canUpload, onChange }: { c: CreditCaseDto;
   };
   const remove = async (docId: string) => { await api.deleteDocument(docId); onChange(); };
 
+  const has = receipts.length > 0;
   return (
-    <Card className="space-y-3">
+    <Card className="space-y-4">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/20">
           <FileText className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-semibold text-gray-800 dark:text-white">Boshlang‘ich to‘lov kvitansiyasi</h2>
-            {receipts.length > 0
-              ? <span className="rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-semibold text-success-700 dark:bg-success-500/15 dark:text-success-400">yuklangan</span>
+            {has
+              ? <span className="rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-semibold text-success-700 dark:bg-success-500/15 dark:text-success-400">✓ {receipts.length} ta yuklangan</span>
               : <span className="rounded-full bg-warning-50 px-2 py-0.5 text-[10px] font-semibold text-warning-700 dark:bg-warning-500/15 dark:text-warning-400">Majburiy</span>}
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
             Mijoz boshlang‘ich to‘lovni bankda to‘laydi — kvitansiyani rasmga olib yuklang (buxgalteriya uchun).
           </p>
         </div>
       </div>
 
       <input ref={inputRef} type="file" accept="image/*,application/pdf" multiple hidden onChange={(e) => onPick(e.target.files)} />
-      {receipts.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+
+      {has ? (
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
           {receipts.map((d) => {
             const isPdf = (d.mimeType ?? '').includes('pdf');
             return (
               <div key={d.id} className="group relative">
-                <button type="button" onClick={() => viewDocument(d.id, d.fileName)} title={d.fileName} className="block aspect-square w-full overflow-hidden rounded-lg border border-gray-200 outline-none transition hover:border-brand-400 focus-visible:ring-2 focus-visible:ring-brand-600/30 dark:border-gray-700">
+                <button type="button" onClick={() => viewDocument(d.id, d.fileName)} title={d.fileName} className="block aspect-square w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50 outline-none transition hover:border-amber-400 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-amber-500/30 dark:border-gray-700 dark:bg-white/5">
                   {isPdf
-                    ? <span className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-medium text-gray-500 dark:bg-white/5">PDF</span>
+                    ? <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500"><FileText className="h-6 w-6" /><span className="text-[10px] font-medium">PDF</span></span>
                     : <img src={documentInlineUrl(d.id)} alt={d.fileName} className="h-full w-full object-cover" />}
                 </button>
                 {canUpload && (
@@ -1180,12 +1182,25 @@ function DownPaymentReceiptPanel({ c, canUpload, onChange }: { c: CreditCaseDto;
               </div>
             );
           })}
+          {canUpload && (
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} aria-label="Yana kvitansiya qo‘shish"
+              className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 outline-none transition hover:border-amber-400 hover:text-amber-600 focus-visible:ring-2 focus-visible:ring-amber-500/30 disabled:opacity-50 dark:border-gray-700 dark:hover:border-amber-500">
+              <Plus className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{busy ? '…' : 'Yana'}</span>
+            </button>
+          )}
         </div>
-      )}
-      {canUpload && (
-        <button onClick={() => inputRef.current?.click()} disabled={busy} className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-600 outline-none transition hover:border-brand-400 hover:bg-brand-50/50 focus-visible:ring-2 focus-visible:ring-brand-600/30 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:border-brand-500">
-          <Upload className="h-4 w-4" /> {busy ? 'Yuklanmoqda…' : 'Kvitansiyani yuklash (rasm)'}
+      ) : canUpload ? (
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
+          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-gray-200 px-4 py-7 text-center outline-none transition hover:border-amber-400 hover:bg-amber-50/40 focus-visible:ring-2 focus-visible:ring-amber-500/30 disabled:opacity-50 dark:border-gray-700 dark:hover:border-amber-500">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"><Upload className="h-5 w-5" /></span>
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{busy ? 'Yuklanmoqda…' : 'Kvitansiyani yuklash'}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">Rasm yoki PDF — bir nechta bo‘lishi mumkin</span>
         </button>
+      ) : (
+        <p className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-4 py-3 text-center text-xs text-gray-500 dark:border-gray-700 dark:bg-white/5 dark:text-gray-400">
+          Kvitansiya hali yuklanmagan — mijoz to‘lovni bankda qilgach yuklanadi.
+        </p>
       )}
     </Card>
   );
