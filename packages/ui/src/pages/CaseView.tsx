@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowRight, Banknote, CheckCircle2, Clock, Download, FileDown, FileText, Pencil, Pause, Play, RotateCcw, Send, Flag, Upload, Eye, House, Car, Paperclip, Trash2, X, Plus, Minus, Messages, Key,
+  ArrowRight, Banknote, CheckCircle2, Clock, Download, FileDown, FileText, Pencil, Pause, Play, RotateCcw, Send, Flag, Upload, Eye, House, Car, Paperclip, Trash2, X, Plus, Minus, Messages, Key, ChevronDown,
 } from '../lib/icons';
 import { api, downloadBlob, viewDocument, documentInlineUrl, getErrorMessage } from '@credit-core/api-client';
 import {
@@ -1106,6 +1106,11 @@ function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => 
   const [bankMfo, setBankMfo] = useState(d?.bankMfo ?? '');
   const [holderInn, setHolderInn] = useState(d?.holderInn ?? '');
   const [bankName, setBankName] = useState(d?.bankName ?? '');
+  // Requisites are only central to asset products (money goes to the seller). For cash (OSON / ADM
+  // TEAM) the panel starts collapsed so it doesn't crowd the case view — expand to fill it in.
+  const isAsset = c.product === 'AVTO' || c.product === 'IPOTEKA';
+  const filled = !!(d?.holderName || d?.cardNumber || d?.accountNumber);
+  const [open, setOpen] = useState(isAsset);
 
   const save = useMutation({
     mutationFn: () => api.saveDisbursement(c.id, {
@@ -1122,18 +1127,23 @@ function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => 
 
   return (
     <Card className="space-y-4">
-      <div className="flex items-start gap-3">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-start gap-3 text-left outline-none">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
           <Banknote className="h-5 w-5" />
         </span>
-        <div className="min-w-0">
-          <h2 className="font-semibold text-gray-800 dark:text-white">Pul o‘tkazish rekvizitlari</h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-gray-800 dark:text-white">Pul o‘tkazish rekvizitlari</h2>
+            {filled && <span className="rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-semibold text-success-700 dark:bg-success-500/15 dark:text-success-400">to‘ldirilgan</span>}
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Buxgalteriya hujjatlariga kiradi — «Mablag‘ taqsimoti» va «Pul o‘tkazish arizasi». Hisob egasi qarz oluvchidan boshqa shaxs bo‘lishi mumkin.
           </p>
         </div>
-      </div>
+        <ChevronDown className={cn('mt-1 h-4 w-4 shrink-0 text-gray-400 transition', open && 'rotate-180')} />
+      </button>
 
+      {open && <>
       {/* Karta ma'lumotlari */}
       <div className="space-y-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Karta ma'lumotlari</p>
@@ -1159,6 +1169,7 @@ function DisbursementPanel({ c, onChange }: { c: CreditCaseDto; onChange: () => 
       </div>
 
       <Button className="w-full" loading={save.isPending} onClick={() => save.mutate()}>Saqlash</Button>
+      </>}
     </Card>
   );
 }

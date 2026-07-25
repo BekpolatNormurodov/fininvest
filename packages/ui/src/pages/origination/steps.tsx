@@ -8,7 +8,7 @@ import {
   collateralComplete, collateralErrors,
   monthlyPaymentFor, termCapFor, isTermValid, paymentDayFor, DocumentType, type RepaymentMethod,
   type UpsertCasePayload,
-  loanProductProfile, SellerKind, type LoanProduct,
+  loanProductProfile, SellerKind, type LoanProduct, type SellerDto,
 } from '@credit-core/shared';
 import { Button, Card, Field, Input } from '../../components/primitives';
 import { MoneyInput, DatePicker, PhoneInput, Select } from '../../components/forms';
@@ -683,6 +683,7 @@ export function StepSeller({ f }: { f: OriginationForm }) {
   const firmCategory = product === 'AVTO' ? 'AUTO' : product === 'IPOTEKA' ? 'REALTY' : null;
   const firmList = firmCategory ? firms.filter((s) => s.category === firmCategory) : firms;
   const firmLabel = product === 'AVTO' ? 'Avtosalon' : product === 'IPOTEKA' ? 'Quruvchi firma' : 'Firma';
+  const selectedFirm = f.form.sellerId ? firms.find((s) => s.id === f.form.sellerId) ?? null : null;
 
   const saveIndiv = async () => {
     if (!indiv.fullName.trim()) { toast.error('Tekshiring', 'Sotuvchi F.I.Sh. sini kiriting'); return; }
@@ -719,14 +720,19 @@ export function StepSeller({ f }: { f: OriginationForm }) {
           <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => { setKind('INDIVIDUAL'); f.patch({ sellerKind: 'INDIVIDUAL', sellerId: null }); }}>Jismoniy shaxs (egasi)</Button>
         </div>
         {kind === 'LEGAL' ? (
-          <Field label={firmLabel}>
-            <Select
-              searchable
-              value={f.form.sellerId ?? ''}
-              onChange={(v) => f.patch({ sellerId: v || null, sellerKind: 'LEGAL' })}
-              options={[{ value: '', label: '— tanlang —' }, ...firmList.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))]}
-            />
-          </Field>
+          <div className="space-y-4">
+            <Field label={firmLabel}>
+              {/* One clean list — the placeholder is the empty state; no extra «— tanlang —» row. */}
+              <Select
+                searchable
+                placeholder="— tanlang —"
+                value={f.form.sellerId ?? ''}
+                onChange={(v) => f.patch({ sellerId: v || null, sellerKind: 'LEGAL' })}
+                options={firmList.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))}
+              />
+            </Field>
+            {selectedFirm && <FirmInfo firm={selectedFirm} />}
+          </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="F.I.Sh." required><Input value={indiv.fullName} onChange={(e) => setIndiv({ ...indiv, fullName: e.target.value })} /></Field>
@@ -746,6 +752,41 @@ export function StepSeller({ f }: { f: OriginationForm }) {
             ? <p className="text-sm font-medium text-warning-700 dark:text-warning-400">Ma'lumotlar tayyor — «Sotuvchini saqlash» tugmasini bosing.</p>
             : <p className="text-sm font-medium text-error-600 dark:text-error-500">Sotuvchini tanlang — majburiy.</p>}
       </Card>
+    </div>
+  );
+}
+
+/**
+ * Read-only contact panel for a selected catalog firm — its general requisites (STIR, director,
+ * phone, legal address, bank). Whatever the catalog actually carries; nothing invented. Payment
+ * requisites are filled in the «Pul o'tkazish» section, so absent fields get a gentle note here.
+ */
+function FirmInfo({ firm }: { firm: SellerDto }) {
+  const rows: { label: string; value?: string | null }[] = [
+    { label: 'STIR (INN)', value: firm.stir },
+    { label: 'Direktor', value: firm.directorName },
+    { label: 'Telefon', value: firm.phone },
+    { label: 'Manzil', value: firm.legalAddress },
+    { label: 'Hisob raqami', value: firm.bankAccount },
+    { label: 'Bank', value: firm.bankName },
+    { label: 'MFO', value: firm.mfoCode },
+  ];
+  const present = rows.filter((r) => r.value && String(r.value).trim());
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3 dark:border-gray-700 dark:bg-white/5">
+      <p className="mb-2 text-sm font-semibold text-gray-800 dark:text-white">{firm.orgName ?? 'Firma'}</p>
+      {present.length ? (
+        <div className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+          {present.map((r) => (
+            <div key={r.label} className="flex items-baseline justify-between gap-3">
+              <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
+              <span className="text-right font-medium text-gray-800 dark:text-gray-100">{r.value}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500 dark:text-gray-400">Katalog firma — pul o‘tkazish rekvizitlari «Pul o‘tkazish» bo‘limida to‘ldiriladi.</p>
+      )}
     </div>
   );
 }
