@@ -42,12 +42,9 @@ export class SigningService {
     if (!rule || rule.to !== CaseStatus.FINALIZED) {
       throw new ForbiddenException('Bu holatda imzolab bo‘lmaydi');
     }
-    // Asset products (AVTO/IPOTEKA): the client's down-payment bank receipt is mandatory before the
-    // case can be finalized — the operator uploads a photo of it on the case view.
-    const isAsset = (c.product as string | null) === 'AVTO' || (c.product as string | null) === 'IPOTEKA';
-    if (isAsset && !c.documents.some((d) => (d.type as string) === 'DOWN_PAYMENT_RECEIPT')) {
-      throw new BadRequestException('Yakunlashdan oldin boshlang‘ich to‘lov kvitansiyasini yuklang (majburiy).');
-    }
+    // NB: the down-payment receipt is deliberately NOT gated here. The correct order is: the director
+    // approves first, THEN the client pays the down payment at the bank and brings the receipt, which
+    // the operator uploads afterwards. So requiring it before signing would be backwards.
     return c;
   }
 

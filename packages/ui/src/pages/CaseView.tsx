@@ -1142,6 +1142,9 @@ function DownPaymentReceiptPanel({ c, canUpload, onChange }: { c: CreditCaseDto;
   const remove = async (docId: string) => { await api.deleteDocument(docId); onChange(); };
 
   const has = receipts.length > 0;
+  // The correct order: director approves first, THEN the client pays and brings the receipt. So it is
+  // only "pending/mandatory" once the case is approved — before that it is simply a later step.
+  const approved = c.status === CaseStatus.FINALIZED || (c.status as string) === 'ADMIN_FINALIZE';
   return (
     <Card className="space-y-4">
       <div className="flex items-start gap-3">
@@ -1153,10 +1156,12 @@ function DownPaymentReceiptPanel({ c, canUpload, onChange }: { c: CreditCaseDto;
             <h2 className="font-semibold text-gray-800 dark:text-white">Boshlang‘ich to‘lov kvitansiyasi</h2>
             {has
               ? <span className="rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-semibold text-success-700 dark:bg-success-500/15 dark:text-success-400">✓ {receipts.length} ta yuklangan</span>
-              : <span className="rounded-full bg-warning-50 px-2 py-0.5 text-[10px] font-semibold text-warning-700 dark:bg-warning-500/15 dark:text-warning-400">Majburiy</span>}
+              : approved
+                ? <span className="rounded-full bg-warning-50 px-2 py-0.5 text-[10px] font-semibold text-warning-700 dark:bg-warning-500/15 dark:text-warning-400">Kutilmoqda</span>
+                : <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-400">Tasdiqdan keyin</span>}
           </div>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Mijoz boshlang‘ich to‘lovni bankda to‘laydi — kvitansiyani rasmga olib yuklang (buxgalteriya uchun).
+            Direktor tasdiqlaganidan so‘ng mijoz boshlang‘ich to‘lovni bankda to‘laydi — kvitansiyani rasmga olib yuklang (buxgalteriya uchun).
           </p>
         </div>
       </div>
