@@ -572,6 +572,20 @@ export function Step4({ f }: { f: OriginationForm }) {
   const setTr = (p: Partial<Tr>) => f.patch({ creditLine: { ...l, tranche: { ...t, ...p } as Tr } });
   const method = (t.scheduleType || undefined) as RepaymentMethod | undefined;
   const rate = l.interestRate ?? cfg?.minRate ?? 0.55;
+  // Asset products (AVTO/IPOTEKA): the whole financed amount is drawn once to pay the seller, so the
+  // tranche principal IS the credit sum (price − down) — never re-typed. Seed the term/schedule too.
+  const productT = (f.form.product ?? null) as LoanProduct | null;
+  const isAssetT = productT ? loanProductProfile(productT).kind === LoanProductKind.ASSET : false;
+  const financed = l.amountTotal ?? null;
+  useEffect(() => {
+    if (!isAssetT) return;
+    const patch: Partial<Tr> = {};
+    if (financed != null && t.principal !== financed) patch.principal = financed;
+    if (t.termMonths == null && l.termMonths != null) patch.termMonths = l.termMonths;
+    if (!t.scheduleType) patch.scheduleType = 'ANNUITY';
+    if (Object.keys(patch).length) setTr(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAssetT, financed, l.termMonths]);
   // Oylik to'lov is derived (annuitet PMT / differensial 1-oy) and locked — never typed by hand.
   const monthly = monthlyPaymentFor(method, t.principal, t.termMonths, rate);
   useEffect(() => {
@@ -604,7 +618,9 @@ export function Step4({ f }: { f: OriginationForm }) {
         {/* Transh №, Ariza №, Ariza sanasi, To'lov kuni, Oylik to'lov, Sug'urta to'lovi — hidden: all
             auto-derived (Transh №=1, ariza № va sana avto, to'lov kuni sanadan, oylik to'lov jadvaldan,
             sug'urta tizimda hisoblanadi). Oylik to'lov chapdagi Xulosada ko'rinadi. Kerak bo'lsa qaytaramiz. */}
-        <Field label="Asosiy summa" required error={f.attempted ? f.errors.principal : undefined}><MoneyInput value={t.principal ?? null} onChange={(v) => setTr({ principal: v })} /></Field>
+        {isAssetT
+          ? <Field label="Asosiy summa" hint="kredit summasi — to‘liq sotuvchiga"><Input readOnly value={financed != null ? formatMoney(financed) : '—'} className="nums bg-gray-50 dark:bg-white/5" /></Field>
+          : <Field label="Asosiy summa" required error={f.attempted ? f.errors.principal : undefined}><MoneyInput value={t.principal ?? null} onChange={(v) => setTr({ principal: v })} /></Field>}
         <Field label="Jadval turi" required error={f.attempted ? f.errors.scheduleType : undefined}><Select value={(t.scheduleType ?? '') as 'ANNUITY' | 'DIFFERENTIATED' | ''} onChange={(v) => setTr({ scheduleType: v })} options={[{ value: 'ANNUITY', label: 'Annuitet (max 30 oy)' }, { value: 'DIFFERENTIATED', label: 'Differensial (max 48 oy)' }]} /></Field>
         <Field label="Muddat (oy)" required hint={cap ? `max ${cap} oy` : 'avval jadval turini tanlang'} error={capExceeded ? `Muddat 1–${cap} oy oralig‘ida` : f.attempted ? f.errors.trancheTerm : undefined}>
           <Input type="number" min={1} max={cap ?? undefined} value={t.termMonths ?? ''} onChange={(e) => setTr({ termMonths: numv(e.target.value) })} />
