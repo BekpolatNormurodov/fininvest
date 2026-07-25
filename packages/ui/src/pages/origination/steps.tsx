@@ -27,6 +27,13 @@ import type { OriginationForm } from './useOriginationForm';
 const numv = (s: string): number | null => (s === '' ? null : Number(s));
 const opt = (vals: string[]) => vals.map((v) => ({ value: v, label: v }));
 
+// Seller-firm branch (filial) options — Uzbekistan regions. The catalog carries no per-firm branch
+// list, so the operator picks a region here (optional); a previously saved free-text value still shows.
+const SELLER_BRANCH_REGIONS = [
+  'Toshkent shahar', 'Toshkent viloyati', 'Andijon', 'Buxoro', 'Farg‘ona', 'Jizzax', 'Xorazm',
+  'Namangan', 'Navoiy', 'Qashqadaryo', 'Qoraqalpog‘iston', 'Samarqand', 'Sirdaryo', 'Surxondaryo',
+];
+
 type Borrower = UpsertCasePayload['borrower'];
 type Emp = NonNullable<UpsertCasePayload['employment']>;
 type Aff = NonNullable<UpsertCasePayload['affordability']>;
@@ -733,8 +740,14 @@ export function StepSeller({ f }: { f: OriginationForm }) {
             </Field>
             {selectedFirm && <FirmInfo firm={selectedFirm} />}
             {selectedFirm && (
-              <Field label="Filial / bo‘lim" hint="ixtiyoriy — bo‘lim nomi va manzili (matn)">
-                <Input value={f.form.sellerBranch ?? ''} onChange={(e) => f.patch({ sellerBranch: e.target.value || null })} placeholder="Masalan: Chilonzor filiali, Bunyodkor ko‘chasi 12" />
+              <Field label="Filial / bo‘lim" hint="ixtiyoriy">
+                <Select
+                  searchable
+                  placeholder="— filialni tanlang —"
+                  value={f.form.sellerBranch ?? ''}
+                  onChange={(v) => f.patch({ sellerBranch: v || null })}
+                  options={SELLER_BRANCH_REGIONS.map((r) => ({ value: `${r} filiali`, label: `${r} filiali` }))}
+                />
               </Field>
             )}
           </div>
