@@ -211,6 +211,7 @@ export class UpsertCaseDto {
   @IsOptional() @IsEnum(LoanProduct) product?: LoanProduct | null;
   @IsOptional() @IsString() sellerId?: string | null;
   @IsOptional() @IsEnum(SellerKind) sellerKind?: SellerKind | null;
+  @IsOptional() @IsString() sellerBranch?: string | null;
 
   @ValidateNested()
   @Type(() => BorrowerInput)

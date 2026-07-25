@@ -100,6 +100,7 @@ export function toCaseDto(c: CaseWithRelations): CreditCaseDto {
     ltvPct: num(c.ltvPct),
     downPaymentPct: num(c.downPaymentPct),
     sellerId: c.sellerId ?? null,
+    sellerBranch: c.sellerBranch ?? null,
     seller: c.seller ?? null,
     status: c.status,
     amount: num(c.amount),

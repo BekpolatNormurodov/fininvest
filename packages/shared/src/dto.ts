@@ -411,6 +411,7 @@ export interface CreditCaseDto {
   downPaymentPct?: number | null;
   sellerId?: string | null;
   sellerKind?: SellerKind | null;
+  sellerBranch?: string | null;
   seller?: SellerDto | null;
   status: CaseStatus;
   amount: number | null;
@@ -510,6 +511,8 @@ export interface UpsertCasePayload {
   sellerId?: string | null;
   /** Seller kind, kept on the form so the wizard knows whether the asset is new (firm) or existing. */
   sellerKind?: SellerKind | null;
+  /** Optional branch/filial of the seller firm for this deal (free text: name + address). */
+  sellerBranch?: string | null;
   borrower: BorrowerDto;
   guarantors: GuarantorDto[];
   collaterals: CollateralDto[];

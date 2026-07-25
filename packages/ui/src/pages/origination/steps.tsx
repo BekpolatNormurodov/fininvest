@@ -732,6 +732,11 @@ export function StepSeller({ f }: { f: OriginationForm }) {
               />
             </Field>
             {selectedFirm && <FirmInfo firm={selectedFirm} />}
+            {selectedFirm && (
+              <Field label="Filial / bo‘lim" hint="ixtiyoriy — bo‘lim nomi va manzili (matn)">
+                <Input value={f.form.sellerBranch ?? ''} onChange={(e) => f.patch({ sellerBranch: e.target.value || null })} placeholder="Masalan: Chilonzor filiali, Bunyodkor ko‘chasi 12" />
+              </Field>
+            )}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">

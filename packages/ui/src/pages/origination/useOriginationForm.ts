@@ -82,6 +82,8 @@ export function useOriginationForm(id?: string) {
       const closeContacts = loadedContacts.length >= 2 ? loadedContacts : [...loadedContacts, emptyContact(), emptyContact()].slice(0, Math.max(2, loadedContacts.length));
       const loaded: UpsertCasePayload = {
         amount: c.amount, termMonths: c.termMonths,
+        // Carry the product + seller selection so editing a draft reloads them (asset flow).
+        product: c.product ?? null, sellerId: c.sellerId ?? null, sellerKind: c.sellerKind ?? null, sellerBranch: c.sellerBranch ?? null,
         borrower: c.borrower ? { ...c.borrower, closeContacts } : { ...emptyBorrower }, guarantors: c.guarantors,
         collaterals: c.collaterals,
         employment: c.employment, affordability: c.affordability, creditLine: c.creditLine, creditHistory: c.creditHistory,

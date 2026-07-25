@@ -194,6 +194,7 @@ export class CreditCasesService {
         productType,
         product: dto.product ?? null,
         sellerId: dto.sellerId ?? null,
+        sellerBranch: dto.sellerBranch ?? null,
         termBand: termForBand ? termBandFor(termForBand) : null,
         ltvPct: fin.ltvPct,
         downPaymentPct: fin.downPaymentPct,
@@ -336,6 +337,7 @@ export class CreditCasesService {
           // fin-invest: keep the product when a section save omits it; re-derive the band from the term.
           ...(dto.product !== undefined ? { product: dto.product } : {}),
           ...(dto.sellerId !== undefined ? { sellerId: dto.sellerId } : {}),
+          ...(dto.sellerBranch !== undefined ? { sellerBranch: dto.sellerBranch } : {}),
           termBand: newTermForBand ? termBandFor(newTermForBand) : existing.termBand,
           ltvPct: finU.ltvPct,
           downPaymentPct: finU.downPaymentPct,

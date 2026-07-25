@@ -154,6 +154,8 @@ model CreditCase {
   // Seller/distributor for AVTO/IPOTEKA — money for the financed part goes here.
   seller   Seller? @relation(fields: [sellerId], references: [id], onDelete: SetNull)
   sellerId String?
+  // Optional branch/filial (name + address, free text) of the seller firm for this deal.
+  sellerBranch String? @db.Text
 
   // Auto contract number (assigned on submit to moderator) — separate from `number` (ariza id).
   // Format: "{contractGlobalNo} MFL {contractYearlyNo} {contractBranchSym}" e.g. "2012 MFL 1320 PS".
