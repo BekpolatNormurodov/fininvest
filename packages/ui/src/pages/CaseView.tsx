@@ -725,9 +725,14 @@ function Detail({ c, canUpload, canManage }: { c: CreditCaseDto; canUpload: bool
       )}
 
       <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-800">
-        <h2 className="font-semibold text-gray-800 dark:text-white">Garovlar ({c.collaterals.length})</h2>
+        {/* Asset products (AVTO/IPOTEKA): the item is the purchased asset, not a pledge — the buyer
+            becomes the owner, so no «Garov»/owner-warning framing. */}
+        {(() => { const isAssetCase = c.product === 'AVTO' || c.product === 'IPOTEKA'; return (
+        <h2 className="font-semibold text-gray-800 dark:text-white">{isAssetCase ? 'Sotib olinayotgan aktiv' : `Garovlar (${c.collaterals.length})`}</h2>
+        ); })()}
         {c.collaterals.map((col, i) => {
           const isAuto = col.type === 'AUTO';
+          const isPurchase = c.product === 'AVTO' || c.product === 'IPOTEKA';
           const rows: [string, string][] = isAuto
             ? [
                 ['Model', col.model ?? '—'],
@@ -751,7 +756,7 @@ function Detail({ c, canUpload, canManage }: { c: CreditCaseDto; canUpload: bool
                 <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-white ${isAuto ? 'bg-warning-600' : 'bg-brand-700'}`}>
                   {isAuto ? <Car className="h-4 w-4" /> : <House className="h-4 w-4" />}
                 </span>
-                <p className="text-sm font-semibold text-gray-800 dark:text-white">Garov {i + 1} — {isAuto ? 'Avtotransport' : 'Uy-joy'}</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-white">{isPurchase ? `Sotib olinayotgan ${isAuto ? 'mashina' : 'uy-joy'}` : `Garov ${i + 1} — ${isAuto ? 'Avtotransport' : 'Uy-joy'}`}</p>
               </div>
               <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
                 {rows.map(([k, v]) => (
@@ -762,11 +767,12 @@ function Detail({ c, canUpload, canManage }: { c: CreditCaseDto; canUpload: bool
                 ))}
               </dl>
               {/*
-                Always shown, because every document names an owner. With no owner entered the
-                borrower stands in at 100% — say so explicitly rather than leaving the line out,
-                which read as "nobody owns this" and sent people looking for a missing field.
+                Shown for pledges only: every pledge document names an owner. For asset purchases the
+                buyer becomes the owner, so there is no separate owner line/warning.
+                With no owner entered the borrower stands in at 100% — say so explicitly rather than
+                leaving the line out, which read as "nobody owns this".
               */}
-              {(() => {
+              {!isPurchase && (() => {
                 const owners = resolveOwners(col.owners, c.borrower);
                 if (!owners.length) {
                   return (
