@@ -5,7 +5,7 @@ import {
   ArrowRight, Calculator, Download, Eye, FileText, Lock, ShieldCheck, Trash2, Upload,
 } from '../lib/icons';
 import { api, downloadBlob, viewDocument, documentInlineUrl, getErrorMessage, type CaseDocumentMeta } from '@credit-core/api-client';
-import { CaseStatus, DocumentType, DOCUMENT_LABEL, Role, type DocumentDto, PRODUCT_LABEL, productExtraDocs } from '@credit-core/shared';
+import { CaseStatus, DocumentType, DOCUMENT_LABEL, Role, type DocumentDto, PRODUCT_LABEL, productExtraDocs, loanProductProfile } from '@credit-core/shared';
 import { useAuth } from '../lib/auth';
 import { Button, Card, Skeleton, StatusBadge } from '../components/primitives';
 import { Select } from '../components/forms';
@@ -110,7 +110,7 @@ export function CaseDocumentsPage() {
         </div>
         <p className="nums text-sm text-gray-500 dark:text-gray-400">
           {c.contractNumber ?? c.number} · {c.borrower?.fullName ?? '—'}
-          <span className="text-gray-400 dark:text-gray-500"> · {PRODUCT_LABEL[c.productType]}</span>
+          <span className="text-gray-400 dark:text-gray-500"> · {c.product ? loanProductProfile(c.product).label.uz : PRODUCT_LABEL[c.productType]}</span>
         </p>
       </div>
 
