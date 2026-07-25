@@ -16,6 +16,15 @@ const num = (v: string): number | null => (v === '' ? null : Number(v));
 // Full cadastre number, e.g. "10:01:05:03:01:1234".
 const KADASTR_FULL = /^\d{2}:\d{2}:\d{2}:\d{2}:\d{2}:\d{3,4}$/;
 
+// Standard cadastre property types (uy-joy). A searchable Select — a free-text value from older
+// records still shows. Applies to realty collateral in both cash pledges and ipoteka.
+const PROPERTY_TYPES = [
+  "KO'P QAVATLI UYDAGI XONADON",
+  "YAKKA TARTIBDAGI TURAR JOY",
+  "BLOKLANGAN TURAR JOY (taunxaus)",
+  "NOTURAR-JOY BINOSI",
+];
+
 /**
  * Kadastr agency lookup card — a dropdown-style card under the cadastre number. Shown once the
  * number is fully typed, with a green check. Currently a SIMULATION (fields are placeholders);
@@ -149,7 +158,10 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
             <Field label="Reestr №" icon={Hashtag} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><Input value={c.registryNo ?? ''} onChange={(e) => onChange({ registryNo: e.target.value })} /></Field>
             <Field label="Kadastr №" required={!firmNew} icon={Hashtag} hint={firmNew ? 'yangi bino — ro‘yxatdan o‘tgach' : '10:01:05:03:01:1234'} error={errors?.cadastreNo}><KadastrInput value={c.cadastreNo ?? null} onChange={(v) => onChange({ cadastreNo: v })} /></Field>
             <KadastrCard cadastreNo={c.cadastreNo ?? ''} />
-            <Field label="Mulk turi" icon={House}><Input value={c.propertyType ?? ''} onChange={(e) => onChange({ propertyType: e.target.value })} placeholder={(c.realtyKind ?? 'APARTMENT') === 'HOUSE' ? "YAKKA TARTIBDAGI TURAR JOY" : "KO'P QAVATLI UYDAGI XONADON"} /></Field>
+            <Field label="Mulk turi" icon={House}>
+              <Select<string> value={c.propertyType ?? ''} onChange={(v) => onChange({ propertyType: v })} searchable placeholder="— mulk turini tanlang —"
+                options={PROPERTY_TYPES.map((p) => ({ value: p, label: p }))} />
+            </Field>
             <Field label="Ko'chirma sanasi" icon={Calendar} hint={firmNew ? "ro'yxatdan o'tgach" : undefined}><DatePicker value={c.registrationDate ?? null} onChange={(iso) => onChange({ registrationDate: iso })} /></Field>
             {(c.realtyKind ?? 'APARTMENT') === 'HOUSE' && (
               <Field label="Yer maydoni (m²)" icon={Ruler}><Input type="number" value={c.landAreaM2 ?? ''} onChange={(e) => onChange({ landAreaM2: num(e.target.value) })} /></Field>
