@@ -79,9 +79,14 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
   const docRef = useRef<HTMLInputElement>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
-  // A brand-new car from a firm starts at 0 km — seed it once so the «yangi» badge shows.
+  // A brand-new car from a firm starts at 0 km and is this year's model — seed both once so the
+  // «yangi» badge shows and the year is pre-filled (operator can still change it).
   useEffect(() => {
-    if (firmNew && isAuto && c.mileage == null) onChange({ mileage: 0 });
+    if (!firmNew || !isAuto) return;
+    const patch: Partial<CollateralDto> = {};
+    if (c.mileage == null) patch.mileage = 0;
+    if (c.year == null) patch.year = new Date().getFullYear();
+    if (Object.keys(patch).length) onChange(patch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firmNew, isAuto]);
 

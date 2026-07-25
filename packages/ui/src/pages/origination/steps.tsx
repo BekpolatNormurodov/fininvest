@@ -748,8 +748,8 @@ export function StepSeller({ f }: { f: OriginationForm }) {
           <span className="rounded-md bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">Majburiy</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant={kind === 'LEGAL' ? 'primary' : 'secondary'} onClick={() => { setKind('LEGAL'); f.patch({ sellerKind: 'LEGAL', sellerId: null }); }}>Firma</Button>
-          <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => { setKind('INDIVIDUAL'); f.patch({ sellerKind: 'INDIVIDUAL', sellerId: null }); }}>Jismoniy shaxs (egasi)</Button>
+          <Button variant={kind === 'LEGAL' ? 'primary' : 'secondary'} onClick={() => { setKind('LEGAL'); f.patch({ sellerKind: 'LEGAL', sellerId: null, sellerBranch: null }); }}>Firma</Button>
+          <Button variant={kind === 'INDIVIDUAL' ? 'primary' : 'secondary'} onClick={() => { setKind('INDIVIDUAL'); f.patch({ sellerKind: 'INDIVIDUAL', sellerId: null, sellerBranch: null }); }}>Jismoniy shaxs (egasi)</Button>
         </div>
         {kind === 'LEGAL' ? (
           <div className="space-y-4">
@@ -759,7 +759,7 @@ export function StepSeller({ f }: { f: OriginationForm }) {
                 searchable
                 placeholder="— tanlang —"
                 value={f.form.sellerId ?? ''}
-                onChange={(v) => f.patch({ sellerId: v || null, sellerKind: 'LEGAL' })}
+                onChange={(v) => f.patch({ sellerId: v || null, sellerKind: 'LEGAL', sellerBranch: null })}
                 options={firmList.map((s) => ({ value: s.id, label: s.orgName ?? s.id }))}
               />
             </Field>
