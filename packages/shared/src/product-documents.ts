@@ -8,7 +8,7 @@
  * legal text. The bodies of any new contracts are intentionally NOT authored here.
  */
 
-import { LoanProduct } from './loan-product';
+import { InsuranceKind, LoanProduct, loanProductProfile } from './loan-product';
 
 /** One extra document a product's dossier expects the operator to upload. */
 export interface ProductUploadDoc {
@@ -36,4 +36,17 @@ export const PRODUCT_EXTRA_DOCS: Record<LoanProduct, ProductUploadDoc[]> = {
 /** The extra upload documents for a product (empty for cash products). */
 export function productExtraDocs(product: LoanProduct): ProductUploadDoc[] {
   return PRODUCT_EXTRA_DOCS[product];
+}
+
+/**
+ * Cyrillic insurance name for an ASSET product's collateral — «КАСКО» (AVTO) or «мол-мулк суғуртаси»
+ * (IPOTEKA). Returns null for cash products (ADM TEAM / OSON) and legacy no-product cases. Document
+ * templates use a non-null result as the «this is an asset product» gate, so cash output is unchanged.
+ */
+export function assetInsuranceLabelCyr(product: LoanProduct | null | undefined): string | null {
+  if (!product) return null;
+  const kind = loanProductProfile(product).insurance;
+  if (kind === InsuranceKind.CAR) return 'КАСКО';
+  if (kind === InsuranceKind.PROPERTY) return 'мол-мулк суғуртаси';
+  return null;
 }

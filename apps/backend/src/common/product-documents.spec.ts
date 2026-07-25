@@ -1,4 +1,4 @@
-import { LoanProduct, productExtraDocs, PRODUCT_EXTRA_DOCS } from '@credit-core/shared';
+import { LoanProduct, productExtraDocs, PRODUCT_EXTRA_DOCS, assetInsuranceLabelCyr } from '@credit-core/shared';
 
 describe('product extra documents', () => {
   it('cash products add no extra documents', () => {
@@ -20,6 +20,14 @@ describe('product extra documents', () => {
     for (const p of Object.values(LoanProduct)) {
       expect(PRODUCT_EXTRA_DOCS[p].length).toBeLessThanOrEqual(4);
     }
+  });
+
+  it('asset insurance label is KASKO for auto, property for ipoteka, null for cash', () => {
+    expect(assetInsuranceLabelCyr(LoanProduct.AVTO)).toBe('КАСКО');
+    expect(assetInsuranceLabelCyr(LoanProduct.IPOTEKA)).toBe('мол-мулк суғуртаси');
+    expect(assetInsuranceLabelCyr(LoanProduct.ADM_TEAM)).toBeNull();
+    expect(assetInsuranceLabelCyr(LoanProduct.OSON)).toBeNull();
+    expect(assetInsuranceLabelCyr(null)).toBeNull();
   });
 
   it('every extra doc carries both uz and ru titles', () => {
