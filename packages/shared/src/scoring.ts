@@ -416,17 +416,41 @@ export function scoringInputFromCase(c: ScorableCase): ScoreInput {
       this factor read `regTenure`. Reading only the latter meant «Срок проживания» scored 0 on
       every case the wizard produced. Both are read until the duplicate is retired.
     */
-    residenceBand: b?.regTenure ?? b?.residenceDuration ?? null,
+    /*
+      Eight of the twenty factors are fed by questions the operator form no longer asks (owner's
+      call, 2026-07-29). Left null they score zero, which is not «unknown» but «worst»: a measured
+      95-point case fell to 64 and its verdict from APPROVED to REFER_COMMITTEE purely because the
+      questions vanished from the screen.
+
+      So each one falls back to what the workbook itself yields for an empty cell — the value the
+      office would arrive at with that row left blank. Seven of the eight match the reference book
+      exactly; «Сфера деятельности» is the exception, where an empty cell returns #N/A, so the
+      bottom of the attainable range is used instead of inventing a grade.
+
+      The defaults live here rather than in the form or the database on purpose: the factor list
+      stays the workbook's twenty (scoreCase is untouched), and the documents keep reading the case
+      itself, so a blank question still prints as «—» rather than as an answer nobody gave.
+    */
+    residenceBand: b?.regTenure ?? b?.residenceDuration ?? 'до 3 лет',
+    /*
+      No fallback for the sector, unlike its neighbours. A null risk code is also what «Boshqa»
+      produces, and this codebase already answers that case: an activity we were not told is not
+      rated, it scores nothing. Grading it anyway would put points on the one answer that says the
+      operator could not classify the work — so the sector simply goes unscored while the question
+      is off the form.
+    */
     sectorRiskCode: emp?.sectorRiskCode ?? null,
-    position: emp?.position ?? null,
-    experienceBand: emp?.experienceBand ?? null,
+    position: emp?.position ?? 'мутахассис',
+    experienceBand: emp?.experienceBand ?? 'до 3 лет',
     housingType: b?.ownsHome ?? null,
     depositBand: b?.depositsBand ?? null,
     activeLoansCount: h?.activeLoansCount ?? null,
-    overdueSubstandardFlag: h?.overdueSubstandardFlag ?? null,
-    otherObligations: h?.otherObligations ?? null,
-    loansOver5MFlag: h?.loansOver5MFlag ?? null,
-    priorMfiPawnshopFlag: h?.priorMfiPawnshopFlag ?? null,
+    overdueSubstandardFlag: h?.overdueSubstandardFlag ?? 0,
+    otherObligations: h?.otherObligations ?? 0,
+    // Blank scores the same as «Мавжуд эмас» here, but the workbook penalises an empty cell by 5,
+    // so the value is stated rather than left to coincide.
+    loansOver5MFlag: h?.loansOver5MFlag ?? 'Мавжуд эмас',
+    priorMfiPawnshopFlag: h?.priorMfiPawnshopFlag ?? 'Мавжуд эмас',
     monthlyTranchePayment: newPayment + existing,
     /*
       балл!C28 reads Д1!C44+C45, and b3 splits those same two into its four income lines — D28←C44,

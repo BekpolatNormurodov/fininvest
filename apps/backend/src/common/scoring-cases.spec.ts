@@ -47,9 +47,35 @@ describe('scoring across real case shapes', () => {
       { affordability: { mainActivityIncome: 5_000_000, newLoanPayment: 9_000_000 } }, 68, 'REFER_COMMITTEE'],
     ['over 68 goes to the committee whatever it scored',
       { borrower: { ...strong().borrower, birthDate: yearsAgo(70) } }, 91, 'REFER_COMMITTEE'],
-    ['an untouched application scores nothing',
-      { borrower: {}, employment: {}, affordability: {}, creditHistory: {}, collaterals: [] }, 0, 'BELOW_MIN'],
+    // Not zero any more, and deliberately so: the eight questions the form stopped asking fall back
+    // to the workbook's own empty-cell grades, and that floor now sits under every application.
+    // Still nowhere near the 60 that would let one through.
+    ['an untouched application scores only the floor the dropped questions leave',
+      { borrower: {}, employment: {}, affordability: {}, creditHistory: {}, collaterals: [] }, 6, 'BELOW_MIN'],
   ];
+
+  /*
+    The point of the defaults, stated as a number.
+
+    Eight factors are fed by questions the form no longer asks. Left null they scored zero — not
+    «unknown» but «worst» — and this same applicant fell from APPROVED to REFER_COMMITTEE without
+    anything about them changing. The gap between the two totals below is what the fallbacks buy
+    back; if someone removes them, this test says by how much.
+  */
+  it('a case missing the questions the form dropped is not scored as the worst case', () => {
+    const s = strong();
+    const withoutDroppedQuestions = {
+      borrower: {
+        ...s.borrower,
+        regTenure: undefined, ownsHome: undefined, depositsBand: undefined,
+      },
+      employment: {}, // sector, position and experience are no longer asked
+      creditHistory: { activeLoansCount: 0 }, // only the three fields still on screen
+    };
+    const r = withCase(withoutDroppedQuestions);
+    expect(r.total).toBe(75);
+    expect(r.verdict).toBe('APPROVED');
+  });
 
   it.each(cases)('%s → %i, %s', (_name, over, total, verdict) => {
     const r = withCase(over);

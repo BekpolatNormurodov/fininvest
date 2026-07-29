@@ -180,8 +180,9 @@ export function Step2({ f }: { f: OriginationForm }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Ish joyi" required={bigLoan} error={bigLoan && f.attempted && !e.employer?.trim() ? 'Majburiy' : undefined}><Input value={e.employer ?? ''} onChange={(ev) => setEmp({ employer: ev.target.value })} /></Field>
           {/* HOZIRCHA KERAK EMAS — egasi so‘radi (2026-07-29). Manzil / soha / lavozim / staj vaqtincha
-              yopildi; skoringdagi mos faktorlar ham izohga olingan (scoring.ts). Qaytarish: shu blokni
-              va scoring.ts dagi «VAQTINCHA YOPIQ» izohlarini oching.
+              yopildi. Skoring TEGILMAGAN: 20 faktor workbookning «балл» varag‘i, o‘chirilmaydi —
+              o‘rniga scoringInputFromCase (scoring.ts) bo‘sh javob uchun workbookning bo‘sh-katak
+              qiymatini beradi. Qaytarish uchun shu blokni ochish kifoya.
           <Field label="Ish joyi manzili"><Input value={e.employerAddress ?? ''} onChange={(ev) => setEmp({ employerAddress: ev.target.value })} /></Field>
           <Field label="Soha" hint="Ixtiyoriy — ro‘yxatda bo‘lmasa «Boshqa» ni tanlang">
             <Select searchable menuWidth={380} value={(e.sector ?? '') as string} onChange={(v) => setEmp({ sector: v, sectorRiskCode: sectorRiskCode(v) })}
@@ -646,8 +647,10 @@ export function Step5({ f }: { f: OriginationForm }) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Aktiv kreditlar soni" required><Input type="number" value={h.activeLoansCount ?? ''} onChange={(e) => set({ activeLoansCount: numv(e.target.value) })} /></Field>
         {/* HOZIRCHA KERAK EMAS — egasi so‘radi (2026-07-29). KATM'dan uchtasi qoldi: aktiv kreditlar
-            soni, jami qarz, o‘rtacha oylik to‘lov. Skoringdagi 15/16/17/18-faktorlar ham izohga
-            olingan (scoring.ts). Qaytarish: shu blokni va scoring.ts dagi «VAQTINCHA YOPIQ»ni oching.
+            soni, jami qarz, o‘rtacha oylik to‘lov. Skoring TEGILMAGAN — 15/16/17/18-faktorlar
+            joyida, scoringInputFromCase (scoring.ts) bo‘sh javobga workbookning bo‘sh-katak
+            qiymatini beradi. «To‘langan kreditlar soni» esa hech bir faktorga oziq bermaydi.
+            Qaytarish uchun shu blokni ochish kifoya.
         <Field label="To‘langan kreditlar soni" required><Input type="number" value={h.repaidLoansCount ?? ''} onChange={(e) => set({ repaidLoansCount: numv(e.target.value) })} /></Field>
         <Field label="Muddati o‘tgan (0/1)" required><Input type="number" value={h.overdueSubstandardFlag ?? ''} onChange={(e) => set({ overdueSubstandardFlag: numv(e.target.value) })} /></Field>
         <Field label="Boshqa majburiyatlar" required><Input type="number" value={h.otherObligations ?? ''} onChange={(e) => set({ otherObligations: numv(e.target.value) })} /></Field>
