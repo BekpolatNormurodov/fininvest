@@ -417,40 +417,43 @@ export function scoringInputFromCase(c: ScorableCase): ScoreInput {
       every case the wizard produced. Both are read until the duplicate is retired.
     */
     /*
-      Eight of the twenty factors are fed by questions the operator form no longer asks (owner's
-      call, 2026-07-29). Left null they score zero, which is not «unknown» but «worst»: a measured
-      95-point case fell to 64 and its verdict from APPROVED to REFER_COMMITTEE purely because the
-      questions vanished from the screen.
+      Eight factors are fed by questions the operator form no longer asks (owner's call,
+      2026-07-29). Left null they score zero, and zero reads as the worst grade rather than as
+      «unknown» — the same applicant fell from 95 to 64 and from APPROVED to REFER_COMMITTEE with
+      nothing about them changed.
 
-      So each one falls back to what the workbook itself yields for an empty cell — the value the
-      office would arrive at with that row left blank. Seven of the eight match the reference book
-      exactly; «Сфера деятельности» is the exception, where an empty cell returns #N/A, so the
-      bottom of the attainable range is used instead of inventing a grade.
+      Two of the eight get a fallback, and only those two. «Должность» and «Общий стаж» describe
+      work the borrower plainly does; the mid grade is what the workbook yields for those rows left
+      blank, and neither one is a claim about the borrower's record.
 
-      The defaults live here rather than in the form or the database on purpose: the factor list
-      stays the workbook's twenty (scoreCase is untouched), and the documents keep reading the case
-      itself, so a blank question still prints as «—» rather than as an answer nobody gave.
+      The other six do not, and the reasons are worth keeping:
+
+        · «Муаммоли кредитлар» (overdueSubstandardFlag) — measured: a default here carries a case
+          over the 70 line (67 → 72), so a report would print «маълумот тўлдирилмаган» beside
+          «Маъқулланди». An unknown arrears record must not read as a clean one.
+        · «5 млн+ кредит» / «МКО-ломбард» — worth zero points either way, so a default buys nothing
+          and turns «not asked» into an unverified assertion that the borrower has neither.
+        · «Прочие обязательства» — the reference books carry an explicit 0 there, so parity already
+          holds; a fallback would only ever fire when nobody entered anything, and it pays a point.
+        · «Сфера деятельности» — a null risk code is also what «Boshqa» produces, and this codebase
+          already settles that: an activity we were not told is not rated (sector-other.spec).
+        · «Срок проживания» — the value the picker offers is not one the workbook grades.
+
+      So the score no longer reads a blank as the worst answer, and it still never invents one about
+      the borrower's credit record. The factor list stays the workbook's twenty, and the documents
+      read the case itself, so an unasked question prints as «—».
     */
-    residenceBand: b?.regTenure ?? b?.residenceDuration ?? 'до 3 лет',
-    /*
-      No fallback for the sector, unlike its neighbours. A null risk code is also what «Boshqa»
-      produces, and this codebase already answers that case: an activity we were not told is not
-      rated, it scores nothing. Grading it anyway would put points on the one answer that says the
-      operator could not classify the work — so the sector simply goes unscored while the question
-      is off the form.
-    */
+    residenceBand: b?.regTenure ?? b?.residenceDuration ?? null,
     sectorRiskCode: emp?.sectorRiskCode ?? null,
     position: emp?.position ?? 'мутахассис',
     experienceBand: emp?.experienceBand ?? 'до 3 лет',
     housingType: b?.ownsHome ?? null,
     depositBand: b?.depositsBand ?? null,
     activeLoansCount: h?.activeLoansCount ?? null,
-    overdueSubstandardFlag: h?.overdueSubstandardFlag ?? 0,
-    otherObligations: h?.otherObligations ?? 0,
-    // Blank scores the same as «Мавжуд эмас» here, but the workbook penalises an empty cell by 5,
-    // so the value is stated rather than left to coincide.
-    loansOver5MFlag: h?.loansOver5MFlag ?? 'Мавжуд эмас',
-    priorMfiPawnshopFlag: h?.priorMfiPawnshopFlag ?? 'Мавжуд эмас',
+    overdueSubstandardFlag: h?.overdueSubstandardFlag ?? null,
+    otherObligations: h?.otherObligations ?? null,
+    loansOver5MFlag: h?.loansOver5MFlag ?? null,
+    priorMfiPawnshopFlag: h?.priorMfiPawnshopFlag ?? null,
     monthlyTranchePayment: newPayment + existing,
     /*
       балл!C28 reads Д1!C44+C45, and b3 splits those same two into its four income lines — D28←C44,
