@@ -38,10 +38,10 @@ export class CreditCasesService {
     return { min: cfg?.minRate ?? 0.55, max: cfg?.maxRate ?? 0.6 };
   }
 
-  /** Default lending rate: the product's own floor (ADM TEAM 32%, OSON …) when a product is set,
-   *  otherwise the config minimum. Each of the four products carries its own rate — not a shared 55%. */
+  /** Default lending rate: the rate the product is quoted at — ADM TEAM opens at its floor (32%),
+   *  OSON at its ceiling (50%, sold «up to»). Config minimum only when no product is set. */
   private rateForProduct(product: LoanProduct | null | undefined, fallback: number): number {
-    return product ? loanProductProfile(product).rateMinPct / 100 : fallback;
+    return product ? loanProductProfile(product).rateDefaultPct / 100 : fallback;
   }
 
   /** Server-authoritative loan-rule guard (term caps). Throws on violation. */

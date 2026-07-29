@@ -61,14 +61,26 @@ export interface LoanProductProfile {
   label: { uz: string; ru: string };
   /** Minimum client down payment as a fraction (0.30 = 30%). 0 for cash products. */
   minDownPayment: number;
-  /** Annual interest-rate bounds, percent. */
+  /** Annual interest-rate bounds, percent — the band a moderator may set within. */
   rateMinPct: number;
   rateMaxPct: number;
+  /**
+   * The rate quoted on the product card and seeded onto a new line, percent.
+   *
+   * Which end of the band that is says what kind of product it is. OSON is sold «up to 50%», so it
+   * opens at its ceiling and a moderator may come down; the rest read «from 32%» and open at the
+   * floor. Without this the seeded rate was always the floor, and OSON quoted 32% while its own
+   * card promised 50%.
+   */
+  rateDefaultPct: number;
   maxTermMonths: number;
   collateralRule: CollateralRule;
   insurance: InsuranceKind;
   sellerRequired: boolean;
-  /** Late-payment penalty, percent (105 = 105%). Owner-set per product. */
+  /**
+   * Late-payment penalty, percent (105 = 105%). Owner-set per product, and a ceiling: OSON's 200%
+   * is «up to 200%», seeded onto the line and reducible from there.
+   */
   penaltyRatePct: number;
   /**
    * Cash products: the multiple of the loan the pledge must cover (1.4 = 140%).
@@ -85,6 +97,7 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     minDownPayment: 0,
     rateMinPct: 32, // owner-fixed
     rateMaxPct: DEFAULT_RATE_MAX,
+    rateDefaultPct: 32, // «32%dan» — opens at the floor
     maxTermMonths: 36, // owner-fixed
     collateralRule: CollateralRule.PLEDGE_COVERAGE,
     insurance: InsuranceKind.LOAN_RISK,
@@ -97,10 +110,12 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     kind: LoanProductKind.CASH,
     label: { uz: 'OSON', ru: 'ОСОН' },
     minDownPayment: 0,
-    // Owner-set 2026-07-29: flat 50% a year, 200% penalty, 60-month line, 125% pledge cover.
-    // These four are OSON's alone — ADM TEAM keeps 32% / 105% / 36 months / 140%.
-    rateMinPct: 50,
+    // Owner-set 2026-07-29: «up to 50%» a year and «up to 200%» penalty, 60-month line, 125% pledge
+    // cover. Both rates are ceilings the moderator may come down from, so the band stays open at
+    // the bottom and the product opens at its top. ADM TEAM keeps 32% / 105% / 36 months / 140%.
+    rateMinPct: DEFAULT_RATE_MIN,
     rateMaxPct: 50,
+    rateDefaultPct: 50, // «50%gacha» — opens at the ceiling
     maxTermMonths: 60,
     collateralRule: CollateralRule.PLEDGE_COVERAGE,
     insurance: InsuranceKind.LOAN_RISK,
@@ -115,6 +130,7 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     minDownPayment: 0.3, // owner-fixed: 30%
     rateMinPct: DEFAULT_RATE_MIN,
     rateMaxPct: DEFAULT_RATE_MAX,
+    rateDefaultPct: DEFAULT_RATE_MIN,
     maxTermMonths: 36,
     collateralRule: CollateralRule.LTV,
     insurance: InsuranceKind.CAR,
@@ -129,6 +145,7 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     minDownPayment: 0.3, // owner-fixed: 30–40%, minimum 30%
     rateMinPct: DEFAULT_RATE_MIN,
     rateMaxPct: DEFAULT_RATE_MAX,
+    rateDefaultPct: DEFAULT_RATE_MIN,
     maxTermMonths: 120,
     collateralRule: CollateralRule.LTV,
     insurance: InsuranceKind.PROPERTY,

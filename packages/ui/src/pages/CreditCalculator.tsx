@@ -64,7 +64,7 @@ export function CreditCalculator() {
   const selectProduct = (p: LoanProduct) => {
     const pr = loanProductProfile(p);
     setProduct(p);
-    setRate(pr.rateMinPct);
+    setRate(pr.rateDefaultPct);
     setMonths((m) => Math.min(m || pr.maxTermMonths, pr.maxTermMonths));
   };
 

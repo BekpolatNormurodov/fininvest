@@ -3,6 +3,7 @@ import {
   LOAN_PRODUCT_ORDER,
   loanProductProfile,
   LoanProductKind,
+  coverageTargetFor,
   type LoanProduct,
 } from '@credit-core/shared';
 import { useI18n } from '../../lib/i18n';
@@ -23,9 +24,12 @@ const HINT: Record<LoanProduct, { uz: string; ru: string }> = {
   IPOTEKA: { uz: 'Uy-joy xaridi', ru: 'Покупка жилья' },
 };
 
+// The cash products' cover is read from the product, not typed here: they stopped sharing a
+// multiple (ADM TEAM 140%, OSON 125%), and a card promising 140% beside a wizard asking 125% is
+// the kind of mismatch an operator quotes to a client.
 const COLLATERAL: Record<LoanProduct, { uz: string; ru: string }> = {
-  ADM_TEAM: { uz: 'Alohida garov (≥140%)', ru: 'Отдельный залог (≥140%)' },
-  OSON: { uz: 'Alohida garov (≥140%)', ru: 'Отдельный залог (≥140%)' },
+  ADM_TEAM: { uz: 'Alohida garov', ru: 'Отдельный залог' },
+  OSON: { uz: 'Alohida garov', ru: 'Отдельный залог' },
   AVTO: { uz: 'Mashina — o‘zi garov', ru: 'Авто — сам залог' },
   IPOTEKA: { uz: 'Uy-joy — o‘zi garov', ru: 'Жильё — сам залог' },
 };
@@ -60,17 +64,24 @@ export function NewApplicationPage() {
           const profile = loanProductProfile(p);
           const Icon = ICON[p];
           const isAsset = profile.kind === LoanProductKind.ASSET;
-          // OSON is owner-capped «up to 50%»; the others read as a floor «from 32%».
-          const rateText = p === 'OSON'
+          /*
+            Which end of its band a product opens at is what the card says. OSON is sold «up to
+            50%» and starts at its ceiling, so it reads «50%gacha»; the rest quote a floor and read
+            «32%dan». Derived, not written per product — the phrasing used to be hard-coded against
+            the product name and would have gone stale the moment a rate moved.
+          */
+          const isCeiling = profile.rateDefaultPct === profile.rateMaxPct;
+          const rateText = isCeiling
             ? `${profile.rateMaxPct}%${lang === 'ru' ? ' макс' : 'gacha'}`
-            : `${profile.rateMinPct}%${lang === 'ru' ? '+' : 'dan'}`;
+            : `${profile.rateDefaultPct}%${lang === 'ru' ? '+' : 'dan'}`;
+          const coverPct = Math.round(coverageTargetFor(p) * 100);
           const facts: { label: string; value: string }[] = [
             { label: lang === 'ru' ? 'Ставка' : 'Foiz', value: rateText },
             { label: lang === 'ru' ? 'Срок' : 'Muddat', value: `${profile.maxTermMonths} ${lang === 'ru' ? 'мес' : 'oygacha'}` },
             ...(isAsset
               ? [{ label: lang === 'ru' ? 'Взнос' : 'Boshlang‘ich', value: `${Math.round(profile.minDownPayment * 100)}%${lang === 'ru' ? '' : 'dan'}` }]
               : []),
-            { label: lang === 'ru' ? 'Залог' : 'Garov', value: tr(COLLATERAL[p]) },
+            { label: lang === 'ru' ? 'Залог' : 'Garov', value: isAsset ? tr(COLLATERAL[p]) : `${tr(COLLATERAL[p])} (≥${coverPct}%)` },
             { label: lang === 'ru' ? 'Страховка' : 'Sug‘urta', value: tr(INSURANCE[profile.insurance]) },
           ];
           // Warm accent for asset products, brand (cool) for cash — a quiet visual split.

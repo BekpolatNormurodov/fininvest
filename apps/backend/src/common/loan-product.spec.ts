@@ -123,3 +123,34 @@ describe('collateral requirement gate (product-aware)', () => {
     expect(collateralRequirementMet(LoanProduct.AVTO, { pledgedValue: 999, loanBase: 1 })).toBe(false);
   });
 });
+
+/*
+  Both of OSON's rates are ceilings, not fixed numbers — «up to 50%» a year, «up to 200%» penalty.
+  That is what the card promises and what the moderator may come down from, so the band has to stay
+  open at the bottom while the product still opens at its top. Pinning it here because the two used
+  to be collapsed onto one number, and a collapsed band silently removes the moderator's room.
+*/
+describe('a product opens at the end of its band that it is sold on', () => {
+  it('OSON quotes its ceiling and keeps room underneath', () => {
+    const oson = loanProductProfile(LoanProduct.OSON);
+    expect(oson.rateDefaultPct).toBe(oson.rateMaxPct); // «50%gacha»
+    expect(oson.rateMinPct).toBeLessThan(oson.rateMaxPct); // a moderator can go lower
+    expect(oson.penaltyRatePct).toBe(200);
+  });
+
+  it('the others quote their floor', () => {
+    for (const p of [LoanProduct.ADM_TEAM, LoanProduct.AVTO, LoanProduct.IPOTEKA]) {
+      const pr = loanProductProfile(p);
+      expect(pr.rateDefaultPct).toBe(pr.rateMinPct); // «32%dan»
+      expect(pr.penaltyRatePct).toBe(105);
+    }
+  });
+
+  it('every quoted rate sits inside its own band', () => {
+    for (const p of Object.values(LoanProduct)) {
+      const pr = loanProductProfile(p);
+      expect(pr.rateDefaultPct).toBeGreaterThanOrEqual(pr.rateMinPct);
+      expect(pr.rateDefaultPct).toBeLessThanOrEqual(pr.rateMaxPct);
+    }
+  });
+});

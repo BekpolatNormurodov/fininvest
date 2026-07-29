@@ -178,7 +178,9 @@ export function Step2({ f }: { f: OriginationForm }) {
       <Card className="space-y-4">
         <h2 className="font-semibold text-gray-800 dark:text-white">Ish joyi</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Ish joyi" required={bigLoan} error={bigLoan && f.attempted && !e.employer?.trim() ? 'Majburiy' : undefined}><Input value={e.employer ?? ''} onChange={(ev) => setEmp({ employer: ev.target.value })} /></Field>
+          {/* «Tashkilot nomi», not «Ish joyi» — the card is already called that, and with the rest of
+              the block closed the heading and the only field were repeating the same two words. */}
+          <Field label="Tashkilot nomi" required={bigLoan} error={bigLoan && f.attempted && !e.employer?.trim() ? 'Majburiy' : undefined}><Input value={e.employer ?? ''} onChange={(ev) => setEmp({ employer: ev.target.value })} placeholder="masalan: «Oq yo‘l» MChJ" /></Field>
           {/* HOZIRCHA KERAK EMAS — egasi so‘radi (2026-07-29). Manzil / soha / lavozim / staj vaqtincha
               yopildi. Skoring TEGILMAGAN: 20 faktor workbookning «балл» varag‘i, o‘chirilmaydi —
               o‘rniga scoringInputFromCase (scoring.ts) bo‘sh javob uchun workbookning bo‘sh-katak
@@ -236,7 +238,7 @@ export function Step3({ f }: { f: OriginationForm }) {
   // operator sees the product rate (ADM TEAM 32%, OSON …) instead of the legacy micro default.
   const prodForRate = (f.form.product ?? null) as LoanProduct | null;
   useEffect(() => {
-    if (prodForRate && l.interestRate == null) setLine({ interestRate: loanProductProfile(prodForRate).rateMinPct / 100 });
+    if (prodForRate && l.interestRate == null) setLine({ interestRate: loanProductProfile(prodForRate).rateDefaultPct / 100 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prodForRate]);
   // Asset products: the loan is DERIVED from the asset step (price − down payment), not entered as an
@@ -279,7 +281,7 @@ export function Step3({ f }: { f: OriginationForm }) {
           const product = (f.form.product ?? null) as LoanProduct | null;
           const isBig = loanTypeFor(amountTotal) === 'MICROCREDIT';
           // Each product carries its own rate — fall back to the product floor, not the shared 55%.
-          const annual = Math.round((l.interestRate ?? (product ? loanProductProfile(product).rateMinPct / 100 : minRate)) * 100);
+          const annual = Math.round((l.interestRate ?? (product ? loanProductProfile(product).rateDefaultPct / 100 : minRate)) * 100);
           // Penalty is per product too (OSON 200%, the rest 105%) — not one shared number.
           const penalty = Math.round((l.penaltyRate ?? penaltyRateFor(product)) * 100);
           // The product IS the credit type; the >100M warning colour is kept only for legacy
