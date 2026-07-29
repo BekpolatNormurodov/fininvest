@@ -128,9 +128,13 @@ export function useOriginationForm(id?: string) {
   const amountTotal = line?.amountTotal ?? form.amount ?? null;
   const validContacts = (b.closeContacts ?? []).filter((c) => c.fullName?.trim() && c.phone?.trim());
   const h = form.creditHistory;
+  // Only the three KATM fields the form still shows are required. The other five are temporarily
+  // hidden (2026-07-29, see steps.tsx «HOZIRCHA KERAK EMAS»); requiring them here would block
+  // submission on fields the operator cannot see. Restore this line when the fields come back:
+  //   && h.repaidLoansCount != null && h.overdueSubstandardFlag != null
+  //   && h.otherObligations != null && !!h.loansOver5MFlag && !!h.priorMfiPawnshopFlag
   const katmFilled = !!h
-    && h.repaidLoansCount != null && h.activeLoansCount != null && h.overdueSubstandardFlag != null
-    && h.otherObligations != null && !!h.loansOver5MFlag && !!h.priorMfiPawnshopFlag
+    && h.activeLoansCount != null
     && h.totalOutstandingDebt != null && h.avgMonthlyPaymentExisting != null;
   const collateralError = (() => {
     const cs = form.collaterals;

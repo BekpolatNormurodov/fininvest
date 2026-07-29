@@ -68,6 +68,13 @@ export interface LoanProductProfile {
   collateralRule: CollateralRule;
   insurance: InsuranceKind;
   sellerRequired: boolean;
+  /** Late-payment penalty, percent (105 = 105%). Owner-set per product. */
+  penaltyRatePct: number;
+  /**
+   * Cash products: the multiple of the loan the pledge must cover (1.4 = 140%).
+   * Asset products settle collateral through LTV instead, so this is unused for them.
+   */
+  coverageTarget: number;
 }
 
 export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
@@ -82,18 +89,24 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     collateralRule: CollateralRule.PLEDGE_COVERAGE,
     insurance: InsuranceKind.LOAN_RISK,
     sellerRequired: false,
+    penaltyRatePct: 105,
+    coverageTarget: 1.4,
   },
   OSON: {
     product: LoanProduct.OSON,
     kind: LoanProductKind.CASH,
     label: { uz: 'OSON', ru: 'ОСОН' },
     minDownPayment: 0,
-    rateMinPct: DEFAULT_RATE_MIN,
-    rateMaxPct: 50, // owner-fixed: up to 50%
-    maxTermMonths: 24,
+    // Owner-set 2026-07-29: flat 50% a year, 200% penalty, 60-month line, 125% pledge cover.
+    // These four are OSON's alone — ADM TEAM keeps 32% / 105% / 36 months / 140%.
+    rateMinPct: 50,
+    rateMaxPct: 50,
+    maxTermMonths: 60,
     collateralRule: CollateralRule.PLEDGE_COVERAGE,
     insurance: InsuranceKind.LOAN_RISK,
     sellerRequired: false,
+    penaltyRatePct: 200,
+    coverageTarget: 1.25,
   },
   AVTO: {
     product: LoanProduct.AVTO,
@@ -106,6 +119,8 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     collateralRule: CollateralRule.LTV,
     insurance: InsuranceKind.CAR,
     sellerRequired: true,
+    penaltyRatePct: 105,
+    coverageTarget: 1.4, // unused: LTV rule
   },
   IPOTEKA: {
     product: LoanProduct.IPOTEKA,
@@ -118,8 +133,20 @@ export const LOAN_PRODUCT_PROFILES: Record<LoanProduct, LoanProductProfile> = {
     collateralRule: CollateralRule.LTV,
     insurance: InsuranceKind.PROPERTY,
     sellerRequired: true,
+    penaltyRatePct: 105,
+    coverageTarget: 1.4, // unused: LTV rule
   },
 };
+
+/** Penalty rate as a fraction (105% -> 1.05). Falls back to 1.05 when the product is unknown. */
+export function penaltyRateFor(p: LoanProduct | null | undefined): number {
+  return p ? LOAN_PRODUCT_PROFILES[p].penaltyRatePct / 100 : 1.05;
+}
+
+/** Required pledge cover as a multiple (140% -> 1.4). Falls back to 1.4 when unknown. */
+export function coverageTargetFor(p: LoanProduct | null | undefined): number {
+  return p ? LOAN_PRODUCT_PROFILES[p].coverageTarget : CASH_COVERAGE_TARGET;
+}
 
 /** Profile for a product. */
 export function loanProductProfile(p: LoanProduct): LoanProductProfile {
@@ -155,7 +182,8 @@ export function collateralRequirementMet(
   }
   const base = input.loanBase ?? 0;
   const pledged = input.pledgedValue ?? 0;
-  return base > 0 && pledged / base >= CASH_COVERAGE_TARGET;
+  // Per-product since 2026-07-29: ADM TEAM still wants 140%, OSON 125%.
+  return base > 0 && pledged / base >= profile.coverageTarget;
 }
 
 /**

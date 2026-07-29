@@ -44,10 +44,27 @@ async function main() {
   ];
 
   for (const u of users) {
+    // A moderator's inbox is scoped by `moderatedBranches` (the branches they oversee),
+    // NOT by their personal `branchId` — see credit-cases.service `list()`/`scopeWhere()`.
+    // So the seeded moderator must be connected to the branch here, or they see an empty
+    // inbox even though branchId is set. (This was the bug: branchId set, relation empty.)
+    const modBranch = u.role === Role.MODERATOR ? branch.id : null;
     await prisma.user.upsert({
       where: { login: u.login },
-      update: { fullName: u.fullName, role: u.role, branchId: u.branchId, passwordHash: password, plainPassword },
-      create: { ...u, passwordHash: password, plainPassword },
+      update: {
+        fullName: u.fullName,
+        role: u.role,
+        branchId: u.branchId,
+        passwordHash: password,
+        plainPassword,
+        ...(modBranch ? { moderatedBranches: { set: [{ id: modBranch }] } } : {}),
+      },
+      create: {
+        ...u,
+        passwordHash: password,
+        plainPassword,
+        ...(modBranch ? { moderatedBranches: { connect: { id: modBranch } } } : {}),
+      },
     });
   }
 

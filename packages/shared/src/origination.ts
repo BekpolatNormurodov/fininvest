@@ -6,15 +6,19 @@ import { collateralOwnerErrors } from './collateral-owner';
 /** Insurance partners currently on-boarded (the "Kompaniya" dropdown). */
 export const INSURANCE_COMPANIES = ['TRUST INSURANCE', 'APEX INSURANCE'] as const;
 /** Insured sum = ×1.3 of the policy-backed loan. The premium is a FLAT rate by TERM BRACKET
- *  (≤2 yil → 2%, 2–4 yil → 4%) — NOT per-year. Max term 4 years (48 months). */
+ *  (≤1 yil → 2%, over 1 yil → 4%) — NOT per-year. Max term 4 years (48 months). */
 export const INSURANCE_ANNUAL_RATE = 0.02; // legacy default (kept for the toggle prefill)
 export const INSURANCE_MAX_MONTHS = 48;
-/** Flat insurance premium rate by policy-term bracket: ≤24 oy → 2%, 24–48 oy → 4%; 0 outside a term. */
+/**
+ * Flat insurance premium rate by policy-term bracket: ≤12 oy → 2%, over 12 oy → 4%; 0 without a term.
+ * The bracket moved from 24 to 12 months on 2026-07-29 (owner-set) — a two-year policy now costs 4%,
+ * not 2%.
+ */
 export function insurancePremiumRate(months: number | null | undefined): number {
   const m = months ?? 0;
   if (m <= 0) return 0;
-  if (m <= 24) return 0.02;
-  return 0.04; // 24 < m ≤ 48 (UI/validation caps at 48)
+  if (m <= 12) return 0.02;
+  return 0.04; // 12 < m ≤ 48 (UI/validation caps at 48)
 }
 /** Common gen-agreement number prefix that opens every policy number; the tail changes per policy. */
 export const INSURANCE_GEN_PREFIX = '01/14/260004-';
@@ -329,9 +333,13 @@ export function caseSubmitErrors(c: CreditCaseDto): string[] {
   if (!tr?.principal || tr.principal <= 0) out.push('Asosiy summa majburiy');
 
   const h = c.creditHistory;
+  // Only the three KATM fields the operator form still shows are required. The other five are
+  // temporarily hidden (2026-07-29, see steps.tsx «HOZIRCHA KERAK EMAS»); demanding them here
+  // would refuse every submission on invisible fields. Restore when the fields come back:
+  //   && h.repaidLoansCount != null && h.overdueSubstandardFlag != null
+  //   && h.otherObligations != null && !!h.loansOver5MFlag && !!h.priorMfiPawnshopFlag
   const katmFilled = !!h
-    && h.repaidLoansCount != null && h.activeLoansCount != null && h.overdueSubstandardFlag != null
-    && h.otherObligations != null && !!h.loansOver5MFlag && !!h.priorMfiPawnshopFlag
+    && h.activeLoansCount != null
     && h.totalOutstandingDebt != null && h.avgMonthlyPaymentExisting != null;
   if (!katmFilled) out.push('KATM bo‘limi to‘liq to‘ldirilishi shart');
 

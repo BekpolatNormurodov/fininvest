@@ -3,7 +3,7 @@ import {
   Plus, Trash2, House, Car, IdCard, Hashtag, Location,
   Money, Clock, Ruler, Tag, Calendar, Palette, Upload, FileText, Check,
 } from '../lib/icons';
-import { ProductType, DocumentType, type CollateralDto, type CollateralField } from '@credit-core/shared';
+import { ProductType, DocumentType, amountInWords, type CollateralDto, type CollateralField } from '@credit-core/shared';
 import { Button, Card, Field, Input } from '../components/primitives';
 import { MoneyInput, DatePicker, PassportInput, PlateInput, KadastrInput, Select, digitsOnly } from '../components/forms';
 import { CAR_MODELS } from '../lib/cars';
@@ -196,8 +196,22 @@ export function CollateralCard({ index, c, errors, onChange, onRemove, canRemove
       )}
 
       <div className="grid gap-4 border-t border-gray-200 pt-4 dark:border-gray-800 sm:grid-cols-2">
-        <Field label={isPurchase ? 'Kelishilgan summa (narx)' : 'Kelishilgan garov qiymati'} required icon={Money} error={errors?.agreedValue}><MoneyInput value={c.agreedValue ?? null} onChange={(v) => onChange({ agreedValue: v })} /></Field>
-        {!isPurchase && <Field label="Qiymat (prописью)" icon={Tag}><Input value={c.agreedValueWords ?? ''} onChange={(e) => onChange({ agreedValueWords: e.target.value })} /></Field>}
+        {/*
+          The words follow the figure. Typing the sum twice — once in digits, once in Cyrillic — is
+          where the mismatches in the pledge contract came from, so the figure fills the words as it
+          is entered. Still an editable field: an operator who wants different wording keeps it,
+          because the fill only replaces text this component itself produced.
+        */}
+        <Field label={isPurchase ? 'Kelishilgan summa (narx)' : 'Kelishilgan garov qiymati'} required icon={Money} error={errors?.agreedValue}>
+          <MoneyInput
+            value={c.agreedValue ?? null}
+            onChange={(v) => {
+              const autoNow = !c.agreedValueWords?.trim() || c.agreedValueWords === amountInWords(c.agreedValue);
+              onChange(autoNow ? { agreedValue: v, agreedValueWords: amountInWords(v) } : { agreedValue: v });
+            }}
+          />
+        </Field>
+        {!isPurchase && <Field label="Qiymat (prописью)" icon={Tag}><Input value={c.agreedValueWords ?? ''} onChange={(e) => onChange({ agreedValueWords: e.target.value })} placeholder={amountInWords(c.agreedValue) || 'summani kiriting'} /></Field>}
       </div>
 
       {!isPurchase && (

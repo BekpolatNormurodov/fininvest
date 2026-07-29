@@ -122,7 +122,8 @@ export class CreditCasesService {
       lineNumber: l.lineNumber ?? null, loanType: d.loanType,
       amountAuto: l.amountAuto ?? null, amountPolis: l.amountPolis ?? null, amountTotal: l.amountTotal ?? null,
       termMonths: l.termMonths ?? null, lineDate: parseDate(l.lineDate), lineMaturity: parseDate(l.lineMaturity),
-      interestRate: rate, penaltyRate: l.penaltyRate ?? 1.05, orderNumber: l.orderNumber ?? null,
+      // Penalty defaults per product (OSON 200%, the rest 105%) — the old flat 1.05 undercharged OSON.
+      interestRate: rate, penaltyRate: l.penaltyRate ?? penaltyRateFor(product), orderNumber: l.orderNumber ?? null,
       requiredCollateralAmount: l.requiredCollateralAmount ?? null, requiredInsuredAmount: l.requiredInsuredAmount ?? null,
       ...(ins ? { insurance: { create: { insured, company: ins.company ?? null, genAgreementNo: ins.genAgreementNo ?? null, genAgreementDate: parseDate(ins.genAgreementDate), policyNo: ins.policyNo ?? null, policyIssueDate: parseDate(ins.policyIssueDate), policyTermMonths: insMonths, policyExpiry: parseDate(ins.policyExpiry), loanUnderPolicy: insLoan, insuredSum: finalInsuredSum, insuranceRate: insRate, premium: finalPremium } } } : {}),
       ...(t ? { tranches: { create: [{ trancheNo: t.trancheNo ?? 1, applicationNo: t.applicationNo ?? null, applicationDate: parseDate(t.applicationDate), contractNo: t.contractNo ?? null, contractDate: parseDate(t.contractDate), principal: t.principal ?? null, termMonths: t.termMonths ?? null, maturity: parseDate(t.maturity), scheduleType: t.scheduleType ?? null, monthlyPayment: t.monthlyPayment ?? null, paymentDay: paymentDayFor(t.applicationDate), insurancePayment: t.insurancePayment ?? null }] } } : {}),

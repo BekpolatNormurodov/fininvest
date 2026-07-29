@@ -1084,6 +1084,7 @@ function CapturePanel({ c, role, onChange }: { c: CreditCaseDto; role: Role; onC
         coverageRatio={calc.coverageRatio}
         collateralTotal={c.collaterals.reduce((sum, col) => sum + (col.agreedValue ?? 0), 0)}
         collateralCount={c.collaterals.length}
+        product={c.product ?? null}
       />
 
       {canSetRate && (

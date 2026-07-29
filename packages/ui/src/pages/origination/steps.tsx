@@ -8,7 +8,7 @@ import {
   collateralComplete, collateralErrors,
   monthlyPaymentFor, termCapFor, isTermValid, paymentDayFor, DocumentType, type RepaymentMethod,
   type UpsertCasePayload,
-  loanProductProfile, LoanProductKind, SellerKind, type LoanProduct, type SellerDto,
+  loanProductProfile, LoanProductKind, SellerKind, penaltyRateFor, coverageTargetFor, type LoanProduct, type SellerDto,
 } from '@credit-core/shared';
 import { Button, Card, Field, Input } from '../../components/primitives';
 import { MoneyInput, DatePicker, PhoneInput, Select } from '../../components/forms';
@@ -113,13 +113,13 @@ export function Step1({ f }: { f: OriginationForm }) {
         <Field label="Oila a'zolari soni"><Input type="number" value={b.familySize ?? ''} onChange={(e) => set({ familySize: numv(e.target.value) })} /></Field>
         <Field label="Bolalar soni"><Input type="number" value={b.childrenCount ?? ''} onChange={(e) => set({ childrenCount: numv(e.target.value) })} /></Field>
         <Field label="Ma'lumoti"><Select value={(b.education ?? '') as string} onChange={(v) => set({ education: v })} options={opt(['бир нечта олий', 'олий', 'урта махсус', 'урта'])} /></Field>
+        {/* HOZIRCHA KERAK EMAS — keyinroq qaytariladi (yashash davomiyligi / uy egaligi / depozit darajasi):
         <Field label="Yashash davomiyligi">
-          {/* `regTenure` is the column the anketa and the score read; `residenceDuration` was a
-              second one for the same answer, so what the operator picked reached neither. */}
           <Select value={(b.regTenure ?? b.residenceDuration ?? '') as string} onChange={(v) => set({ regTenure: v, residenceDuration: v })} options={opt(['до 3 лет', '1-5 лет', '5-10 лет', 'иное'])} />
         </Field>
         <Field label="Uy egaligi"><Select value={(b.ownsHome ?? '') as string} onChange={(v) => set({ ownsHome: v })} options={opt(['мулкий хукук', 'ижара/ётокхона', 'иш берувчи берган'])} /></Field>
         <Field label="Depozit darajasi"><Select value={(b.depositsBand ?? '') as string} onChange={(v) => set({ depositsBand: v })} options={opt(['мавжуд эмас', '500$ кам', '500-1000$', '1000-3000$', '3000$+'])} /></Field>
+        */}
       </div>
       <div className="grid gap-4 border-t border-gray-200 pt-4 dark:border-gray-800 sm:grid-cols-2">
         <Field label="Propiska manzili"><Input value={b.regAddress ?? ''} onChange={(e) => set({ regAddress: e.target.value })} /></Field>
@@ -179,18 +179,11 @@ export function Step2({ f }: { f: OriginationForm }) {
         <h2 className="font-semibold text-gray-800 dark:text-white">Ish joyi</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Ish joyi" required={bigLoan} error={bigLoan && f.attempted && !e.employer?.trim() ? 'Majburiy' : undefined}><Input value={e.employer ?? ''} onChange={(ev) => setEmp({ employer: ev.target.value })} /></Field>
+          {/* HOZIRCHA KERAK EMAS — egasi so‘radi (2026-07-29). Manzil / soha / lavozim / staj vaqtincha
+              yopildi; skoringdagi mos faktorlar ham izohga olingan (scoring.ts). Qaytarish: shu blokni
+              va scoring.ts dagi «VAQTINCHA YOPIQ» izohlarini oching.
           <Field label="Ish joyi manzili"><Input value={e.employerAddress ?? ''} onChange={(ev) => setEmp({ employerAddress: ev.target.value })} /></Field>
-          {/*
-            One column, not two. Spanning the row pushed «Lavozim» onto a line of its own and left
-            the field far wider than the answer needs — the trigger truncates a long sector anyway,
-            and the menu wraps it.
-          */}
           <Field label="Soha" hint="Ixtiyoriy — ro‘yxatda bo‘lmasa «Boshqa» ni tanlang">
-            {/*
-              Shown in the interface language, stored in Russian: `value` stays the workbook's
-              string, which is what the risk code is looked up by and what the documents print.
-              `keywords` keeps every option findable by typing Russian, Uzbek or English.
-            */}
             <Select searchable menuWidth={380} value={(e.sector ?? '') as string} onChange={(v) => setEmp({ sector: v, sectorRiskCode: sectorRiskCode(v) })}
               options={[
                 ...SECTOR_RISK.map((s) => ({ value: s.label, label: lang === 'ru' ? s.label : s.uz, keywords: `${s.label} ${s.uz} ${s.search}` })),
@@ -200,6 +193,7 @@ export function Step2({ f }: { f: OriginationForm }) {
           <Field label="Lavozim"><Select value={(e.position ?? '') as string} onChange={(v) => setEmp({ position: v })} options={opt(['Рахбарият', 'ўрта менежер', 'мутахассис', 'хизмат кўрсатувчи'])} /></Field>
           <Field label="Ish staji (sana)"><Input value={e.employedSince ?? ''} onChange={(ev) => setEmp({ employedSince: ev.target.value })} placeholder="2024 й." /></Field>
           <Field label="Umumiy staj"><Select value={(e.experienceBand ?? '') as string} onChange={(v) => setEmp({ experienceBand: v })} options={opt(['до 3 лет', '3-5 лет', '5-9 лет', '10 и более'])} /></Field>
+          */}
         </div>
       </Card>
       <Card className="space-y-4">
@@ -234,7 +228,7 @@ export function Step3({ f }: { f: OriginationForm }) {
     const insurance = 'amountPolis' in p
       ? ({ ...(merged.insurance ?? {}), loanUnderPolicy: merged.amountPolis ?? null } as Ins)
       : merged.insurance;
-    f.patch({ creditLine: { ...merged, amountTotal, insurance, loanType: loanTypeFor(amountTotal), penaltyRate: merged.penaltyRate ?? 1.05 } });
+    f.patch({ creditLine: { ...merged, amountTotal, insurance, loanType: loanTypeFor(amountTotal), penaltyRate: merged.penaltyRate ?? penaltyRateFor((f.form.product ?? null) as LoanProduct | null) } });
   };
   const amountTotal = l.amountTotal ?? null;
   // The annual rate is fixed/defaulted per product: seed it from the product's floor once, so the
@@ -285,7 +279,8 @@ export function Step3({ f }: { f: OriginationForm }) {
           const isBig = loanTypeFor(amountTotal) === 'MICROCREDIT';
           // Each product carries its own rate — fall back to the product floor, not the shared 55%.
           const annual = Math.round((l.interestRate ?? (product ? loanProductProfile(product).rateMinPct / 100 : minRate)) * 100);
-          const penalty = Math.round((l.penaltyRate ?? 1.05) * 100);
+          // Penalty is per product too (OSON 200%, the rest 105%) — not one shared number.
+          const penalty = Math.round((l.penaltyRate ?? penaltyRateFor(product)) * 100);
           // The product IS the credit type; the >100M warning colour is kept only for legacy
           // cases that carry no product.
           const useWarn = !product && isBig;
@@ -337,9 +332,16 @@ export function Step3({ f }: { f: OriginationForm }) {
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Bu maydonlar ixtiyoriy — hisoblangan qiymat avtomatik ishlatiladi, keyinroq ham tahrirlashingiz mumkin.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Garov qoplami — mol-mulk ×140%" hint={l.amountAuto ? `hisoblangan: ${formatMoney(l.amountAuto * COLLATERAL_COVERAGE_TARGET)}` : 'summa kiriting'}>
-            <MoneyInput value={l.requiredCollateralAmount ?? null} onChange={(v) => setLine({ requiredCollateralAmount: v })} placeholder={l.amountAuto ? formatMoney(l.amountAuto * COLLATERAL_COVERAGE_TARGET) : '—'} />
-          </Field>
+          {/* The multiple is the product's, not a constant: OSON covers at 125%, ADM TEAM at 140%.
+              The label has to say the same number the placeholder is computed from. */}
+          {(() => {
+            const cover = coverageTargetFor((f.form.product ?? null) as LoanProduct | null);
+            return (
+              <Field label={`Garov qoplami — mol-mulk ×${Math.round(cover * 100)}%`} hint={l.amountAuto ? `hisoblangan: ${formatMoney(l.amountAuto * cover)}` : 'summa kiriting'}>
+                <MoneyInput value={l.requiredCollateralAmount ?? null} onChange={(v) => setLine({ requiredCollateralAmount: v })} placeholder={l.amountAuto ? formatMoney(l.amountAuto * cover) : '—'} />
+              </Field>
+            );
+          })()}
           <Field label="Sug‘urta summasi — polis ×130%" hint={l.amountPolis ? `hisoblangan: ${formatMoney(l.amountPolis * 1.3)}` : 'polis summasini kiriting'}>
             <MoneyInput value={l.requiredInsuredAmount ?? null} onChange={(v) => setLine({ requiredInsuredAmount: v })} placeholder={l.amountPolis ? formatMoney(l.amountPolis * 1.3) : '—'} />
           </Field>
@@ -642,12 +644,16 @@ export function Step5({ f }: { f: OriginationForm }) {
         {f.attempted && f.errors.katm && <span className="text-xs font-medium text-error-600 dark:text-error-500">{f.errors.katm}</span>}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="To‘langan kreditlar soni" required><Input type="number" value={h.repaidLoansCount ?? ''} onChange={(e) => set({ repaidLoansCount: numv(e.target.value) })} /></Field>
         <Field label="Aktiv kreditlar soni" required><Input type="number" value={h.activeLoansCount ?? ''} onChange={(e) => set({ activeLoansCount: numv(e.target.value) })} /></Field>
+        {/* HOZIRCHA KERAK EMAS — egasi so‘radi (2026-07-29). KATM'dan uchtasi qoldi: aktiv kreditlar
+            soni, jami qarz, o‘rtacha oylik to‘lov. Skoringdagi 15/16/17/18-faktorlar ham izohga
+            olingan (scoring.ts). Qaytarish: shu blokni va scoring.ts dagi «VAQTINCHA YOPIQ»ni oching.
+        <Field label="To‘langan kreditlar soni" required><Input type="number" value={h.repaidLoansCount ?? ''} onChange={(e) => set({ repaidLoansCount: numv(e.target.value) })} /></Field>
         <Field label="Muddati o‘tgan (0/1)" required><Input type="number" value={h.overdueSubstandardFlag ?? ''} onChange={(e) => set({ overdueSubstandardFlag: numv(e.target.value) })} /></Field>
         <Field label="Boshqa majburiyatlar" required><Input type="number" value={h.otherObligations ?? ''} onChange={(e) => set({ otherObligations: numv(e.target.value) })} /></Field>
         <Field label="5 mln+ kredit" required><Select value={(h.loansOver5MFlag ?? '') as string} onChange={(v) => set({ loansOver5MFlag: v })} options={opt(['Мавжуд', 'Мавжуд эмас'])} /></Field>
         <Field label="MKO/lombard tarixi" required><Select value={(h.priorMfiPawnshopFlag ?? '') as string} onChange={(v) => set({ priorMfiPawnshopFlag: v })} options={opt(['Мавжуд', 'Мавжуд эмас'])} /></Field>
+        */}
         <Field label="Jami qarz" required><MoneyInput value={h.totalOutstandingDebt ?? null} onChange={(v) => set({ totalOutstandingDebt: v })} /></Field>
         <Field label="O‘rtacha oylik to‘lov" required><MoneyInput value={h.avgMonthlyPaymentExisting ?? null} onChange={(v) => set({ avgMonthlyPaymentExisting: v })} /></Field>
         {/* Komitet protokoli va Komitet qarori sanasi — olib tashlandi (komitet qarori keyingi bosqichda,

@@ -70,7 +70,7 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
         </p>
       )}
 
-      <ScorePanel subject={form as unknown as ScorableCase} coverageRatio={calc.coverageRatio} collateralTotal={collateralTotal} collateralCount={form.collaterals.length} />
+      <ScorePanel subject={form as unknown as ScorableCase} coverageRatio={calc.coverageRatio} collateralTotal={collateralTotal} collateralCount={form.collaterals.length} product={form.product ?? null} />
     </Card>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { scoreForCase, SCORE_VERDICT_LABEL, COLLATERAL_COVERAGE_TARGET, type ScorableCase } from '@credit-core/shared';
+import { scoreForCase, SCORE_VERDICT_LABEL, coverageTargetFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
 import { Button } from './primitives';
 import { Modal } from './Modal';
 import { Chart } from '../lib/icons';
@@ -23,19 +23,22 @@ function scoreTone(verdict: string): string {
  * Those rows say «kiritilmagan» instead, and the card counts them, so a low score on an unfinished
  * application is legible as unfinished.
  */
-export function ScorePanel({ subject, coverageRatio, collateralTotal, collateralCount }: {
+export function ScorePanel({ subject, coverageRatio, collateralTotal, collateralCount, product }: {
   /** Anything scorable — the wizard's in-progress form or a saved case. */
   subject: ScorableCase;
   coverageRatio: number;
   collateralTotal: number;
   collateralCount: number;
+  /** Sets the required cover (OSON 125%, ADM TEAM 140%). Cases without one fall back to 140%. */
+  product?: LoanProduct | null;
 }) {
   const [open, setOpen] = useState(false);
   const r = scoreForCase(subject);
   const tone = scoreTone(r.verdict);
   const cols = collateralCount;
   const coveragePct = Math.round(coverageRatio * 100);
-  const coverageOk = coverageRatio >= COLLATERAL_COVERAGE_TARGET;
+  const coverTarget = coverageTargetFor(product ?? null);
+  const coverageOk = coverageRatio >= coverTarget;
 
   return (
     <div className="mt-2 border-t border-gray-200 pt-2 dark:border-white/10">
@@ -140,7 +143,7 @@ export function ScorePanel({ subject, coverageRatio, collateralTotal, collateral
               <span className="nums font-medium">{formatMoney(collateralTotal)}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-gray-500 dark:text-gray-400">Qoplama (kerak {Math.round(COLLATERAL_COVERAGE_TARGET * 100)}%)</span>
+              <span className="text-gray-500 dark:text-gray-400">Qoplama (kerak {Math.round(coverTarget * 100)}%)</span>
               <span className={cn('nums font-semibold', coverageOk ? 'text-success-700 dark:text-success-400' : 'text-error-600 dark:text-error-500')}>
                 {coveragePct}%
               </span>
