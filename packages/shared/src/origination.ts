@@ -183,6 +183,11 @@ export interface OriginationCalcInput {
   amountTotal?: number | null;
   collateralTotal?: number | null;
   requiredInsuredAmount?: number | null; // manual override of the ×1.3 insured sum
+  // Tranche shape, used only to size the income requirement over a long term (see Д1!D43 below).
+  repaymentMethod?: RepaymentMethod | null;
+  tranchePrincipal?: number | null;
+  trancheTermMonths?: number | null;
+  annualRate?: number | null;            // fraction, e.g. 0.32
 }
 
 export interface OriginationCalc {
@@ -191,7 +196,7 @@ export interface OriginationCalc {
   totalExpenses: number;       // utilities + family + other + existing + new payment
   dtiRatio: number;            // totalCreditPayments / totalIncome (0 when no income)
   surplus: number;             // totalIncome − totalExpenses
-  minRequiredIncome: number;   // ROUNDUP((existing + new) × 2.2, −3)
+  minRequiredIncome: number;   // ROUNDUP((existing + sized-over-≤36-months) × 2.2, −3)
   insuredSum: number;          // loanUnderPolicy × 1.3
   premium: number;             // insuredSum × flat bracket rate (≤2yil 2% / 2–4yil 4%)
   coverageRatio: number;       // collateralTotal / amountTotal (0 when no amount)
@@ -199,7 +204,35 @@ export interface OriginationCalc {
 }
 
 const n = (v: number | null | undefined): number => v ?? 0;
-const roundUpTo = (x: number, unit: number): number => Math.ceil(x / unit) * unit;
+export const roundUpTo = (x: number, unit: number): number => Math.ceil(x / unit) * unit;
+
+/** Д1!C44 multiplier. One constant: keying it to the product or the pledge was checked against all
+ *  six reference books and rejected — the APEX set uses the same figure for house, flat and car. */
+export const INCOME_MULTIPLIER = 2.2;
+/** Д1!D43 — income is sized over at most this many months, however long the tranche runs. */
+export const INCOME_STRESS_TERM_MONTHS = 36;
+
+/**
+ * The payment the income requirement is measured against — Д1!D43, `IF(Д3!B11>36, Д1!D47, Д3!B18)`.
+ *
+ * Past three years the sheet stops asking whether the client can afford *this* instalment and asks
+ * whether they could afford the same debt repaid in three, which is a harder question and the one
+ * the office actually underwrites. On the ХОВЛИ book a 48-month tranche pays 8 106 000 a month but
+ * is sized at 8 938 813 — about 1.8 mln more required income than the real instalment implies.
+ *
+ * Only the requirement uses it. Everything else — DTI, surplus, the score — stays on the real
+ * payment, because балл!C27 does (`'b4 '!C9 + Д3!B18`).
+ */
+export function incomeSizingPayment(
+  method: RepaymentMethod | null | undefined,
+  principal: number | null | undefined,
+  termMonths: number | null | undefined,
+  annualRate: number | null | undefined,
+  actualPayment: number | null | undefined,
+): number {
+  if (!termMonths || termMonths <= INCOME_STRESS_TERM_MONTHS) return n(actualPayment);
+  return monthlyPaymentFor(method, principal, INCOME_STRESS_TERM_MONTHS, annualRate) ?? n(actualPayment);
+}
 
 export function originationCalc(i: OriginationCalcInput): OriginationCalc {
   const totalIncome = n(i.mainActivityIncome) + n(i.secondaryIncome) + n(i.familyIncome) + n(i.otherIncome);
@@ -207,7 +240,18 @@ export function originationCalc(i: OriginationCalcInput): OriginationCalc {
   const totalExpenses = n(i.utilitiesExpense) + n(i.familyExpense) + n(i.otherExpense) + totalCreditPayments;
   const dtiRatio = totalIncome > 0 ? totalCreditPayments / totalIncome : 0;
   const surplus = totalIncome - totalExpenses;
-  const minRequiredIncome = roundUpTo((n(i.existingCreditBurden) + n(i.newLoanPayment)) * 2.2, 1000);
+  /*
+    Sized on the stress payment, not the real one (Д1!C44 over D43). Callers that pass no tranche
+    shape keep the old behaviour, since incomeSizingPayment falls back to the actual instalment.
+
+    A known, deliberate gap to the workbook: interest here is annualRate/12, while the sheet accrues
+    on actual/365. On ХОВЛИ that is 8 833 333 against 8 938 813 — about 1.2%, or 19 434 000 against
+    19 666 000 of required income. Moving to day-count was considered and refused: schedule.ts pays
+    on /12, so the two would disagree and «Oylik to'lov» would stop matching the first row of the
+    schedule. The residue is accepted, not overlooked.
+  */
+  const sizingPayment = incomeSizingPayment(i.repaymentMethod, i.tranchePrincipal, i.trancheTermMonths, i.annualRate, i.newLoanPayment);
+  const minRequiredIncome = roundUpTo((n(i.existingCreditBurden) + sizingPayment) * INCOME_MULTIPLIER, 1000);
   const insuredSum = i.requiredInsuredAmount ?? roundUpTo(n(i.loanUnderPolicy) * 1.3, 1); // override ?? ×1.3
   // Flat premium by term bracket (≤2 yil → 2%, 2–4 yil → 4%) of the effective insured sum.
   const premium = roundUpTo(insuredSum * insurancePremiumRate(i.policyTermMonths), 1);

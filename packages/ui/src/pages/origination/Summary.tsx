@@ -1,4 +1,4 @@
-import { originationCalc, loanTypeFor, loanProductProfile, LoanProductKind, type LoanProduct, type ScorableCase, type UpsertCasePayload } from '@credit-core/shared';
+import { originationCalc, loanTypeFor, loanProductProfile, LoanProductKind, INCOME_MULTIPLIER, type LoanProduct, type RepaymentMethod, type ScorableCase, type UpsertCasePayload } from '@credit-core/shared';
 import { Card } from '../../components/primitives';
 import { ScorePanel } from '../../components/ScorePanel';
 import { formatMoney } from '../../lib/cn';
@@ -16,6 +16,11 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
     loanUnderPolicy: ins?.loanUnderPolicy, insuranceRate: ins?.insuranceRate, policyTermMonths: ins?.policyTermMonths,
     requiredInsuredAmount: form.creditLine?.requiredInsuredAmount,
     amountTotal, collateralTotal,
+    // Lets the requirement be sized over 36 months when the tranche runs longer (Д1!D43).
+    repaymentMethod: form.creditLine?.tranche?.scheduleType as RepaymentMethod | null | undefined,
+    tranchePrincipal: form.creditLine?.tranche?.principal,
+    trancheTermMonths: form.creditLine?.tranche?.termMonths,
+    annualRate: form.creditLine?.interestRate,
   });
   const loanType = loanTypeFor(amountTotal);
   // The 4 products ARE the credit type. Show the product; fall back to the micro label only for
@@ -54,7 +59,7 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
       {calc.totalIncome > 0 && (
         <>
           {row('Surplus', formatMoney(calc.surplus), calc.surplus < 0)}
-          {row('Min kerakli daromad', formatMoney(calc.minRequiredIncome))}
+          {row(`Min kerakli daromad (×${INCOME_MULTIPLIER})`, formatMoney(calc.minRequiredIncome))}
         </>
       )}
       {row('Sug‘urta puli', formatMoney(calc.premium))}
@@ -66,7 +71,7 @@ export function Summary({ form }: { form: UpsertCasePayload }) {
         : row('Garov qoplami', amountTotal ? `${(calc.coverageRatio * 100).toFixed(0)}%` : '—')}
       {!calc.affordabilityOk && (calc.totalIncome > 0) && (
         <p className="mt-2 rounded-lg bg-error-50 px-3 py-2 text-xs font-medium text-error-700 dark:bg-error-600/10 dark:text-error-400">
-          Daromad yetarli emas (surplus manfiy yoki 2.2× dan past) — ko‘rib chiqing.
+          Daromad yetarli emas (surplus manfiy yoki {INCOME_MULTIPLIER}× dan past) — ko‘rib chiqing.
         </p>
       )}
 

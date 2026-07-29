@@ -3,7 +3,7 @@ import type { PassportScanResult } from '@credit-core/shared';
 import { api, getErrorMessage } from '@credit-core/api-client';
 import { Upload, Camera, IdCard, CheckCircle2, RotateCcw, Globe, Warning, ShieldCheck, Eye, X, FileText } from '../../lib/icons';
 import { Button, Card, Field, Input } from '../../components/primitives';
-import { Select } from '../../components/forms';
+import { Select, DatePicker } from '../../components/forms';
 import { cn } from '../../lib/cn';
 
 type Fields = PassportScanResult['fields'];
@@ -209,6 +209,9 @@ export function PassportScan({ onExtract, onSaveScan }: {
   const trusted = !!result && result.confidence >= TRUST;
   const expired = result?.warnings.includes('expired');
   const expiringSoon = result?.warnings.includes('expiring_soon');
+  // One face of an ID card cannot carry both: the issue date is printed on the front, the issuing
+  // authority on the back. Say which side is missing rather than leaving an empty field unexplained.
+  const idOtherSideNeeded = result?.warnings.includes('id_other_side_needed');
 
   return (
     <Card className="space-y-4 border-brand-100 bg-brand-50/40 dark:border-brand-500/20 dark:bg-brand-500/5">
@@ -358,8 +361,16 @@ export function PassportScan({ onExtract, onSaveScan }: {
             {form.placeOfBirth !== undefined && (
               <Field label="Tug‘ilgan joy"><Input value={form.placeOfBirth ?? ''} onChange={(e) => setForm({ ...form, placeOfBirth: e.target.value })} /></Field>
             )}
+            {/*
+              Editable, unlike the two rows above it. Those come out of the MRZ with a check digit;
+              this one cannot — ICAO 9303 has no date of issue — so it is OCR of printed text and
+              may well be empty or wrong. Read-only left the operator looking at a blank they could
+              see on the card in their hand and had no way to enter.
+            */}
             {form.passportIssueDate !== undefined && (
-              <ReadonlyRow label="Berilgan sana" value={fmtDate(form.passportIssueDate ?? null)} />
+              <Field label="Berilgan sana">
+                <DatePicker value={form.passportIssueDate ?? null} onChange={(iso) => setForm({ ...form, passportIssueDate: iso })} />
+              </Field>
             )}
             {form.passportIssuer !== undefined && (
               <Field label="Pasport kim bergan"><Input value={form.passportIssuer ?? ''} onChange={(e) => setForm({ ...form, passportIssuer: e.target.value })} /></Field>
@@ -368,6 +379,14 @@ export function PassportScan({ onExtract, onSaveScan }: {
 
           {result.unverifiedFields && result.unverifiedFields.length > 0 && (
             <p className="text-xs text-gray-500 dark:text-gray-400">Ba’zi maydonlar rasmdan o‘qildi (check-digit yo‘q) — ✓ belgisiz maydonlarni tekshiring.</p>
+          )}
+
+          {idOtherSideNeeded && (
+            <p className="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300">
+              Bu — ID-karta. «Berilgan sana» kartaning old, «Kim bergan» esa orqa tomonida bosilgan,
+              shuning uchun bitta rasmdan ikkalasi chiqmaydi. To‘liq to‘lishi uchun «ID-karta»
+              bo‘limidan <b>ikkala tomonni</b> yuklang — yoki quyida qo‘lda kiriting.
+            </p>
           )}
 
           <div className="flex items-center gap-2">

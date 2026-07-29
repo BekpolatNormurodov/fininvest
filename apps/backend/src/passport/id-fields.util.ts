@@ -202,9 +202,22 @@ export function mergeIdResult(back: PassportScanResult, front: IdFrontFields, vi
     if (toks[0] === mrzSurname || toks[0] === frontSurname) { toks[0] = fixedSurname; chosenName = toks.join(' '); }
   }
   if (chosenName) { fields.fullName = chosenName; unverified.push('fullName'); }
-  if (front.issueDate) { fields.passportIssueDate = front.issueDate; unverified.push('passportIssueDate'); }
   if (viz.placeOfBirth) { fields.placeOfBirth = viz.placeOfBirth; unverified.push('placeOfBirth'); }
-  if (viz.issuer) { fields.passportIssuer = viz.issuer; unverified.push('passportIssuer'); }
+  /*
+    These two are always present on an ID result, empty included.
+
+    Neither is in the MRZ — ICAO 9303 has no issuing authority and no date of issue — so both come
+    from OCR of the printed text and both can come back empty. Omitting the key when that happens
+    hid the row entirely: the form renders on `!== undefined`, so the operator saw no field, could
+    not tell the scan had missed anything, and had nowhere to type what the card plainly says.
+
+    Only a value that was actually read is marked unverified; an empty one is a blank to fill, not
+    something the scan claims to have seen.
+  */
+  fields.passportIssueDate = front.issueDate ?? null;
+  fields.passportIssuer = viz.issuer || '';
+  if (front.issueDate) unverified.push('passportIssueDate');
+  if (viz.issuer) unverified.push('passportIssuer');
   const warnings = [...back.warnings];
   const mismatch = (a: string | null | undefined, b: string | null) => !!a && !!b && a !== b;
   if (mismatch(front.birthDate, back.fields.birthDate) || mismatch(front.expiryDate, back.fields.passportExpiry)) {
@@ -234,10 +247,27 @@ export function extractPassportViz(text: string): PassportViz {
   // Issuer: the authority after "KIM TOMONIDAN BERILGAN" / "ORGANI" / "AUTHORITY", spanning up to two
   // lines (e.g. "BUXORO VILOYATI QORAKUL TUMANI IIB"). Best-effort; flagged unverified.
   const ai = labelIdx(ls, ['TOMONIDAN', 'ORGANI', 'AUTHOR']);
-  let issuer = ai >= 0 ? capsPhrase([ls[ai + 1], ls[ai + 2]].filter(Boolean).join(' ')) : '';
-  // The authority ends at its office suffix (…IIB / …IIV); drop trailing OCR garbage after it.
-  const cut = issuer.match(/^(.*\bII[BV])\b/);
-  if (cut) issuer = cut[1];
+  /*
+    The authority ends at its office suffix (…IIB / …IIV), and that suffix is now required rather
+    than used to trim.
+
+    The label match is not safe on its own. The same page carries «PERSONALLASHTIRISH ORGANI /
+    AUTHORITY», which answers to both 'ORGANI' and 'AUTHOR'; one bad character in TOMONIDAN is
+    enough to pick it, and what followed went out as the issuer. That string reaches the contract —
+    «… томонидан … берилган» — so a misread put an authority on a signed document that never issued
+    the passport. An empty field is a gap the operator fills; an invented one is a lie nobody sees.
+
+    When the label is unreadable the authority is still findable by its own suffix, so the page is
+    swept for it before giving up. Names wrap, hence the two-line window in both passes.
+  */
+  let m = (ai >= 0 ? capsPhrase([ls[ai + 1], ls[ai + 2]].filter(Boolean).join(' ')) : '')
+    .match(/^(.*\bII[BV])\b/);
+  if (!m) {
+    for (let i = 0; i < ls.length && !m; i++) {
+      m = capsPhrase([ls[i], ls[i + 1]].filter(Boolean).join(' ')).match(/^(.*\bII[BV])\b/);
+    }
+  }
+  const issuer = m ? m[1] : '';
   return {
     placeOfBirth,
     issueDate: dateAfter(ls, ['DATE OF ISSUE', 'BERILGAN SANASI']),

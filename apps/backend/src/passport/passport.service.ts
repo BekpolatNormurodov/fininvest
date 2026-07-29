@@ -120,12 +120,36 @@ export class PassportService {
       // was found. Best-effort: a VIZ hiccup must never fail the (verified) MRZ result.
       if (best && best.conf > 0) {
         try {
-          const viz = extractPassportViz(await text.ocr(await this.preprocessViz(file, best.angle, 1500)));
+          const vizText = await text.ocr(await this.preprocessViz(file, best.angle, 1500));
+          /*
+            An ID card is not a passport page, and reading it as one is why «Kim bergan» and
+            «Berilgan sana» came back empty every time.
+
+            A TD1 card splits the two across its faces: the issue date is printed on the front, the
+            authority on the back. extractPassportViz looks for a passport data page's labels —
+            «DATE OF ISSUE», «KIM TOMONIDAN BERILGAN» — and an ID card carries neither, so both
+            fields were guaranteed to be blank however good the scan was. The MRZ already tells us
+            which document this is, so use it.
+
+            One face still cannot yield both. When the half we were given is missing one, say so
+            rather than leaving the operator to guess why a field stayed empty — the ID-card tab
+            takes both sides.
+          */
+          const isId = result.format === 'TD1';
+          const viz = isId
+            ? { ...extractIdBackViz(vizText), issueDate: extractIdFront(vizText).issueDate }
+            : extractPassportViz(vizText);
           const unverified: string[] = [];
           if (viz.placeOfBirth) { result.fields.placeOfBirth = viz.placeOfBirth; unverified.push('placeOfBirth'); }
           if (viz.issueDate) { result.fields.passportIssueDate = viz.issueDate; unverified.push('passportIssueDate'); }
           if (viz.issuer) { result.fields.passportIssuer = viz.issuer; unverified.push('passportIssuer'); }
-          result.docType = 'PASSPORT';
+          result.docType = isId ? 'ID' : 'PASSPORT';
+          if (isId) {
+            // Present even when empty, so the form renders a field to type into (see mergeIdResult).
+            result.fields.passportIssueDate = viz.issueDate ?? null;
+            result.fields.passportIssuer = viz.issuer || '';
+            if (!viz.issuer || !viz.issueDate) result.warnings.push('id_other_side_needed');
+          }
           if (unverified.length) result.unverifiedFields = unverified;
         } catch {
           /* VIZ is best-effort; keep the verified MRZ result */

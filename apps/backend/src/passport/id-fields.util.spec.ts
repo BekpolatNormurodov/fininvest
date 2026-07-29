@@ -41,6 +41,32 @@ describe('extractPassportViz', () => {
   it('reads the space-separated issue date', () => {
     expect(extractPassportViz(viz).issueDate).toBe('2017-06-15T00:00:00.000Z');
   });
+
+  /*
+    The issuer goes straight into the contract — «… томонидан … берилган» — so a wrong one is a
+    false statement on a signed document, and nobody reading the PDF can tell it was invented.
+
+    This page carries a second line answering to the same labels: «PERSOMALLASHTIRISH
+    ORGANI/AUTHORETY», with «STATE PERSONALIZATION» under it. One bad character in TOMONIDAN used to
+    be enough to send that out as the issuing authority. The office suffix is what makes an
+    authority an authority, so it is required now: found, or the field stays empty for the operator.
+  */
+  it('does not mistake the personalization line for the issuing authority', () => {
+    const garbled = viz.replace('KiM TOMONIDAN BERILGAN', 'KiM TOMOHIDAN BERILGAN');
+    const issuer = extractPassportViz(garbled).issuer;
+    expect(issuer).not.toContain('PERSONALIZATION');
+    // The authority is still on the page under its own suffix, so it is found without the label.
+    expect(issuer).toBe('BUXORO VILOYATI QORAKUL TUMANI IIB');
+  });
+
+  it('returns nothing rather than a guess when no authority suffix is on the page', () => {
+    const noAuthority = [
+      'KiM TOMONIDAN BERILGAN',
+      'STATE PERSONALIZATION CENTRE',
+      'PERSOMALLASHTIRISH ORGANI/AUTHORETY',
+    ].join('\n');
+    expect(extractPassportViz(noAuthority).issuer).toBe('');
+  });
 });
 
 describe('extractIdFront', () => {

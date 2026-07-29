@@ -65,7 +65,11 @@ export function yymmddToIso(yymmdd: string | null | undefined, future: boolean):
   const cc = new Date().getFullYear() % 100;
   // Expiry is always this century (passports don't expire in the 1900s). Birth is past-biased.
   const year = future ? 2000 + yy : yy <= cc ? 2000 + yy : 1900 + yy;
-  return new Date(Date.UTC(year, mm - 1, dd)).toISOString();
+  const iso = new Date(Date.UTC(year, mm - 1, dd));
+  // 31 in a 30-day month is a misread, and Date.UTC rolls it into the next month without saying so —
+  // «31.04» would leave as 01.05 and be printed on a document as if the card said it.
+  if (iso.getUTCDate() !== dd) return null;
+  return iso.toISOString();
 }
 
 /**

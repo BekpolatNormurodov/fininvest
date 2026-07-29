@@ -7,7 +7,8 @@ import {
 import { api, downloadBlob, viewDocument, documentInlineUrl, getErrorMessage } from '@credit-core/api-client';
 import {
   CaseStatus, computeLoan, DocumentType, DOCUMENT_LABEL, originationCalc, PRODUCT_LABEL, Role, ROLE_LABEL,
-  TRANSITIONS, WorkflowDecision, resolveOwners, ownerIsImplied, loanProductProfile, type ScorableCase, type CreditCaseDto, type DocumentDto,
+  TRANSITIONS, WorkflowDecision, resolveOwners, ownerIsImplied, loanProductProfile,
+  type RepaymentMethod, type ScorableCase, type CreditCaseDto, type DocumentDto,
 } from '@credit-core/shared';
 import { useAuth } from '../lib/auth';
 import { Button, Card, Field, Input, Skeleton, StatusBadge } from '../components/primitives';
@@ -1022,6 +1023,11 @@ function CapturePanel({ c, role, onChange }: { c: CreditCaseDto; role: Role; onC
     newLoanPayment: line?.tranche?.monthlyPayment,
     requiredInsuredAmount: line?.requiredInsuredAmount,
     amountTotal: line?.amountTotal ?? c.amount, collateralTotal: c.collaterals.reduce((s, col) => s + (col.agreedValue ?? 0), 0),
+    // Lets the requirement be sized over 36 months when the tranche runs longer (Д1!D43).
+    repaymentMethod: line?.tranche?.scheduleType as RepaymentMethod | null | undefined,
+    tranchePrincipal: line?.tranche?.principal,
+    trancheTermMonths: line?.tranche?.termMonths,
+    annualRate: line?.interestRate,
   });
   const canEdit = (role === Role.OPERATOR || role === Role.ADMIN) && c.status === CaseStatus.DRAFT;
   const canSetRate = role === Role.MODERATOR && c.status === CaseStatus.MODERATION;

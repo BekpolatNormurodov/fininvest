@@ -34,6 +34,29 @@ describe('yymmddToIso', () => {
     expect(yymmddToIso('991399', false)).toBeNull();
     expect(yymmddToIso('abc', false)).toBeNull();
   });
+
+  it('rejects a day the month does not have, instead of rolling into the next one', () => {
+    // Date.UTC(2031, 3, 31) is 01.05.2031. A misread «31.04» must not leave here as a real date and
+    // end up printed on a document.
+    expect(yymmddToIso('310431', true)).toBeNull(); // 31 April
+    expect(yymmddToIso('310230', true)).toBeNull(); // 30 February
+    expect(yymmddToIso('310430', true)).toBe('2031-04-30T00:00:00.000Z'); // 30 April is real
+  });
+
+  /*
+    The expiry on a scanned card is read, not worked out.
+
+    «29.07.2034» landing exactly eight years after the day it was scanned looked like arithmetic on
+    today's date. It is not: the century pivot that consults the clock is only on the birth-date
+    branch. Two very different «today»s, same answer — so nobody has to wonder again.
+  */
+  it('reads expiry from the MRZ and never computes it from today', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-29T00:00:00Z'));
+    expect(yymmddToIso('340729', true)).toBe('2034-07-29T00:00:00.000Z');
+    jest.setSystemTime(new Date('2030-01-01T00:00:00Z'));
+    expect(yymmddToIso('340729', true)).toBe('2034-07-29T00:00:00.000Z');
+    jest.useRealTimers();
+  });
 });
 
 describe('mapMrzToBorrower', () => {
