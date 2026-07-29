@@ -96,9 +96,18 @@ describe('assetFinancials', () => {
 });
 
 describe('collateral requirement gate (product-aware)', () => {
-  it('cash products need pledge coverage of at least 140%', () => {
+  // The two cash products stopped sharing a multiple on 2026-07-29: ADM TEAM still wants 140%,
+  // OSON 125%. A pledge of 130 covers a 100 loan for OSON and does not for ADM TEAM — that pair is
+  // the whole point of the change, so it is asserted rather than implied.
+  it('cash products need their own pledge coverage', () => {
     expect(collateralRequirementMet(LoanProduct.ADM_TEAM, { pledgedValue: 140, loanBase: 100 })).toBe(true);
-    expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 139, loanBase: 100 })).toBe(false);
+    expect(collateralRequirementMet(LoanProduct.ADM_TEAM, { pledgedValue: 139, loanBase: 100 })).toBe(false);
+    expect(collateralRequirementMet(LoanProduct.ADM_TEAM, { pledgedValue: 130, loanBase: 100 })).toBe(false);
+
+    expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 125, loanBase: 100 })).toBe(true);
+    expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 130, loanBase: 100 })).toBe(true);
+    expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 124, loanBase: 100 })).toBe(false);
+
     expect(collateralRequirementMet(LoanProduct.OSON, { pledgedValue: 0, loanBase: 0 })).toBe(false);
   });
 

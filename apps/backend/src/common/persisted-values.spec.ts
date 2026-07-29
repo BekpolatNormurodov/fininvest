@@ -8,7 +8,9 @@ describe('originationPersistedValues', () => {
     expect(v.loanType).toBe('MICROCREDIT');
     expect(v.amount).toBe(130_000_000);
     expect(v.insuredSum).toBe(78_000_000);
-    expect(v.premium).toBe(1_560_000); // flat bracket: 78M × 2% (term ≤ 24 months)
+    // Flat bracket: 78M × 4%. The 24-month policy was 2% until the boundary moved from 24 to 12
+    // months on 2026-07-29 — the stored premium follows the same function the form quotes from.
+    expect(v.premium).toBe(3_120_000);
     expect(v.newLoanPayment).toBe(8_060_000);
   });
   it('handles empty input (microloan, nulls, zero premium)', () => {

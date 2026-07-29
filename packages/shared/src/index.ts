@@ -12,4 +12,4 @@ export * from './scoring';
 export * from './loan-product';
 export * from './seller';
 export * from './product-documents';
-export * from './amount-words';
+export * from './sum-to-words';

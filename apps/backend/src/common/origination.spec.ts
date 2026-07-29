@@ -48,9 +48,11 @@ describe('originationCalc (TADJIYEV fixture)', () => {
     expect(calc.minRequiredIncome).toBe(18_838_000);
   });
 
-  it('insurance: insuredSum 1.3×, flat-bracket premium (≤2yil → 2%)', () => {
+  it('insurance: insuredSum 1.3×, flat-bracket premium (over 12 oy → 4%)', () => {
     expect(calc.insuredSum).toBe(78_000_000);
-    expect(calc.premium).toBe(1_560_000); // 78M × 2% (term ≤ 24 months)
+    // The fixture's policy runs 24 months. That was 2% until the bracket moved to 12 months on
+    // 2026-07-29; the same policy now costs 4%.
+    expect(calc.premium).toBe(3_120_000); // 78M × 4%
   });
 
   it('affordability ok when surplus≥0 and income≥required', () => {
