@@ -8,6 +8,7 @@ import { LoginDto } from './dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser, RequestUser } from './current-user.decorator';
 import { StorageService } from '../documents/storage.service';
+import { decodeUploadName } from '../common/upload-name.util';
 
 class UpdateProfileDto {
   @IsOptional() @IsString() @MinLength(1) fullName?: string;
@@ -43,7 +44,7 @@ export class AuthController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadMyAvatar(@CurrentUser() user: RequestUser, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('Rasm yuborilmadi');
-    const stored = await this.storage.save(file.buffer, file.originalname, file.mimetype, `avatars/${user.id}`);
+    const stored = await this.storage.save(file.buffer, decodeUploadName(file.originalname), file.mimetype, `avatars/${user.id}`);
     return this.auth.setAvatar(user.id, stored.storagePath);
   }
 }

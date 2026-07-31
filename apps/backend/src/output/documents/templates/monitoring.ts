@@ -93,7 +93,7 @@ export function monitoringTemplate(c: CaseDocData, periodMonths: number): TDocum
   const property: Content[] = [];
   if (autos.length) {
     property.push(autoValueTable(autos, false));
-    autos.forEach((a) => property.push(...autoFootnotes(a)));
+    autos.forEach((a) => property.push(...autoFootnotes(a, c.borrower?.regAddress)));
   }
   if (realty.length) {
     property.push(realtyMonitoringTable(realty));

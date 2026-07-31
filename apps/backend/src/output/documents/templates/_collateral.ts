@@ -82,15 +82,22 @@ export function autoValueTable(collaterals: Collateral[], withValue = true): Con
   };
 }
 
-/** Footnote lines under the auto table (эгаси / тех паспорт / гараж / давлат рақами). */
-export function autoFootnotes(c: Collateral): Content[] {
+/**
+ * Footnote lines under the auto table (эгаси / тех паспорт / гараж / давлат рақами).
+ *
+ * `regAddress` is the borrower's registered address, used when the collateral carries none. A car
+ * has no address of its own — the operator never fills that field — so this line printed «—» on
+ * every auto case, while the address it is asking for was already on the borrower. The label is the
+ * workbook's own and stays as it is; only the value it was missing is supplied.
+ */
+export function autoFootnotes(c: Collateral, regAddress?: string | null): Content[] {
   const tp = c.techPassportNo
     ? `${c.techPassportNo}${c.techPassportDate ? ` от ${shortDate(c.techPassportDate)} г.` : ''}`
     : '—';
   return [
     { text: `* Автомототранспорт воситаси эгаси: ${owner(c)}`, fontSize: 9 },
     { text: `* техник паспорт рақами: ${tp}`, fontSize: 9 },
-    { text: `* рўйхатдан ўтган манзил/гараж манзили: ${dash(c.address)}`, fontSize: 9 },
+    { text: `* рўйхатдан ўтган манзил/гараж манзили: ${dash(c.address ?? regAddress ?? null)}`, fontSize: 9 },
     { text: `* давлат рақами: ${dash(c.stateNumber)}`, fontSize: 9 },
   ];
 }
@@ -213,7 +220,7 @@ export function collateralDeclaredBlock(c: CaseDocData): Content[] {
   const out: Content[] = [];
   if (autos.length) {
     out.push(autoValueTable(autos, false));
-    autos.forEach((a) => out.push(...autoFootnotes(a)));
+    autos.forEach((a) => out.push(...autoFootnotes(a, c.borrower?.regAddress)));
   }
   if (realty.length) {
     out.push(realtyValueTable(realty, false));
@@ -248,7 +255,7 @@ export function collateralBlock(c: CaseDocData, opts: { realtyWithValue?: boolea
   const out: Content[] = [];
   if (autos.length) {
     out.push(autoValueTable(autos));
-    autos.forEach((a) => out.push(...autoFootnotes(a)));
+    autos.forEach((a) => out.push(...autoFootnotes(a, c.borrower?.regAddress)));
   }
   if (realty.length) {
     out.push(realtyValueTable(realty, opts.realtyWithValue ?? true));

@@ -24,6 +24,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { StorageService } from './storage.service';
+import { decodeUploadName } from '../common/upload-name.util';
 
 @Controller('documents')
 export class DocumentsController {
@@ -48,7 +49,7 @@ export class DocumentsController {
     if (!file) throw new BadRequestException('Fayl yuborilmadi');
     if (!caseId) throw new BadRequestException('caseId kerak');
     const docType = (Object.values(DocumentType) as string[]).includes(type) ? type : DocumentType.OTHER;
-    const stored = await this.storage.save(file.buffer, file.originalname, file.mimetype, caseId);
+    const stored = await this.storage.save(file.buffer, decodeUploadName(file.originalname), file.mimetype, caseId);
     return this.prisma.document.create({
       data: {
         caseId,
@@ -73,7 +74,7 @@ export class DocumentsController {
     const doc = await this.prisma.document.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException('Hujjat topilmadi');
     if (doc.uploadedById !== user.id && user.role !== Role.ADMIN) throw new ForbiddenException('Bu hujjatni o‘zgartira olmaysiz');
-    const stored = await this.storage.save(file.buffer, file.originalname, file.mimetype, doc.caseId ?? undefined);
+    const stored = await this.storage.save(file.buffer, decodeUploadName(file.originalname), file.mimetype, doc.caseId ?? undefined);
     await this.storage.remove(doc.storagePath);
     return this.prisma.document.update({
       where: { id },

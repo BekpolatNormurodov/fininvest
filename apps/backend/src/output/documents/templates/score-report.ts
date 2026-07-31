@@ -66,7 +66,16 @@ export function scoreReportTemplate(c: CaseDocData): TDocumentDefinitions {
   const amount = line?.amountTotal ?? c.amount ?? null;
   const term = line?.termMonths ?? null;
   const ratePct = line?.interestRate != null ? Math.round(Number(line.interestRate) * 100) : null;
-  const activity = [b?.entrepreneurType, b?.entrepreneurCertNo].filter(Boolean).join(' № ') || '—';
+  /*
+    The entrepreneur certificate is only collected above the microcredit threshold, so under it this
+    row printed «—» even when the operator had already said what the client does. On a self-employed
+    client that is the line a reader is looking for, and it was typed into «Ish joyi» — «O'Z O'ZINI
+    BAND QILGAN №12588». The certificate wins where it exists; the workplace stands in where it does
+    not.
+  */
+  const activity = [b?.entrepreneurType, b?.entrepreneurCertNo].filter(Boolean).join(' № ')
+    || c.employment?.employer?.trim()
+    || '—';
 
   const identity: Content = table([
     plainRow('МИЖОЗ Ф.И.Ш.', b?.fullName ?? '—'),

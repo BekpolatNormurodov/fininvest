@@ -28,6 +28,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { StorageService } from '../documents/storage.service';
+import { decodeUploadName } from '../common/upload-name.util';
 
 class CreateUserDto {
   @IsString() @MinLength(1) fullName!: string;
@@ -141,7 +142,7 @@ class UsersController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(@Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('Rasm yuborilmadi');
-    const stored = await this.storage.save(file.buffer, file.originalname, file.mimetype, `avatars/${id}`);
+    const stored = await this.storage.save(file.buffer, decodeUploadName(file.originalname), file.mimetype, `avatars/${id}`);
     return this.prisma.user.update({ where: { id }, data: { avatarPath: stored.storagePath }, select: userSelect });
   }
 }

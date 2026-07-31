@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, ScoringVerdict } from '@prisma/client';
-import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, penaltyRateFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
+import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, monthlyPaymentFor, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, penaltyRateFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -55,12 +55,25 @@ export class CreditCasesService {
     if (errs.length) throw new ForbiddenException(errs.join('; '));
   }
 
-  /** Backfill the affordability new-loan payment from the tranche so the stored DTI matches the UI. */
-  private fillDerived(dto: UpsertCaseDto) {
-    const mp = dto.creditLine?.tranche?.monthlyPayment;
-    if (dto.affordability && dto.affordability.newLoanPayment == null && mp != null) {
-      dto.affordability.newLoanPayment = mp;
-    }
+  /**
+   * The monthly payment is worked out here, from the rate that is being written on the same row.
+   *
+   * It used to be taken from the browser, which made it the one derived figure on the line that the
+   * client owned — `interestRate`, `paymentDay`, `insuredSum`, `premium` and `loanType` are all
+   * settled server-side. That exception put two numbers that contradict each other into one row:
+   * case BR-2026-0002 carries a payment computed at 55% next to a rate of 50%, because the rate
+   * moved after the form had done its arithmetic and nothing recomputed it.
+   *
+   * Recomputing also keeps affordability honest — `newLoanPayment` feeds DTI and the score, and it
+   * is overwritten every save rather than only filled when empty, so a stale payment cannot survive
+   * a re-save either.
+   */
+  private fillDerived(dto: UpsertCaseDto, rate: number) {
+    const t = dto.creditLine?.tranche;
+    if (!t) return;
+    const mp = monthlyPaymentFor(t.scheduleType ?? null, t.principal ?? null, t.termMonths ?? null, rate);
+    t.monthlyPayment = mp;
+    if (dto.affordability && mp != null) dto.affordability.newLoanPayment = mp;
   }
 
   private collateralCreate(c: CollateralInput): Prisma.CollateralCreateWithoutCaseInput {
@@ -183,8 +196,11 @@ export class CreditCasesService {
     const number = await this.nextNumber(branch?.symbol ?? null);
     const productType = dto.collaterals?.[0]?.type ?? ProductType.REAL_ESTATE;
     this.assertRules(dto);
-    this.fillDerived(dto);
+    // The rate has to be settled before the payment is worked out from it — they are written on the
+    // same row and must agree.
     const { min } = await this.loadRates();
+    const newRate = this.rateForProduct(dto.product ?? null, min);
+    this.fillDerived(dto, newRate);
     const amount = dto.creditLine?.amountTotal ?? dto.amount ?? null;
     const termForBand = dto.creditLine?.termMonths ?? dto.termMonths ?? null;
     const fin = assetFinancials(dto.product ?? null, amount, dto.collaterals?.[0]?.agreedValue ?? null);
@@ -210,7 +226,7 @@ export class CreditCasesService {
         ...(dto.employment ? { employment: { create: this.employmentData(dto.employment) } } : {}),
         ...(dto.affordability ? { affordability: { create: this.affordabilityData(dto.affordability) } } : {}),
         ...(dto.creditHistory ? { creditHistory: { create: this.creditHistoryData(dto.creditHistory) } } : {}),
-        ...(dto.creditLine ? { creditLine: { create: this.creditLineNested(dto.creditLine, this.rateForProduct(dto.product ?? null, min), dto.product ?? null) } } : {}),
+        ...(dto.creditLine ? { creditLine: { create: this.creditLineNested(dto.creditLine, newRate, dto.product ?? null) } } : {}),
       },
       include: caseInclude,
     });
@@ -308,7 +324,6 @@ export class CreditCasesService {
       throw new ForbiddenException('Bu ariza sizga tegishli emas');
     }
     this.assertRules(dto);
-    this.fillDerived(dto);
 
     const { min } = await this.loadRates();
     // Preserve a moderator-raised rate across a later DRAFT re-save (operator never sets the rate).
@@ -317,6 +332,9 @@ export class CreditCasesService {
     const lineRate = existingLine?.interestRate != null
       ? Number(existingLine.interestRate)
       : this.rateForProduct((dto.product ?? existing.product) as LoanProduct | null, min);
+    // After lineRate, for the same reason as in createCase: the payment is derived from the rate
+    // that is about to be stored beside it.
+    this.fillDerived(dto, lineRate);
 
     const newTermForBand = dto.creditLine?.termMonths ?? dto.termMonths ?? existing.termMonths;
     // Recompute asset financials from the effective loan + purchased-asset value (dto wins, else saved).

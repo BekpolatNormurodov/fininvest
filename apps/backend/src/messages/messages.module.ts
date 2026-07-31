@@ -22,6 +22,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { StorageService } from '../documents/storage.service';
+import { decodeUploadName } from '../common/upload-name.util';
 
 const msgInclude = {
   sender: true,
@@ -235,7 +236,7 @@ class MessagesController {
     if (files?.length) {
       await Promise.all(
         files.map(async (file) => {
-          const stored = await this.storage.save(file.buffer, file.originalname, file.mimetype, `${caseId}/chat`);
+          const stored = await this.storage.save(file.buffer, decodeUploadName(file.originalname), file.mimetype, `${caseId}/chat`);
           await this.prisma.document.create({
             data: {
               caseId,
@@ -295,7 +296,7 @@ class MessagesController {
     });
     if (opts.files?.length) {
       await Promise.all(opts.files.map(async (file) => {
-        const stored = await this.storage.save(file.buffer, file.originalname, file.mimetype, opts.dir);
+        const stored = await this.storage.save(file.buffer, decodeUploadName(file.originalname), file.mimetype, opts.dir);
         await this.prisma.document.create({ data: { caseId: opts.caseId, messageId: created.id, type: DocumentType.CHAT, fileName: stored.fileName, storagePath: stored.storagePath, mimeType: stored.mimeType, uploadedById: opts.senderId } });
       }));
     }
