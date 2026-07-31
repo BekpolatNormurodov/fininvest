@@ -87,6 +87,67 @@ export interface LoanRuleInput {
   scheduleType?: RepaymentMethod | null;
   trancheTermMonths?: number | null;
   lineTermMonths?: number | null;
+  amountTotal?: number | null;
+  /** Every tranche on the line (one, today), in so'm. */
+  tranchePrincipals?: (number | null | undefined)[] | null;
+}
+
+/** A drawdown under this share of the line is legal but unusual — warned about, never refused. */
+export const LOW_DRAWDOWN_SHARE = 0.2;
+
+/**
+ * What a tranche may be against its line. Empty array = fine.
+ *
+ * Case BR-2026-0002 opened a 110 000 000 line and drew 1 100 000 — two zeros short — and nothing
+ * anywhere objected. The monthly payment came out at 80 972, which is 0.07% of the loan, and the
+ * two payment-ratio factors scored 43 of the case's 65 points on it.
+ *
+ * Two rules, both narrow on purpose:
+ *
+ *  · Over the limit. A line is a ceiling; drawing more than it is not a judgement call.
+ *  · Off by exactly a power of ten. 1 100 000 × 100 = 110 000 000 is a keyboard slip, not a
+ *    business decision. Nothing legitimate lands on it: this repo's own reference case draws
+ *    130 mln against a 150 mln line (86.7%), and the workbook allows up to five tranches, so a
+ *    fifth one worth 3.3% of the line is real. A minimum-share rule would refuse that; this does
+ *    not, and its false-positive rate is zero.
+ */
+export function trancheAmountViolations(
+  amountTotal: number | null | undefined,
+  principals: (number | null | undefined)[] | null | undefined,
+): string[] {
+  const line = amountTotal ?? 0;
+  const drawn = (principals ?? []).reduce<number>((s, p) => s + (p ?? 0), 0);
+  if (line <= 0 || drawn <= 0) return []; // «required» is a separate gate
+
+  if (drawn > line) {
+    return [`Transhlar yig'indisi (${drawn}) liniya summasidan (${line}) oshib ketdi`];
+  }
+  for (const k of [10, 100, 1000]) {
+    if (Math.round(drawn * k) === Math.round(line)) {
+      return [`Transh summasi liniyadan aynan ${k} barobar kichik (${drawn} / ${line}) — nol soni to‘g‘rimi?`];
+    }
+  }
+  return [];
+}
+
+/**
+ * A drawdown far below the line — legal, and worth saying out loud.
+ *
+ * Kept apart from the refusals because there is no evidence for a floor: a small fifth tranche is
+ * a real thing. This is what an operator sees, not what the server rejects.
+ */
+export function trancheAmountWarnings(
+  amountTotal: number | null | undefined,
+  principals: (number | null | undefined)[] | null | undefined,
+): string[] {
+  const line = amountTotal ?? 0;
+  const drawn = (principals ?? []).reduce<number>((s, p) => s + (p ?? 0), 0);
+  if (line <= 0 || drawn <= 0) return [];
+  if (trancheAmountViolations(amountTotal, principals).length) return []; // already refused
+  if (drawn < line * LOW_DRAWDOWN_SHARE) {
+    return [`Transh liniyaning ${Math.round((drawn / line) * 100)}% i — summani tekshiring`];
+  }
+  return [];
 }
 
 /**
@@ -104,6 +165,7 @@ export function loanRuleViolations(i: LoanRuleInput): string[] {
   if (i.lineTermMonths != null && (i.lineTermMonths <= 0 || i.lineTermMonths > LINE_TERM_CAP)) {
     errs.push(`Liniya (bosh kelishuv) muddati ${LINE_TERM_CAP} oydan oshmasligi kerak`);
   }
+  errs.push(...trancheAmountViolations(i.amountTotal, i.tranchePrincipals));
   return errs;
 }
 
@@ -375,6 +437,7 @@ export function caseSubmitErrors(c: CreditCaseDto): string[] {
   if (!tr?.scheduleType) out.push('Jadval turini tanlang');
   if (!isTermValid((tr?.scheduleType ?? undefined) as RepaymentMethod, tr?.termMonths)) out.push('Transh muddati noto‘g‘ri');
   if (!tr?.principal || tr.principal <= 0) out.push('Asosiy summa majburiy');
+  out.push(...trancheAmountViolations(amountTotal, tr ? [tr.principal] : null));
 
   const h = c.creditHistory;
   // Only the three KATM fields the operator form still shows are required. The other five are

@@ -6,6 +6,7 @@ import {
   ProductType, RepaymentMethod, loanTypeFor, isTermValid, termCapFor, LINE_TERM_CAP, MICRO_THRESHOLD,
   collateralComplete, collateralMissing,
   type UpsertCasePayload, type CaseSectionKey, type CollateralDto,
+  trancheAmountViolations,
 } from '@credit-core/shared';
 
 const emptyContact = () => ({ relation: null, fullName: null, phone: null });
@@ -174,7 +175,11 @@ export function useOriginationForm(id?: string) {
       : isTermValid(method, tr?.termMonths)
         ? undefined
         : `Muddat 1–${termCapFor(method)} oy oralig‘ida`,
-    principal: tr?.principal && tr.principal > 0 ? undefined : 'Asosiy summa majburiy',
+    // A missing amount and an amount off by a power of ten are both refusals, and the operator
+    // should see the second one at the field rather than only when the case is submitted.
+    principal: !(tr?.principal && tr.principal > 0)
+      ? 'Asosiy summa majburiy'
+      : trancheAmountViolations(line?.amountTotal, [tr.principal])[0],
     katm: katmFilled ? undefined : 'KATM bo‘limi to‘liq to‘ldirilishi shart',
   } as const;
   type ErrKey = keyof typeof errors;

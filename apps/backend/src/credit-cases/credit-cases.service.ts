@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, ScoringVerdict } from '@prisma/client';
-import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, monthlyPaymentFor, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, penaltyRateFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
+import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, monthlyPaymentFor, type RepaymentMethod, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, penaltyRateFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -51,6 +51,8 @@ export class CreditCasesService {
       scheduleType: l?.tranche?.scheduleType ?? null,
       trancheTermMonths: l?.tranche?.termMonths ?? null,
       lineTermMonths: l?.termMonths ?? null,
+      amountTotal: l?.amountTotal ?? null,
+      tranchePrincipals: l?.tranche ? [l.tranche.principal] : null,
     });
     if (errs.length) throw new ForbiddenException(errs.join('; '));
   }
@@ -828,6 +830,31 @@ export class CreditCasesService {
     }
     const oldRate = c.creditLine.interestRate != null ? Number(c.creditLine.interestRate) : null;
     await this.prisma.creditLine.update({ where: { caseId: id }, data: { interestRate } });
+
+    /*
+      Everything the rate feeds moves with it.
+
+      Changing the rate on its own is how case BR-2026-0002 came to store a payment computed at 55%
+      beside a rate of 50%: the rate was lowered, the instalment kept its old value, and the
+      schedule, the DTI and the score all went on reading it. The payment is derived from the rate
+      everywhere else now, so it is derived here too — and the score follows, because two of its
+      twenty factors are ratios against that instalment.
+    */
+    const t = await this.prisma.tranche.findFirst({ where: { creditLineId: c.creditLine.id }, orderBy: { trancheNo: 'asc' } });
+    if (t) {
+      const mp = monthlyPaymentFor(
+        t.scheduleType as RepaymentMethod | null,
+        t.principal != null ? Number(t.principal) : null,
+        t.termMonths,
+        interestRate,
+      );
+      if (mp != null) {
+        await this.prisma.tranche.update({ where: { id: t.id }, data: { monthlyPayment: mp } });
+        await this.prisma.affordability.updateMany({ where: { caseId: id }, data: { newLoanPayment: mp } });
+      }
+    }
+    await this.persistScoring(id);
+
     await this.audit.rateChange(user, id, oldRate, interestRate, reason);
     return this.getOne(id);
   }

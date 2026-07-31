@@ -1,4 +1,4 @@
-import { pmt } from '@credit-core/shared';
+import { pmt, paymentDayFor } from '@credit-core/shared';
 import type { CaseDocData } from './case-document.loader';
 
 /** One amortization row, in the shape both the grafik PDF and the Excel export render. */
@@ -86,7 +86,16 @@ export function scheduleForCase(c: CaseDocData): DocSchedule | null {
 
   const method: DocSchedule['method'] = t?.scheduleType === 'DIFFERENTIATED' ? 'DIFFERENTIATED' : 'ANNUITY';
   const disbursementDate = t?.contractDate ?? t?.applicationDate ?? line?.lineDate ?? c.createdAt ?? new Date();
-  const payDay = t?.paymentDay ?? new Date(disbursementDate).getDate();
+  /*
+    The fallback caps at the 15th, as the stored value does.
+
+    `paymentDay` is written by `paymentDayFor`, which caps the formalization day — a client
+    formalized on the 20th pays on the 15th. When the tranche carries no application date that
+    column is null, and this line used the raw day-of-month, so a case drawn on the 20th quietly
+    got a schedule paying on the 20th. Nothing failed; the document just disagreed with the rule.
+    BR-2026-0002 has exactly that null.
+  */
+  const payDay = t?.paymentDay ?? paymentDayFor(new Date(disbursementDate).toISOString()) ?? 1;
   const monthlyRate = annualRate / 12;
   const annuity = pmt(monthlyRate, termMonths, principal);
   const flatPrincipal = principal / termMonths;
