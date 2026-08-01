@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, ScoringVerdict } from '@prisma/client';
-import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, monthlyPaymentFor, type RepaymentMethod, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, penaltyRateFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
+import { addBusinessDays, caseSubmitErrors, CaseStatus, DocumentType, formatContractNumber, hasDeadline, insurancePremiumRate, INSURANCE_MAX_MONTHS, monthlyPaymentFor, type RepaymentMethod, isCaseInScope, loanRuleViolations, originationPersistedValues, paymentDayFor, ProductType, ReMflContractDto, trancheAmountViolations, Role, scoreForCase, termBandFor, loanProductProfile, LoanProductKind, assetFinancials, penaltyRateFor, type LoanProduct, type ScorableCase } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
@@ -868,13 +868,24 @@ export class CreditCasesService {
     if (user.role !== Role.DIRECTOR && user.role !== Role.ADMIN) {
       throw new ForbiddenException('Summa taqsimotini faqat rahbar yoki admin belgilaydi');
     }
-    const c = await this.prisma.creditCase.findUnique({ where: { id }, include: { creditLine: { include: { insurance: true } } } });
+    const c = await this.prisma.creditCase.findUnique({ where: { id }, include: { creditLine: { include: { insurance: true, tranches: true } } } });
     if (!c) throw new NotFoundException('Ariza topilmadi');
     if (c.status !== CaseStatus.DIRECTOR_REVIEW) throw new ForbiddenException('Faqat direktor ko‘rigida taqsimotni belgilash mumkin');
     if (!c.creditLine) throw new NotFoundException('Kredit liniyasi to‘ldirilmagan');
     const ins = c.creditLine.insurance;
     const insured = ins?.insured ?? false;
     const amountTotal = (amountAuto || 0) + (amountPolis || 0) || null;
+    /*
+      The one writer of amountTotal that was not checked.
+
+      Every other path runs assertRules on the way in, so a tranche a hundred times smaller than its
+      line is refused. This one recomputes the total from the director's split and wrote it straight
+      through, which meant a case could pass the operator's guard and then acquire the same mismatch
+      from the review screen. The tranches were not even loaded here, so there was nothing to compare
+      against — hence the widened include above.
+    */
+    const offBy = trancheAmountViolations(amountTotal, c.creditLine.tranches.map((t) => Number(t.principal)));
+    if (offBy.length) throw new BadRequestException(offBy.join('; '));
     const insMonths = ins?.policyTermMonths != null ? Math.min(Number(ins.policyTermMonths), INSURANCE_MAX_MONTHS) : null;
     const insLoan = insured ? amountPolis : (ins?.loanUnderPolicy != null ? Number(ins.loanUnderPolicy) : null);
     const insRate = insured ? insurancePremiumRate(insMonths) : null;

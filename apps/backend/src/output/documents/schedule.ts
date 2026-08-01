@@ -1,4 +1,4 @@
-import { pmt, paymentDayFor } from '@credit-core/shared';
+import { pmt, paymentDayFor, trancheAmountViolations } from '@credit-core/shared';
 import type { CaseDocData } from './case-document.loader';
 
 /** One amortization row, in the shape both the grafik PDF and the Excel export render. */
@@ -72,6 +72,28 @@ export function scheduleForCase(c: CaseDocData): DocSchedule | null {
           days: i.days,
         })),
     };
+  }
+
+  /*
+    Refuse to print a schedule the tranche cannot support.
+
+    «заявку на 110 млн открывали… график 1,100,000 млнга корсатвоти» — the line was opened for
+    110 000 000 and the tranche carried 1 100 000, a hundredth of it, so the contract stated one sum
+    and Илова №1 amortised another. The document was internally consistent and wrong, and it was
+    signed that way.
+
+    The test is not «the two fields differ» — they legitimately do. A 150M line drawn 60M at a time
+    is an ordinary multi-tranche case: §1.1 states the ceiling, the schedule states the draw. What is
+    refused is a tranche that is a clean power of ten off the line, which is a mistyped zero and
+    never a drawdown. The same rule the save path applies, from the same function, so a row already
+    in the database is caught at print time even though it was written before the guard existed.
+
+    Returning null puts the document on its existing «Тўлов жадвали ҳисобланмаган» path, and the
+    Excel export degrades the same way. Refusing is right: there is no way to tell which of the two
+    numbers the operator meant, and inventing one would sign a client up to it.
+  */
+  if (t?.principal != null && line?.amountTotal != null) {
+    if (trancheAmountViolations(Number(line.amountTotal), [Number(t.principal)]).length) return null;
   }
 
   const principal = t?.principal != null ? Number(t.principal)
