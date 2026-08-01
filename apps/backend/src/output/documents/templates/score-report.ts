@@ -2,7 +2,7 @@ import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interface
 import { COLLATERAL_COVERAGE_TARGET, collateralRequirementMet } from '@credit-core/shared';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { gridTable, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { gridTable, borrowerAddress, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { wordsCyr } from './_shared';
 import { scoringForCase } from '../scoring-for-case';
 
@@ -79,7 +79,7 @@ export function scoreReportTemplate(c: CaseDocData): TDocumentDefinitions {
 
   const identity: Content = table([
     plainRow('МИЖОЗ Ф.И.Ш.', b?.fullName ?? '—'),
-    plainRow('Манзил', b?.regAddress ?? b?.address ?? '—'),
+    plainRow('Манзил', borrowerAddress(b)),
     plainRow('Фаолият тури', activity),
     plainRow('Кредит тури', 'Микромолия линия'),
     plainRow('Микромолия линияси лимити', moneyWithWordsCyr(amount)),

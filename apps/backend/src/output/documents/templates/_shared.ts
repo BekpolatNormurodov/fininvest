@@ -3,6 +3,7 @@ import {
   sumToWordsUz, dateToUzbekWords, moneyWithWordsCyr, integerToUzbekWordsCyrillic,
 } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
+import { borrowerAddress } from '../doc-layout';
 
 /** Justified body paragraph. */
 export const p = (text: string): Content => ({ text, margin: [0, 3, 0, 3], alignment: 'justify' });
@@ -69,7 +70,7 @@ export function notaryBlock(c: CaseDocData): Content {
   return {
     stack: [
       { text: 'НОТАРИАЛ ТАСДИҚ', bold: true, alignment: 'center', margin: [0, 18, 0, 6] },
-      { text: `Тарафлар шахси аниқланди: ${b?.fullName ?? '—'}, паспорт: ${passport}, ЖШШИР: ${b?.pinfl ?? '—'}, манзил: ${b?.regAddress ?? b?.address ?? '—'}.`, margin: [0, 2, 0, 6] },
+      { text: `Тарафлар шахси аниқланди: ${b?.fullName ?? '—'}, паспорт: ${passport}, ЖШШИР: ${b?.pinfl ?? '—'}, манзил: ${borrowerAddress(b)}.`, margin: [0, 2, 0, 6] },
       { text: 'Нотариус: ______________________________________', margin: [0, 4, 0, 2] },
       { text: 'Реестр рақами: _____________   Сана: _____________   Жой: _____________', margin: [0, 2, 0, 2] },
       { text: '\nНотариус имзоси ___________________     М.У. (муҳр)', margin: [0, 8, 0, 0] },

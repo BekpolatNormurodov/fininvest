@@ -2,7 +2,7 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { LoanProduct, loanProductProfile, LoanProductKind } from '@credit-core/shared';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { sectionTitle } from '../doc-layout';
+import { sectionTitle, borrowerAddress } from '../doc-layout';
 import { mapDocStrings } from '../sanitize';
 import { p, loanWord } from './_shared';
 import { contractCollateralProse } from './_collateral';
@@ -79,7 +79,7 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
   const passport = [b?.passportSeries, b?.passportNumber].filter(Boolean).join(' ') || '—';
   const passportIssuer = b?.passportIssuer ?? '—';
   const passportIssueDateStr = b?.passportIssueDate ? dateToRuCyrillic(b.passportIssueDate) : '—';
-  const borrowerAddress = b?.regAddress ?? b?.address ?? '—';
+  const addressLine = borrowerAddress(b);
   const phoneList = [
     b?.phone,
     ...(Array.isArray((b as { phones?: unknown })?.phones)
@@ -336,7 +336,7 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
             stack: [
               { text: '«Қарздор»', bold: true },
               { text: borrowerName, margin: [0, 4, 0, 2] },
-              { text: `Манзил: ${borrowerAddress}`, margin: [0, 1, 0, 1] },
+              { text: `Манзил: ${addressLine}`, margin: [0, 1, 0, 1] },
               { text: `Паспорт: ${passport}, ${passportIssuer} томонидан ${passportIssueDateStr} берилган`, margin: [0, 1, 0, 1] },
               { text: `Тел: ${phonesStr}`, margin: [0, 1, 0, 1] },
               { text: borrowerName, margin: [0, 10, 0, 2] },

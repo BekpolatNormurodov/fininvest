@@ -1,7 +1,7 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { borrowerAddress, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { p } from './_shared';
 import { loanProductProfile, LoanProductKind } from '@credit-core/shared';
 
@@ -66,7 +66,7 @@ export function disbursementTemplate(c: CaseDocData): TDocumentDefinitions {
           {
             width: 300,
             stack: [
-              { text: `${b?.regAddress ?? b?.address ?? '—'}да яшовчи`, margin: [0, 0, 0, 1] },
+              { text: `${borrowerAddress(b)}да яшовчи`, margin: [0, 0, 0, 1] },
               { text: b?.fullName ?? '—', bold: true },
               { text: 'томонидан' },
             ],

@@ -1,7 +1,7 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { sumToWordsUzCyrillic, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { sectionTitle, shortDate } from '../doc-layout';
+import { sectionTitle, shortDate, borrowerAddress } from '../doc-layout';
 import { p, wordsCyr } from './_shared';
 import { realtyWord } from './_collateral';
 import { CONTRACT_LINES, type ContractSlot } from './contract-body';
@@ -268,7 +268,7 @@ function requisitesBlock(c: CaseDocData): Content {
         stack: [
           { text: '«Қарз олувчи»', bold: true },
           { text: b?.fullName ?? '—', margin: [0, 4, 0, 2] },
-          { text: `Манзил: ${b?.regAddress ?? b?.address ?? '—'}`, margin: [0, 1, 0, 1] },
+          { text: `Манзил: ${borrowerAddress(b)}`, margin: [0, 1, 0, 1] },
           { text: `Паспорт: ${passport}`, margin: [0, 1, 0, 1] },
           { text: `ЖШШИР: ${b?.pinfl ?? '—'}`, margin: [0, 1, 0, 1] },
           { text: `Тел: ${b?.phone ?? '—'}`, margin: [0, 1, 0, 1] },

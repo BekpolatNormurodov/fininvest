@@ -43,6 +43,32 @@ export const money = (n: unknown): string =>
   n == null ? '—' : new Intl.NumberFormat('ru-RU').format(Number(n)) + " so'm";
 
 /**
+ * The one address the forms print for the borrower — «Манзил».
+ *
+ * The workbook gives the contract, the ходатайство, the бош келишув, the score report and the
+ * credit application a single address cell, Д1!C20, and C20 is the propiska. So the propiska is
+ * what «Манзил» carries, and the anketa is the only form with two rows (Д2!D13 registered,
+ * Д2!D14 actual) — leave that one alone.
+ *
+ * Every site used to spell this as `b?.regAddress ?? b?.address ?? '—'`, and that chain has two
+ * holes. `??` does not skip an empty string, so a cleared field printed «Манзил: » with the next
+ * label immediately after it — measured on the contract, the бош келишув, the ходатайство, the
+ * score report and the disbursement request. And `actualAddress` was never in the chain at all, so
+ * a case that carried only the actual address printed «—» while holding an address.
+ *
+ * `||` rather than `??` on purpose: rows written before the DTO started trimming, seeds and direct
+ * Prisma writes can all still hold `''`, and those must fall through too.
+ */
+export function borrowerAddress(b: {
+  regAddress?: string | null;
+  address?: string | null;
+  actualAddress?: string | null;
+} | null | undefined): string {
+  const pick = (v: string | null | undefined) => (typeof v === 'string' && v.trim() ? v.trim() : '');
+  return pick(b?.regAddress) || pick(b?.address) || pick(b?.actualAddress) || '—';
+}
+
+/**
  * The бош келишув number — «№ 0000 СОНЛИ МИКРОМОЛИЯ ЛИНИЯСИ ОЧИШ БЎЙИЧА БОШ КЕЛИШУВ».
  *
  * A case carries two numbers, not one. This is the credit LINE's: the обложка, the РКЛ Ген, the
@@ -131,7 +157,7 @@ export function partyRequisites(c: CaseDocData): Content {
   const debtor: Content[] = [
     { text: '«Қарздор»', bold: true },
     { text: b?.fullName ?? '—' },
-    { text: `Манзил: ${b?.regAddress ?? b?.address ?? '—'}` },
+    { text: `Манзил: ${borrowerAddress(b)}` },
     { text: passportLine },
     { text: `Тел: ${b?.phone ?? '—'}` },
   ];

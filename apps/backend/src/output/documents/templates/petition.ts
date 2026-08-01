@@ -1,7 +1,7 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { shortDate, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { shortDate, borrowerAddress, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { p, lineTerms } from './_shared';
 import { autoDescription, realtyDescription, isAutoOnly } from './_collateral';
@@ -18,7 +18,7 @@ export function petitionTemplate(c: CaseDocData): TDocumentDefinitions {
   const b = c.borrower;
 
   const name = b?.fullName ?? '—';
-  const address = b?.regAddress ?? b?.address ?? '—';
+  const address = borrowerAddress(b);
   const passport = [b?.passportSeries, b?.passportNumber].filter(Boolean).join(' ') || '—';
   const dateStr = line?.lineDate ? `${shortDate(line.lineDate)}й.` : '—';
   const insuredSum = line?.insurance?.insuredSum ?? line?.amountPolis ?? null;

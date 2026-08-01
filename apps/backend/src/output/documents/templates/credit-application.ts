@@ -4,7 +4,7 @@ import {
 } from '../../../common/sum-to-words.util';
 import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { CaseDocData } from '../case-document.loader';
-import { docTitle, shortDate, plainMoney, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { docTitle, shortDate, plainMoney, borrowerAddress, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { autoDescription, realtyDescription, isAutoOnly } from './_collateral';
 import { loanWord } from './_shared';
 
@@ -62,7 +62,7 @@ export function creditApplicationTemplate(c: CaseDocData): TDocumentDefinitions 
     docTitle('АРИЗА'),
 
     p(
-      `${b?.regAddress ?? b?.address ?? '—'} манзилда яшовчи Ўзбекистон Республикаси фуқароси ${b?.fullName ?? '—'}дан:`,
+      `${borrowerAddress(b)} манзилда яшовчи Ўзбекистон Республикаси фуқароси ${b?.fullName ?? '—'}дан:`,
       2,
     ),
     p(`Туғилган санаси: ${b?.birthDate ? `${shortDate(b.birthDate)} йил` : '—'}`),

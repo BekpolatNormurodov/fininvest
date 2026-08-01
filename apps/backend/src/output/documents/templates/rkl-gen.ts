@@ -1,7 +1,7 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { dateToRuCyrillic, moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { sectionTitle, lineAgreementNo } from '../doc-layout';
+import { sectionTitle, lineAgreementNo, borrowerAddress } from '../doc-layout';
 import { notaryBlock, p } from './_shared';
 import { collateralBlock } from './_collateral';
 
@@ -150,7 +150,7 @@ export function rklGenTemplate(c: CaseDocData, notary = false): TDocumentDefinit
         { width: '*', stack: [
           { text: '«Қарздор»', bold: true },
           { text: name, margin: [0, 4, 0, 2] as [number, number, number, number] },
-          { text: `Манзил: ${b?.regAddress ?? b?.address ?? '—'}` },
+          { text: `Манзил: ${borrowerAddress(b)}` },
           { text: `Паспорт: ${passport || '—'}` },
           { text: `Тел: ${b?.phone ?? '—'}` },
           { text: name, margin: [0, 10, 0, 2] as [number, number, number, number] },

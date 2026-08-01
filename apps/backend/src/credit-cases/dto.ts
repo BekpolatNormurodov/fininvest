@@ -24,6 +24,17 @@ import { LoanProduct, ProductType, SellerKind, WorkflowDecision } from '@credit-
  */
 const BlankToNull = () => Transform(({ value }) => (value === '' ? null : value));
 
+/**
+ * A text field the documents fall back FROM, so a blank has to become null rather than survive.
+ *
+ * `regAddress ?? address ?? '—'` never reaches its fallback when regAddress is `''` — `??` only
+ * skips null and undefined — so a cleared address field printed «Манзил: » with nothing after it on
+ * the contract, the бош келишув, the ходатайство, the score report and the disbursement request.
+ * Whitespace does the same, which is why this trims instead of comparing to the empty string.
+ */
+const BlankTextToNull = () =>
+  Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? null : value));
+
 export class BorrowerInput {
   // Draft-lenient: the wizard saves steps progressively (on the asset flow the borrower step comes
   // after the asset/seller step), so an empty name must pass a section save. Submit is strict —
@@ -33,7 +44,7 @@ export class BorrowerInput {
   @IsOptional() @IsString() passportNumber?: string | null;
   @IsOptional() @IsString() pinfl?: string | null;
   @IsOptional() @IsString() birthDate?: string | null;
-  @IsOptional() @IsString() address?: string | null;
+  @IsOptional() @BlankTextToNull() @IsString() address?: string | null;
   @IsOptional() @IsString() phone?: string | null;
   @IsOptional() @IsIn(['MALE', 'FEMALE']) gender?: 'MALE' | 'FEMALE' | null;
   @IsOptional() @IsString() citizenship?: string | null;
@@ -43,11 +54,11 @@ export class BorrowerInput {
   @IsOptional() @IsString() passportIssuer?: string | null;
   @IsOptional() @IsString() passportIssueDate?: string | null;
   @IsOptional() @IsString() passportExpiry?: string | null;
-  @IsOptional() @IsString() regAddress?: string | null;
+  @IsOptional() @BlankTextToNull() @IsString() regAddress?: string | null;
   @IsOptional() @IsString() regLandmark?: string | null;
   @IsOptional() @IsString() regTenure?: string | null;
   @IsOptional() @BlankToNull() @IsBoolean() regMatchesActual?: boolean | null;
-  @IsOptional() @IsString() actualAddress?: string | null;
+  @IsOptional() @BlankTextToNull() @IsString() actualAddress?: string | null;
   @IsOptional() @IsString() actualLandmark?: string | null;
   @IsOptional() @IsString() actualTenure?: string | null;
   @IsOptional() @IsArray() @IsString({ each: true }) phones?: string[] | null;
