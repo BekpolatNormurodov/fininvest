@@ -15,7 +15,16 @@ import { plainMoney, lineAgreementNo, DOC_DEFAULT_STYLE } from '../doc-layout';
 */
 const COVER_W = 413.2;
 const COVER_H = 723;
-const COVER_SIDE = Math.round((595.28 - COVER_W) / 2);   // A4 width
+/*
+  The box is centred on the page; the TEXT sits a few points inside it, not hard against the border.
+
+  Excel gives every cell a small inner margin, so nothing it prints touches a gridline — but the
+  page margin and the box's left edge were the same 91pt, which pushed the terms lines right up
+  against the frame. This pad insets the content on both sides so it reads as a filled-in form
+  rather than text jammed into a box, and being equal on both sides it keeps the centring.
+*/
+const COVER_PAD = 9;
+const COVER_SIDE = Math.round((595.28 - COVER_W) / 2) + COVER_PAD;   // A4 width, then the inner pad
 const COVER_TOP = Math.round((841.89 - COVER_H) / 2);    // A4 height, vertically centred
 const COVER_BOTTOM = Math.round((841.89 - COVER_TOP - COVER_H + 14) * 100) / 100;  // …plus the footer line
 

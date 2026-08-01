@@ -101,7 +101,8 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
       fits in two lines where the reference breaks it into three, and no amount of type sizing fixes
       that. Left/right = (595.28 − 413.2) / 2, top = (841.89 − 723) / 2.
     */
-    expect(def.pageMargins).toEqual([91, 59, 91, 73.89]);
+    // Side margin is the centring inset (91) PLUS the inner pad (9) that holds the text off the box.
+    expect(def.pageMargins).toEqual([100, 59, 100, 73.89]);
     // The frame is the LAST shape on the canvas — the grid lines are drawn under it.
     const bg = (def.background as (p: number, s: { width: number; height: number }) => { canvas: { w?: number; h?: number }[] })(1, { width: 595.28, height: 841.89 });
     const frame = bg.canvas[bg.canvas.length - 1];
