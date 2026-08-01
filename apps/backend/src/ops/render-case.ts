@@ -18,16 +18,23 @@ import { PdfService } from '../output/pdf.service';
  * lands in the folder is what the operator would download — not a fixture and not an approximation.
  *
  *   docker compose exec backend npm run render:case -- BR-2026-0002
- *   docker compose exec backend npm run render:case -- BR-2026-0002 /tmp/hujjatlar
+ *   docker compose cp backend:/data/uploads/rendered ./rendered
  *
  * Accepts the application number («BR-2026-0002»), the full contract number, or the row id. With no
  * argument it takes the three most recent cases that have collateral.
  *
- * Read-only: it opens the database, renders, and writes files. Nothing in the case is changed.
+ * Output goes under UPLOAD_DIR (…/rendered) by default. That matters in production, where the
+ * backend runs as three replicas: `exec` lands on one of them, `cp` may pick another, and files
+ * written to a container's own filesystem are then invisible to the copy. UPLOAD_DIR is a shared
+ * named volume mounted into every replica, so anything written there is visible from all of them.
+ * Pass an explicit path as the second argument to override.
+ *
+ * Read-only for the case: it opens the database, renders, and writes files. Nothing is changed.
  */
 async function main() {
   const [wanted, outArg] = process.argv.slice(2);
-  const out = outArg || path.join(process.cwd(), 'rendered', wanted ? wanted.replace(/[^\w-]+/g, '_') : 'oxirgi');
+  const base = outArg || path.join(process.env.UPLOAD_DIR || process.cwd(), 'rendered');
+  const out = outArg || path.join(base, wanted ? wanted.replace(/[^\w-]+/g, '_') : 'oxirgi');
   const prisma = new PrismaClient();
   const pdf = new PdfService();
 
