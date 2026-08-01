@@ -3,7 +3,7 @@ import { COLLATERAL_COVERAGE_TARGET, collateralRequirementMet } from '@credit-co
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, borrowerAddress, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
-import { wordsCyr } from './_shared';
+import { wordsCyr, activityLine } from './_shared';
 import { scoringForCase } from '../scoring-for-case';
 
 // The exact phrases the reference sheet offers for each gate — never invent wording.
@@ -66,16 +66,9 @@ export function scoreReportTemplate(c: CaseDocData): TDocumentDefinitions {
   const amount = line?.amountTotal ?? c.amount ?? null;
   const term = line?.termMonths ?? null;
   const ratePct = line?.interestRate != null ? Math.round(Number(line.interestRate) * 100) : null;
-  /*
-    The entrepreneur certificate is only collected above the microcredit threshold, so under it this
-    row printed «—» even when the operator had already said what the client does. On a self-employed
-    client that is the line a reader is looking for, and it was typed into «Ish joyi» — «O'Z O'ZINI
-    BAND QILGAN №12588». The certificate wins where it exists; the workplace stands in where it does
-    not.
-  */
-  const activity = [b?.entrepreneurType, b?.entrepreneurCertNo].filter(Boolean).join(' № ')
-    || c.employment?.employer?.trim()
-    || '—';
+  // Д1!C36 — the same cell the анкета and the credit application read. This file's rule (certificate
+  // first, workplace where there is none) is now the shared one; see activityLine.
+  const activity = activityLine(c);
 
   const identity: Content = table([
     plainRow('МИЖОЗ Ф.И.Ш.', b?.fullName ?? '—'),

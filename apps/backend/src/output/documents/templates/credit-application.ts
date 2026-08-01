@@ -6,7 +6,7 @@ import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { CaseDocData } from '../case-document.loader';
 import { docTitle, shortDate, plainMoney, borrowerAddress, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { autoDescription, realtyDescription, isAutoOnly } from './_collateral';
-import { loanWord } from './_shared';
+import { loanWord, activityLine } from './_shared';
 
 const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 /** Number spelled in Cyrillic Uzbek words, capitalized (e.g. 33 → "Ўттиз уч"). */
@@ -67,7 +67,7 @@ export function creditApplicationTemplate(c: CaseDocData): TDocumentDefinitions 
     ),
     p(`Туғилган санаси: ${b?.birthDate ? `${shortDate(b.birthDate)} йил` : '—'}`),
     p(passportLine),
-    p(`Асосий фаолият жойи: ${emp?.employer ?? b?.entrepreneurType ?? '—'}`),
+    p(`Асосий фаолият жойи: ${activityLine(c)}`),
     p(`Лавозими: ${emp?.position ?? '—'}`),
     /*
       `avgMonthlyIncome` is a column the wizard never writes — the operator's "Asosiy daromad" field

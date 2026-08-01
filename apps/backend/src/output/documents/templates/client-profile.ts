@@ -3,8 +3,11 @@ import { scoreForCase, MICRO_THRESHOLD, type ScorableCase } from '@credit-core/s
 import { dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, plainMoney, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { activityLine } from './_shared';
 
-const dash = (v: unknown): string => (v == null || v === '' ? '—' : String(v));
+// Trims: a field cleared to spaces is a blank to fill, not a value. Without this every row of the
+// анкета could print whitespace where the form expects «—».
+const dash = (v: unknown): string => (v == null || String(v).trim() === '' ? '—' : String(v));
 const money = (v: unknown): string => (v == null ? '—' : plainMoney(Number(v)));
 
 /**
@@ -112,7 +115,7 @@ export function clientProfileTemplate(c: CaseDocData): TDocumentDefinitions {
     ...single('Оилавий ахволи', dash(b?.maritalStatus)),
     ...single('Оила аъзолари сони', dash(b?.familySize)),
     ...group('Даромад манбаи', [
-      ['Фаолият жойи', dash(emp?.employer)],
+      ['Фаолият жойи', activityLine(c)],
       ['Фаолият манзили', dash(emp?.employerAddress)],
       /*
         Over 100 million the client is registered as a sole trader or self-employed, and the office

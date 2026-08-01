@@ -40,6 +40,28 @@ export function loanWord(c: CaseDocData): string {
   return amount > 100_000_000 ? 'Микрокредит' : 'Микроқарз';
 }
 
+/**
+ * What the client does for a living — Д1!C36, the cell «Фаолият жойи» / «Фаолият тури» /
+ * «Асосий фаолият жойи» all read.
+ *
+ * «оз озини банд колган дб кириткканмиз шуни тортиш кере» — a client entered as self-employed
+ * («O'Z O'ZINI BAND QILGAN №12588») did not come through. Three documents each answered this
+ * differently: the анкета printed the employer and nothing else, so a self-employed client got «—»;
+ * the score report preferred the certificate; the credit application preferred the employer with
+ * `??`, so an employer stored as '' hid the certificate behind it. One cell, three answers.
+ *
+ * The certificate wins where it exists — the score report's existing rule, and the reason it has
+ * one: a registered sole trader's status IS the answer, and the workplace stands in when there is
+ * none. `||` throughout, so a blank falls through instead of ending the chain.
+ */
+export function activityLine(c: CaseDocData): string {
+  const cert = [c.borrower?.entrepreneurType, c.borrower?.entrepreneurCertNo]
+    .map((x) => (typeof x === 'string' ? x.trim() : ''))
+    .filter(Boolean)
+    .join(' № ');
+  return cert || c.employment?.employer?.trim() || '—';
+}
+
 /** "200 000 000,00 (ikki yuz million ...)" — number + words. */
 export function amountWords(amount: number): string {
   return `${new Intl.NumberFormat('ru-RU').format(amount)},00 (${amount ? sumToWordsUz(amount) : '—'})`;
