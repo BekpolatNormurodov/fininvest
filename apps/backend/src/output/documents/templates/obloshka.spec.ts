@@ -33,20 +33,36 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
   });
 
   /*
-    A title page, and the only frame it has.
+    A title page: the frame, the sheet's grid inside it, and no table.
 
-    The reference screenshot shows a grid across the whole page. Those are Excel's own SCREEN
-    gridlines, not the form: the sheet is saved in pageBreakPreview — which is where its «Страница 1»
-    watermark comes from — and printGridLines is off. Its only real border is the outer box: a left
-    edge on column B, a right on F, a top on row 2, a bottom on row 36. Drawing the screen grid
-    would put lines on a signed cover that the printed form does not have.
+    Excel does not print that grid — «обложка» has printGridLines off, and the lines in the office's
+    screenshot are the application's, which is where its «Страница 1» watermark comes from too. Drawn
+    anyway, at the owner's request, because it is how they read the form. The geometry is the
+    sheet's: 34 row lines and 4 column lines at the actual row heights and column widths, so row 2 is
+    48pt, row 12 is 135 and rows 19–21 are 27.75 — not an even division, which would look tidy and
+    line up with nothing.
   */
-  it('is a title page — one outer frame, no table', () => {
+  it('is a title page — the frame, the sheet\'s grid, no table', () => {
     const def = obloshkaTemplate(mockCaseDoc());
     expect(JSON.stringify(def)).not.toContain('"table"');
-    // The frame is a page background, so it is a function and never reaches JSON — call it.
-    const bg = (def.background as (p: number, s: { width: number; height: number }) => { canvas: { type: string }[] })(1, { width: 595, height: 842 });
-    expect(bg.canvas.map((x) => x.type)).toEqual(['rect']);
+    // The background is a function and never reaches JSON — call it.
+    type Shape = { type: string; y1?: number };
+    const bg = (def.background as (p: number, s: { width: number; height: number }) => { canvas: Shape[] })(
+      1, { width: 595.28, height: 841.89 },
+    );
+    const lines = bg.canvas.filter((s) => s.type === 'line');
+    expect(lines).toHaveLength(38);                                  // 34 rows + 4 columns
+    expect(bg.canvas.filter((s) => s.type === 'rect')).toHaveLength(1);
+    // The border is drawn LAST, so the grid's ends sit under it rather than across it.
+    expect(bg.canvas[bg.canvas.length - 1].type).toBe('rect');
+
+    // Every line inside the box — if the sheet's geometry ever drifts from the frame's, this fails.
+    const top = (841.89 - 723) / 2;
+    for (const l of lines) {
+      expect(l.y1!).toBeGreaterThanOrEqual(top);
+      expect(l.y1!).toBeLessThanOrEqual(top + 723);
+    }
+
     // Fields that only belonged to the old invented summary grid.
     const text = flattenDocText(def);
     expect(text).not.toContain('ЖШШИР');
@@ -86,9 +102,11 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
       that. Left/right = (595.28 − 413.2) / 2, top = (841.89 − 723) / 2.
     */
     expect(def.pageMargins).toEqual([91, 59, 91, 73.89]);
-    const bg = (def.background as (p: number, s: { width: number; height: number }) => { canvas: { w: number; h: number }[] })(1, { width: 595.28, height: 841.89 });
-    expect(bg.canvas[0].w).toBeCloseTo(413.2, 1);
-    expect(bg.canvas[0].h).toBe(723);
+    // The frame is the LAST shape on the canvas — the grid lines are drawn under it.
+    const bg = (def.background as (p: number, s: { width: number; height: number }) => { canvas: { w?: number; h?: number }[] })(1, { width: 595.28, height: 841.89 });
+    const frame = bg.canvas[bg.canvas.length - 1];
+    expect(frame.w).toBeCloseTo(413.2, 1);
+    expect(frame.h).toBe(723);
 
     expect(typeof def.footer).toBe('function');
     expect((def.footer as () => { text: string })().text).toContain('Тошкент шахар');

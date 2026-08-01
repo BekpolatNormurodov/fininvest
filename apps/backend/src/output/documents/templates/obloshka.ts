@@ -19,6 +19,27 @@ const COVER_SIDE = Math.round((595.28 - COVER_W) / 2);   // A4 width
 const COVER_TOP = Math.round((841.89 - COVER_H) / 2);    // A4 height, vertically centred
 const COVER_BOTTOM = Math.round((841.89 - COVER_TOP - COVER_H + 14) * 100) / 100;  // …plus the footer line
 
+/*
+  The sheet's own row and column boundaries, inside the box — the grid the owner reads the form by.
+
+  Excel does not PRINT these: «обложка» has printGridLines off, and the lines visible in the office's
+  screenshot are the application's, which is also where its «Страница 1» watermark comes from. I said
+  so and was asked for them twice; they are the owner's form and the owner's call, so here they are,
+  drawn from the sheet's actual geometry rather than an even division — row 2 is 48pt, row 12 is 135,
+  rows 19–21 are 27.75 each, and the rest are the 15pt default.
+
+  Light grey and hairline, the weight Excel draws them at, so they frame the text without competing
+  with it. The last row and column are skipped: those coincide with the box border.
+*/
+const GRID_ROWS = [
+  48, 63, 78, 93, 108, 127.5, 142.5, 157.5, 172.5, 187.5, 322.5, 337.5, 352.5, 367.5, 382.5,
+  397.5, 414, 441.75, 469.5, 497.25, 512.25, 527.25, 542.25, 557.25, 572.25, 587.25, 602.25,
+  617.25, 632.25, 647.25, 662.25, 677.25, 692.25, 707.25,
+];
+const GRID_COLS = [104.24, 152.25, 242.23, 308.98];
+const GRID_COLOR = '#c9d1d9';
+const GRID_WIDTH = 0.4;
+
 /**
  * обложка — the dossier COVER PAGE, matching the reference sheet: the org name at the top, the
  * borrower's name large and centered in the middle, the "№ … СОНЛИ МИКРОМОЛИЯ ЛИНИЯСИ ОЧИШ БЎЙИЧА
@@ -57,24 +78,33 @@ export function obloshkaTemplate(c: CaseDocData): TDocumentDefinitions {
     */
     pageMargins: [COVER_SIDE, COVER_TOP, COVER_SIDE, COVER_BOTTOM],
     /*
-      The cover's frame. Drawn as a page background rather than a bordered table so it cannot push
-      the content around or split — it is decoration, and the title page's spacing is set by the
-      margins above it.
+      The frame and the grid inside it, drawn as a page background rather than a bordered table so
+      they cannot push the content around or split — they are the form, and the spacing of what sits
+      on them is set by the margins above.
 
-      Sized from the actual page rather than hard-coded A4 numbers, so it stays inset by the same
-      18pt whatever page size the document is rendered at.
+      Positioned from the actual page size rather than hard-coded A4 numbers, so the box stays
+      centred whatever page size the document is rendered at.
     */
-    background: (_page: number, size: { width: number; height: number }) => ({
-      canvas: [{
-        type: 'rect',
-        x: (size.width - COVER_W) / 2,
-        y: (size.height - COVER_H) / 2,
-        w: COVER_W,
-        h: COVER_H,
-        lineWidth: 1.2,
-        lineColor: '#111111',
-      }],
-    }),
+    background: (_page: number, size: { width: number; height: number }) => {
+      const x0 = (size.width - COVER_W) / 2;
+      const y0 = (size.height - COVER_H) / 2;
+      return {
+        canvas: [
+          ...GRID_ROWS.map((dy) => ({
+            type: 'line' as const,
+            x1: x0, y1: y0 + dy, x2: x0 + COVER_W, y2: y0 + dy,
+            lineWidth: GRID_WIDTH, lineColor: GRID_COLOR,
+          })),
+          ...GRID_COLS.map((dx) => ({
+            type: 'line' as const,
+            x1: x0 + dx, y1: y0, x2: x0 + dx, y2: y0 + COVER_H,
+            lineWidth: GRID_WIDTH, lineColor: GRID_COLOR,
+          })),
+          // The border last, so it draws over the grid's ends rather than under them.
+          { type: 'rect' as const, x: x0, y: y0, w: COVER_W, h: COVER_H, lineWidth: 1.2, lineColor: '#111111' },
+        ],
+      };
+    },
     /*
       Type sizes are the sheet's own — 20 / 36 / 16 / 11, read off the cells rather than chosen.
 
