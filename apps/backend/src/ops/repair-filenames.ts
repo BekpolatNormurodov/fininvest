@@ -5,7 +5,7 @@
 */
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { decodeUploadName } from '../src/common/upload-name.util';
+import { decodeUploadName } from '../common/upload-name.util';
 
 /**
  * One-off repair of filenames that were stored mangled, before uploads started decoding them.
@@ -22,7 +22,7 @@ import { decodeUploadName } from '../src/common/upload-name.util';
  * plain ASCII, is left alone. Nothing is written unless the value actually changes.
  *
  * Run AFTER deploying, once:
- *   docker compose exec backend npx ts-node prisma/repair-filenames.ts
+ *   docker compose exec backend npm run repair:filenames
  * Add --dry to list what would change without writing.
  */
 async function main() {

@@ -7,9 +7,9 @@ import 'dotenv/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
-import { loadCaseForDocs } from '../src/output/documents/case-document.loader';
-import { DOC_REGISTRY } from '../src/output/documents/registry';
-import { PdfService } from '../src/output/pdf.service';
+import { loadCaseForDocs } from '../output/documents/case-document.loader';
+import { DOC_REGISTRY } from '../output/documents/registry';
+import { PdfService } from '../output/pdf.service';
 
 /**
  * Render every document of a real case to PDF, from live data.
