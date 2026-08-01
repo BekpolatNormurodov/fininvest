@@ -21,6 +21,7 @@ export const Menu = make(Iso.HambergerMenu);
 export const Bell = make(Iso.Notification);
 export const X = make(Iso.CloseCircle);
 export const Category = make(Iso.Category);
+export const Filter = make(Iso.Filter ?? Iso.Sort);
 export const Settings = make(Iso.Setting2);
 export const Chart = make(Iso.Chart);
 export const FileText = make(Iso.DocumentText);

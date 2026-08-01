@@ -22,6 +22,8 @@ export function DataTable<T extends { id?: string }>({
   onRowClick,
   searchable,
   searchFields,
+  filter,
+  toolbar,
   empty = 'Ma’lumot yo‘q',
 }: {
   columns: Column<T>[];
@@ -30,6 +32,10 @@ export function DataTable<T extends { id?: string }>({
   onRowClick?: (row: T) => void;
   searchable?: boolean;
   searchFields?: (keyof T)[];
+  /** Row predicate applied BEFORE the text search — the filter bar owns its own state and passes this. */
+  filter?: (row: T) => boolean;
+  /** Controls rendered on the search row, right of the input — the filter bar goes here. */
+  toolbar?: React.ReactNode;
   empty?: string;
 }) {
   const [q, setQ] = useState('');
@@ -37,10 +43,11 @@ export function DataTable<T extends { id?: string }>({
   const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
 
   const filtered = useMemo(() => {
-    if (!q || !searchFields) return rows;
+    const base = filter ? rows.filter(filter) : rows;
+    if (!q || !searchFields) return base;
     const needle = q.toLowerCase();
-    return rows.filter((r) => searchFields.some((f) => String(r[f] ?? '').toLowerCase().includes(needle)));
-  }, [rows, q, searchFields]);
+    return base.filter((r) => searchFields.some((f) => String(r[f] ?? '').toLowerCase().includes(needle)));
+  }, [rows, q, searchFields, filter]);
 
   const sorted = useMemo(() => {
     if (!sort) return filtered;
@@ -70,17 +77,22 @@ export function DataTable<T extends { id?: string }>({
 
   return (
     <div className={cn('overflow-hidden', surface)}>
-      {searchable && (
-        <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-white/10">
-          <Search className="h-4 w-4 text-gray-400" />
-          <input
-            value={q}
-            onChange={(e) => { setQ(e.target.value); setPage(0); }}
-            placeholder="Qidirish…"
-            aria-label="Jadvalda qidirish"
-            className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:text-gray-100"
-          />
-          {q && <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-white/10 dark:text-gray-300">{filtered.length}</span>}
+      {(searchable || toolbar) && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-white/10">
+          {searchable && (
+            <div className="flex min-w-[180px] flex-1 items-center gap-2">
+              <Search className="h-4 w-4 shrink-0 text-gray-400" />
+              <input
+                value={q}
+                onChange={(e) => { setQ(e.target.value); setPage(0); }}
+                placeholder="Qidirish…"
+                aria-label="Jadvalda qidirish"
+                className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:text-gray-100"
+              />
+              {q && <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-white/10 dark:text-gray-300">{filtered.length}</span>}
+            </div>
+          )}
+          {toolbar && <div className="flex flex-wrap items-center gap-2">{toolbar}</div>}
         </div>
       )}
       {/* Desktop / tablet: real table */}

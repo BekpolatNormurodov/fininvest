@@ -9,7 +9,9 @@ import { Button, Skeleton, StatusBadge } from '../components/primitives';
 import { MetricCard } from '../components/widgets';
 import { DeadlineBadge } from '../components/DeadlineBadge';
 import { DataTable, type Column } from '../components/DataTable';
+import { useCaseFilters } from '../components/CaseFilters';
 import { useToast } from '../components/Toast';
+import { useI18n } from '../lib/i18n';
 import { cn, formatMoney } from '../lib/cn';
 
 const productCell = (c: CreditCaseListItem) => (
@@ -33,7 +35,11 @@ export function Dashboard() {
   const canCreate = user?.role === Role.OPERATOR || user?.role === Role.ADMIN;
   const [tab, setTab] = useState<'active' | 'archived'>('active');
 
+  const { lang } = useI18n();
   const { data: cases, isLoading } = useQuery({ queryKey: ['cases'], queryFn: () => api.cases(false) });
+  // The filter bar sits next to the applications table's search; it derives region/branch options
+  // from the loaded rows and hands the table a predicate.
+  const filters = useCaseFilters(cases ?? [], lang);
   const { data: archived, isLoading: archLoading } = useQuery({
     queryKey: ['cases', 'archived'],
     queryFn: () => api.archivedCases(),
@@ -166,6 +172,8 @@ export function Dashboard() {
                 rows={cases ?? []}
                 searchable
                 searchFields={['number', 'borrowerName', 'branchSymbol']}
+                filter={filters.predicate}
+                toolbar={filters.toolbar}
                 onRowClick={(c) => nav(`/cases/${c.id}`)}
                 empty="Hozircha ariza yo‘q"
               />

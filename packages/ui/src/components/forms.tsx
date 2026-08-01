@@ -5,7 +5,7 @@ import { Input } from './primitives';
 import { cn } from '../lib/cn';
 
 /** Anchored popover rendered in a portal (never clipped by overflow/modals). */
-function Popover({
+export function Popover({
   anchorRef, open, onClose, width, children,
 }: {
   anchorRef: React.RefObject<HTMLElement>;
