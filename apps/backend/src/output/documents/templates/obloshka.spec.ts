@@ -23,11 +23,13 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
     the margin instead of hard against it.
   */
   it('follows the sheet on the three details that are easy to get almost right', () => {
-    const text = flattenDocText(obloshkaTemplate(mockCaseDoc()));
+    const def = obloshkaTemplate(mockCaseDoc());
+    const text = flattenDocText(def);
     expect(text).toContain('миқдори');            // қ, not к
     expect(text).not.toContain('микдори');
-    expect(text).toContain('Тошкент шахар, 05 Январь 2026 г.');   // г., not й.
     expect(text).toContain(' Фоиз ставкаси:');    // the cell's own leading space
+    // The date lives in the page footer — see the band test below.
+    expect((def.footer as () => { text: string })().text).toBe('Тошкент шахар, 05 Январь 2026 г.');  // г., not й.
   });
 
   /*
@@ -56,14 +58,33 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
     reference cover does and what makes a dossier findable in a stack of them — but it still has to
     be ONE page, and the spacing below was tuned against a real PDF render, not by arithmetic.
   */
-  it('uses the sheet\'s type sizes and still fits on one page', () => {
+  it('uses the sheet\'s type sizes', () => {
     const json = JSON.stringify(obloshkaTemplate(mockCaseDoc({ borrower: { fullName: 'UBAYDULLAYEV ZUXRIDDIN NASRIDDINOVICH' } as never })));
     for (const size of [20, 36, 16, 11]) expect(json).toContain(`"fontSize":${size}`);
-    const gaps: string[] = json.match(/"margin":\[0,(\d+),0,0\]/g) ?? [];
-    let total = 0;
-    for (const g of gaps) total += Number(/,(\d+),/.exec(g)![1]);
-    // A4 less margins is 742pt; the text itself takes ~195pt at these sizes and wraps.
-    expect(total).toBeLessThanOrEqual(742 - 195);
+  });
+
+  /*
+    Where the blocks land, checked against the sheet's own rows rather than by eye.
+
+    The reference's печатная band is 723pt of rows; each block's centre falls at a fixed fraction of
+    it — 3.3% for the org name, 35.3% for the borrower, 59.2% for the бош келишув line, 76.0/78.1/
+    80.2% for the three terms and 98.9% for the date. Measured on the rendered PDF, ours now sit
+    within 0.4 percentage points (3pt) of every one of them.
+
+    Two structural things make that possible and are asserted here because losing either would put
+    the page silently out of proportion again: the cover keeps the sheet's own 26pt vertical margins
+    instead of the shared 50pt, and the date is a page FOOTER rather than the last content element —
+    at 98.9% there is not enough room left for pdfmake to fit a content line, and trying pushed the
+    cover onto a second page.
+  */
+  it('keeps the sheet\'s vertical band and puts the date in the footer', () => {
+    const def = obloshkaTemplate(mockCaseDoc());
+    expect(def.pageMargins).toEqual([45, 26, 45, 44]);
+    expect(typeof def.footer).toBe('function');
+    const foot = (def.footer as () => { text: string })();
+    expect(foot.text).toContain('Тошкент шахар');
+    // …and therefore NOT in the body, or it would print twice.
+    expect(JSON.stringify(def.content)).not.toContain('Тошкент шахар');
   });
 
   it('never crashes / shows NaN when the credit-line fields are missing — renders "—" instead', () => {
