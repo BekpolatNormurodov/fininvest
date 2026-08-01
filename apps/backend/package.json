@@ -12,6 +12,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:demo": "ts-node prisma/seed-demo.ts",
+    "repair:filenames": "ts-node prisma/repair-filenames.ts",
     "db:push": "prisma db push",
     "setup:ocr": "node scripts/fetch-ocr-model.mjs",
     "test": "jest",

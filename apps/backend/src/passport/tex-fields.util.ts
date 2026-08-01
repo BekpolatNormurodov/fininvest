@@ -117,9 +117,35 @@ export function fixUzbekText(s: string): string {
   return s.split(/\s+/).map((t) => (/[A-Za-z]/.test(t) ? snapToken(t, UZ_FLAT, 5) : t)).join(' ').trim();
 }
 
-/** Correct the vehicle body type (field 10) — snap "YENGIL SEOAN" → "YENGIL SEDAN" etc. */
+/**
+ * Correct the vehicle body type (field 10) — snap "YENGIL SEOAN" → "YENGIL SEDAN" etc.
+ *
+ * A phrase in which nothing snapped to the closed set is not a body type. Field 10 is a small
+ * fixed vocabulary printed on the form, so when the OCR box drifts onto a caption instead — «OLDI
+ * KO'RINISH» — every token passes through unrecognised and the caption lands in the field, from
+ * where it prints into «Кузов тури» on the приказ, the акт and the contract.
+ *
+ * Returning empty is the honest answer: the operator sees a blank to fill, not a plausible-looking
+ * wrong value they have no reason to question.
+ */
 export function fixBodyType(s: string): string {
-  return s.split(/\s+/).map((t) => (/[A-Za-z]/.test(t) ? snapToken(t, BODY_FLAT, 3) : t)).join(' ').trim();
+  const snapped = s.split(/\s+/).map((t) => (/[A-Za-z]/.test(t) ? snapToken(t, BODY_FLAT, 3) : t)).join(' ').trim();
+  if (!snapped) return '';
+  const known = new Set(BODY_FLAT.map((b) => b.canon));
+  return snapped.split(/\s+/).some((t) => known.has(t)) ? snapped : '';
+}
+
+/**
+ * Field 11's second half — the chassis, which on most Uzbek cars is printed as «RAKAMSIZ» (none).
+ *
+ * Anything else has to look like an identifier: letters and digits, no spaces. A phrase reaching
+ * this field is the same OCR drift that fills the body type with a caption.
+ */
+export function cleanChassis(s: string): string {
+  const v = s.trim();
+  if (!v) return '';
+  if (/^(RAKAMSIZ|РАКАМСИЗ|RAQAMSIZ)$/i.test(v)) return v.toUpperCase();
+  return /^[A-Z0-9-]{4,20}$/i.test(v) ? v.toUpperCase() : '';
 }
 
 /** Correct the fuel/power type (field 16) — snap "BENZN" → "BENZIN", "DIZ EL" → "DIZEL". */
@@ -218,7 +244,7 @@ function splitVin(raw: string): { bodyNo: string; chassis: string } {
   const isNumberless = (s: string) => /RAKAMSIZ|РАКАМСИЗ|RAQAMSIZ/i.test(s);
   const body = parts.find((p) => !isNumberless(p)) ?? '';
   const chassisPart = parts.find((p) => isNumberless(p));
-  return { bodyNo: joinCode(body, 17), chassis: chassisPart ? squish(chassisPart) : '' };
+  return { bodyNo: joinCode(body, 17), chassis: chassisPart ? cleanChassis(squish(chassisPart)) : '' };
 }
 
 // Distinctive car-model words. When field 2 (model) reads garbage, the model word often still survives
