@@ -4,6 +4,8 @@ import { CaseDocData } from '../case-document.loader';
 import { sectionTitle, lineAgreementNo, borrowerAddress } from '../doc-layout';
 import { notaryBlock, p } from './_shared';
 import { collateralBlock } from './_collateral';
+import { rklApexTemplate } from './rkl-apex';
+import { isAssetProduct } from './product-form';
 
 /** Centered, larger chapter heading, e.g. "3. МИКРОҚАРЗ/МИКРОКРЕДИТЛАР ГАРОВ ТАЪМИНОТИ". */
 const h = (text: string): Content => sectionTitle(text);
@@ -22,6 +24,9 @@ const sub = (text: string): Content => ({ text, bold: true, italics: true, margi
  * notary/registry/seal) as the last content item. Defaults to false so existing callers are unaffected.
  */
 export function rklGenTemplate(c: CaseDocData, notary = false): TDocumentDefinitions {
+  // AVTO and IPOTEKA sign the APEX form — a different agreement, not a revision of this one. The
+  // cash products keep this, which is what their workbooks say.
+  if (isAssetProduct(c)) return rklApexTemplate(c, notary);
   const line = c.creditLine;
   const b = c.borrower;
   const org = c.organization;

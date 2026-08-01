@@ -1,5 +1,4 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { LoanProduct, loanProductProfile, LoanProductKind } from '@credit-core/shared';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { sectionTitle, borrowerAddress } from '../doc-layout';
@@ -7,18 +6,7 @@ import { mapDocStrings } from '../sanitize';
 import { p, loanWord } from './_shared';
 import { contractCollateralProse } from './_collateral';
 import { contractApexTemplate } from './contract-apex';
-
-/**
- * True when the case buys an asset (AVTO / IPOTEKA) rather than handing over cash.
- *
- * Only those two get the APEX contract. The cash form below is what ADM TEAM and OSON have been
- * signing and matches their workbooks line for line, so it is left exactly as it is.
- */
-function isAssetProduct(c: CaseDocData): boolean {
-  const product = c.product as LoanProduct | null | undefined;
-  if (!product) return false;
-  return loanProductProfile(product)?.kind === LoanProductKind.ASSET;
-}
+import { isAssetProduct } from './product-form';
 
 /** Bold section heading, e.g. "4. Микромолия ташкилотининг ҳуқуқ ва мажбуриятлари". */
 const h = (text: string): Content => sectionTitle(text);
