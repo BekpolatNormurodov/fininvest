@@ -1,7 +1,7 @@
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { plainMoney, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { plainMoney, lineAgreementNo, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 
 /**
  * обложка — the dossier COVER PAGE, matching the reference sheet: the org name at the top, the
@@ -14,7 +14,7 @@ export function obloshkaTemplate(c: CaseDocData): TDocumentDefinitions {
   const org = c.organization;
   const b = c.borrower;
   const line = c.creditLine;
-  const lineNo = line?.lineNumber ?? c.contractNumber ?? c.number ?? '—';
+  const lineNo = lineAgreementNo(c);
   const termText = line?.termMonths != null ? `${line.termMonths} ойгача` : '—';
   const rateText = line?.interestRate != null ? `${Math.round(Number(line.interestRate) * 100)}%` : '—';
   const amount = line?.amountTotal ?? c.amount ?? null;

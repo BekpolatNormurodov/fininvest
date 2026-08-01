@@ -39,10 +39,18 @@ describe('prikazTemplate', () => {
     expect(text).not.toContain('GMT');
   });
 
-  it('prefers the credit line order number for the order №', () => {
-    const c = mockCaseDoc({ creditLine: { orderNumber: 'П-123' as unknown as never } });
-    const text = flattenDocText(prikazTemplate(c));
+  /*
+    The order cites the бош келишув, not an order number of its own.
 
-    expect(text).toContain('П-123');
+    `orderNumber` was the first term of this expression and nothing has ever written it — the only
+    assignment is a pass-through of whatever the client sent, and the wizard has no such field. So
+    the branch could fire on a legacy row and on nothing else, while the tail behind it printed the
+    CONTRACT number under a heading that names the линия. See two-numbers.spec.ts.
+  */
+  it('cites the бош келишув number, not the contract number', () => {
+    const text = flattenDocText(prikazTemplate(mockCaseDoc({ creditLine: { lineNumber: null as unknown as never } })));
+
+    expect(text).toContain('1320');
+    expect(text).not.toContain('2012 MFL 1320 PS');
   });
 });

@@ -1,7 +1,7 @@
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { lineAgreementNo, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { lineTerms, notaryBlock } from './_shared';
 import { collateralBlock } from './_collateral';
 
@@ -16,7 +16,7 @@ export function prikazTemplate(c: CaseDocData, notary = false): TDocumentDefinit
   const line = c.creditLine;
   const b = c.borrower;
   const director = org?.directorFull ?? 'Ижрочи директор';
-  const contractNo = line?.orderNumber ?? line?.lineNumber ?? c.contractNumber ?? c.number;
+  const contractNo = lineAgreementNo(c);
   const dateStr = line?.lineDate ? `${dateToRuCyrillic(line.lineDate)} йилдаги` : '—';
 
   return {

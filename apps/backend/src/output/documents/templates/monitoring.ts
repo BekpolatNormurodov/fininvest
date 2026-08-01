@@ -1,7 +1,7 @@
 import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { gridTable, shortDate, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { gridTable, shortDate, lineAgreementNo, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { p, pv, v } from './_shared';
 import { autoValueTable, autoFootnotes, realtyFootnotes, shortName, totalAgreedValue } from './_collateral';
 
@@ -79,7 +79,7 @@ export function monitoringTemplate(c: CaseDocData, periodMonths: number): TDocum
   const b = c.borrower;
   const name = b?.fullName ?? '—';
   const line = c.creditLine;
-  const lineNo = line?.orderNumber ?? line?.lineNumber ?? c.contractNumber ?? c.number ?? '—';
+  const lineNo = lineAgreementNo(c);
   const lineDate = line?.lineDate ?? null;
   const lineDateStr = lineDate ? shortDate(lineDate) : '—';
 

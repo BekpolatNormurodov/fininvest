@@ -1,7 +1,7 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { dateToRuCyrillic, moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { sectionTitle } from '../doc-layout';
+import { sectionTitle, lineAgreementNo } from '../doc-layout';
 import { notaryBlock, p } from './_shared';
 import { collateralBlock } from './_collateral';
 
@@ -34,7 +34,7 @@ export function rklGenTemplate(c: CaseDocData, notary = false): TDocumentDefinit
     b?.passportIssueDate ? `${dateToRuCyrillic(b.passportIssueDate)} берилган` : null,
   ].filter(Boolean).join(', ');
 
-  const contractNo = line?.lineNumber ?? c.contractNumber ?? c.number;
+  const contractNo = lineAgreementNo(c);
   const amount = Number(line?.amountTotal ?? c.amount ?? 0);
   const amt = moneyWithWordsCyr(amount);
   const termText = line?.termMonths != null ? `${line.termMonths} ой` : '—';

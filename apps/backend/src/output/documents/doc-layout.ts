@@ -43,6 +43,34 @@ export const money = (n: unknown): string =>
   n == null ? '—' : new Intl.NumberFormat('ru-RU').format(Number(n)) + " so'm";
 
 /**
+ * The бош келишув number — «№ 0000 СОНЛИ МИКРОМОЛИЯ ЛИНИЯСИ ОЧИШ БЎЙИЧА БОШ КЕЛИШУВ».
+ *
+ * A case carries two numbers, not one. This is the credit LINE's: the обложка, the РКЛ Ген, the
+ * приказ, the акт and the мониторинг all head or cite the line agreement. The contract carries the
+ * other one, the full «2012 MFL 1320 PS».
+ *
+ * It is `contractYearlyNo`, assigned at submit alongside the contract number — the design settled
+ * that (docs/superpowers/specs/2026-07-09-contract-number-remfl-design.md §6: «Liniya № (РКЛ)» →
+ * contractYearlyNo, avto, read-only). Nothing new is generated here; a second stored column would
+ * hold the same value while being free to drift from the one the contract number is built from.
+ *
+ * `creditLine.lineNumber` still wins when it is set, so a number an operator typed on an older case
+ * keeps printing.
+ *
+ * There is no fall-through to the contract number. All five documents used to end
+ * `?? c.contractNumber ?? c.number`, so a dossier printed one number under two different labels and
+ * looked right. A case with no number yet says «—», which is true.
+ */
+export function lineAgreementNo(c: {
+  creditLine?: { lineNumber?: string | null } | null;
+  contractYearlyNo?: number | null;
+}): string {
+  const typed = c.creditLine?.lineNumber?.trim();
+  if (typed) return typed;
+  return c.contractYearlyNo != null ? String(c.contractYearlyNo) : '—';
+}
+
+/**
  * Shared document defaults — bumped line height (1.15, per the "kattaroq line orasi" request) so
  * every rebuilt template reads like the Excel forms. Templates spread this into `defaultStyle`.
  */

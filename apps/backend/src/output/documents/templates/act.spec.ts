@@ -4,12 +4,18 @@ import { actTemplate } from './act';
 const norm = (s: string) => s.replace(/\s/g, ' ');
 
 describe('actTemplate', () => {
-  it('titles the act "№1" (as the Excel does) and references the real line number in the clause', () => {
-    const c = mockCaseDoc({ contractNumber: '1175/MFL', creditLine: { orderNumber: 'ORD-77' as unknown as never } });
+  it('titles the act "№1" (as the Excel does) and cites the бош келишув in the clause', () => {
+    const c = mockCaseDoc({ contractNumber: '1175/MFL', creditLine: { lineNumber: null as unknown as never } });
     const text = flattenDocText(actTemplate(c));
     expect(text).toContain('ГАРОВ ПРЕДМЕТИНИНГ ҚИЙМАТИНИ КЕЛИШИШ ДАЛОЛАТНОМАСИ №1');
-    // The line reference inside the clause still carries the real number.
-    expect(text).toContain('№ORD-77 сонли микромолиялаш линияси');
+    /*
+      The clause says «микромолиялаш линияси очиш тўғрисидаги Бош Келишувга асосан», so the number
+      it carries is the line's, not the contract's. It used to read `orderNumber ?? lineNumber ??
+      contractNo` — and since nothing writes orderNumber and nothing wrote lineNumber, in practice
+      it printed the contract number under a clause naming the line agreement.
+    */
+    expect(text).toContain('№1320 сонли микромолиялаш линияси');
+    expect(text).not.toContain('№1175/MFL сонли микромолиялаш линияси');
   });
 
   it('shows "—" instead of fabricating a today() date when lineDate is missing', () => {

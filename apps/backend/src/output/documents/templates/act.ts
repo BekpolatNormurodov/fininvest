@@ -1,7 +1,7 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { lineAgreementNo, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { p, notaryBlock } from './_shared';
 import { collateralDeclaredBlock, collateralAgreedTables, totalAgreedValue, shortName } from './_collateral';
 
@@ -25,7 +25,7 @@ export function actTemplate(c: CaseDocData, notary = false): TDocumentDefinition
   const pledgorName = c.collaterals?.[0]?.owners?.[0]?.fullName ?? borrowerName;
   const samePerson = pledgorName === borrowerName;
   const contractNo = c.contractNumber ?? c.number ?? '—';
-  const lineRefNo = line?.orderNumber ?? line?.lineNumber ?? contractNo;
+  const lineRefNo = lineAgreementNo(c);
   const dateBare = line?.lineDate ? ruBare(line.lineDate) : '—';
   const dateFull = line?.lineDate ? dateToRuCyrillic(line.lineDate) : '—';
   const creditAmount = line?.amountTotal ?? c.amount ?? null;

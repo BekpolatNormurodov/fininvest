@@ -45,6 +45,15 @@ export function mockCaseDoc(overrides?: DeepPartial<CaseDocData>): CaseDocData {
     termMonths: 24,
     katmPrice: null,
     contractNumber: '2012 MFL 1320 PS',
+    /*
+      The three columns the contract number is built from. They were missing here, so any template
+      reading them rendered `undefined` under every spec while working in production. The бош
+      келишув number is one of those, which is how a dossier printing one number under two labels
+      stayed green. Kept consistent with contractNumber above: 2012 MFL 1320 PS.
+    */
+    contractGlobalNo: 2012,
+    contractYearlyNo: 1320,
+    contractBranchSym: 'PS',
     createdAt: new Date('2026-01-10T00:00:00.000Z'),
     updatedAt: new Date('2026-01-10T00:00:00.000Z'),
 
