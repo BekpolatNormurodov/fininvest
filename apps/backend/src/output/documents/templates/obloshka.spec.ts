@@ -72,20 +72,43 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
     within 0.4 percentage points (3pt) of every one of them.
 
     Two structural things make that possible and are asserted here because losing either would put
-    the page silently out of proportion again: the cover keeps the sheet's own 26pt vertical margins
+    the page silently out of proportion again: the cover keeps the sheet-s own 59pt top margin
     instead of the shared 50pt, and the date is a page FOOTER rather than the last content element —
     at 98.9% there is not enough room left for pdfmake to fit a content line, and trying pushed the
     cover onto a second page.
   */
-  it('keeps the sheet\'s vertical band and puts the date in the footer', () => {
+  it('sits in the sheet\'s own box and puts the date in the footer', () => {
     const def = obloshkaTemplate(mockCaseDoc());
-    expect(def.pageMargins).toEqual([45, 26, 45, 44]);
+    /*
+      The box is columns B..F by rows 2..36 — 413.2 × 723pt — and the sheet is set to centre it both
+      ways. The WIDTH is what makes the wrapping match: at our usual 505pt column the borrower's name
+      fits in two lines where the reference breaks it into three, and no amount of type sizing fixes
+      that. Left/right = (595.28 − 413.2) / 2, top = (841.89 − 723) / 2.
+    */
+    expect(def.pageMargins).toEqual([91, 59, 91, 73.89]);
+    const bg = (def.background as (p: number, s: { width: number; height: number }) => { canvas: { w: number; h: number }[] })(1, { width: 595.28, height: 841.89 });
+    expect(bg.canvas[0].w).toBeCloseTo(413.2, 1);
+    expect(bg.canvas[0].h).toBe(723);
+
     expect(typeof def.footer).toBe('function');
-    const foot = (def.footer as () => { text: string })();
-    expect(foot.text).toContain('Тошкент шахар');
+    expect((def.footer as () => { text: string })().text).toContain('Тошкент шахар');
     // …and therefore NOT in the body, or it would print twice.
     expect(JSON.stringify(def.content)).not.toContain('Тошкент шахар');
   });
+
+  /*
+    The reference cover breaks the borrower's name across three lines and the org name across two.
+    That is a function of the column width, and it is the most visible thing about the page — a
+    dossier is found in a stack by that block. Asserted through pdfmake's own line breaking.
+  */
+  it('breaks the long names the way the reference does', async () => {
+    const { PdfService } = await import('../../pdf.service');
+    const buf = await new PdfService().render(
+      obloshkaTemplate(mockCaseDoc({ borrower: { fullName: 'UBAYDULLAYEV ZUXRIDDIN NASRIDDINOVICH' } as never })),
+    );
+    // One page, and the name split into its three words on three lines.
+    expect((buf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length).toBe(1);
+  }, 60_000);
 
   it('never crashes / shows NaN when the credit-line fields are missing — renders "—" instead', () => {
     const c = mockCaseDoc({
