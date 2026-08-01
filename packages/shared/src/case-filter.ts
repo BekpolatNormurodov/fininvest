@@ -45,6 +45,40 @@ export function activeFilterCount(f: CaseFilter): number {
   );
 }
 
+/**
+ * The quick date ranges the filter offers, resolved against a reference «today».
+ *
+ * `now` is passed in rather than read from the clock so the result is deterministic and testable;
+ * the UI passes `new Date()`. Days are stamped as UTC midnight of the calendar day — the same
+ * convention the date picker and matchesCaseFilter use — so a preset and a hand-picked date compare
+ * identically.
+ */
+export type DatePresetKey = 'last7' | 'last30' | 'prevMonth' | 'thisYear' | 'lastYear';
+
+export const DATE_PRESET_LABELS: Record<DatePresetKey, string> = {
+  last7: 'So‘nggi 7 kun',
+  last30: 'So‘nggi 30 kun',
+  prevMonth: 'O‘tgan oy',
+  thisYear: 'Shu yil',
+  lastYear: 'O‘tgan yil',
+};
+export const DATE_PRESET_ORDER: DatePresetKey[] = ['last7', 'last30', 'prevMonth', 'thisYear', 'lastYear'];
+
+const utcDay = (y: number, m: number, d: number): string => new Date(Date.UTC(y, m, d)).toISOString();
+
+export function datePreset(key: DatePresetKey, now: Date): { from: string; to: string } {
+  // Read the calendar day off `now` and rebuild it as UTC midnight, so «today» is the day the user sees.
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const today = utcDay(y, m, d);
+  switch (key) {
+    case 'last7': return { from: utcDay(y, m, d - 6), to: today };   // today plus the six before it
+    case 'last30': return { from: utcDay(y, m, d - 29), to: today };
+    case 'prevMonth': return { from: utcDay(y, m - 1, 1), to: utcDay(y, m, 0) }; // 1st .. last day of last month
+    case 'thisYear': return { from: utcDay(y, 0, 1), to: today };
+    case 'lastYear': return { from: utcDay(y - 1, 0, 1), to: utcDay(y - 1, 11, 31) };
+  }
+}
+
 /** True when the row passes every active dimension of the filter. */
 export function matchesCaseFilter(f: CaseFilter, r: CreditCaseListItem): boolean {
   if (f.products.size && !(r.product && f.products.has(r.product))) return false;

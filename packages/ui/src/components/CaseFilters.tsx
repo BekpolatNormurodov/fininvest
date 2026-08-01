@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   LOAN_PRODUCT_ORDER, loanProductProfile, EMPTY_CASE_FILTER, activeFilterCount, matchesCaseFilter,
+  datePreset, DATE_PRESET_ORDER, DATE_PRESET_LABELS,
   type LoanProduct, type CaseFilter, type CreditCaseListItem,
 } from '@credit-core/shared';
 import { Popover, DatePicker } from './forms';
@@ -51,18 +52,15 @@ export function useCaseFilters(rows: CreditCaseListItem[], lang: 'uz' | 'ru') {
         single selected={s.insured ? new Set([s.insured]) : new Set()}
         onChange={(set) => setS((x) => ({ ...x, insured: (set.values().next().value as 'yes' | 'no') ?? '' }))}
       />
-      {regionOpts.length > 1 && (
-        <FilterMenu
-          label="Region" options={regionOpts.map((v) => ({ value: v, label: v }))}
-          selected={s.regions as Set<string>} onChange={(regions) => setS((x) => ({ ...x, regions }))}
-        />
-      )}
-      {branchOpts.length > 1 && (
-        <FilterMenu
-          label="Filial" options={branchOpts.map((v) => ({ value: v, label: v }))}
-          selected={s.branches as Set<string>} onChange={(branches) => setS((x) => ({ ...x, branches }))}
-        />
-      )}
+      {/* Region and Filial are always shown — an empty menu says «Ma'lumot yo'q» rather than vanishing. */}
+      <FilterMenu
+        label="Region" options={regionOpts.map((v) => ({ value: v, label: v }))}
+        selected={s.regions as Set<string>} onChange={(regions) => setS((x) => ({ ...x, regions }))}
+      />
+      <FilterMenu
+        label="Filial" options={branchOpts.map((v) => ({ value: v, label: v }))}
+        selected={s.branches as Set<string>} onChange={(branches) => setS((x) => ({ ...x, branches }))}
+      />
       <DateRange from={s.from} to={s.to} onChange={(from, to) => setS((x) => ({ ...x, from, to }))} />
       {activeCount > 0 && (
         <button
@@ -124,6 +122,9 @@ function FilterMenu({
       </button>
       <Popover anchorRef={ref} open={open} onClose={() => setOpen(false)} width={220}>
         <div className="max-h-72 overflow-y-auto p-1">
+          {options.length === 0 && (
+            <p className="px-2.5 py-2 text-sm text-gray-400 dark:text-gray-500">Ma’lumot yo‘q</p>
+          )}
           {options.map((o) => {
             const on = selected.has(o.value);
             return (
@@ -166,8 +167,28 @@ function DateRange({
         {summary}
         <ChevronDown className={cn('h-3.5 w-3.5 transition', open && 'rotate-180')} />
       </button>
-      <Popover anchorRef={ref} open={open} onClose={() => setOpen(false)} width={240}>
-        <div className="space-y-2 p-3">
+      <Popover anchorRef={ref} open={open} onClose={() => setOpen(false)} width={256}>
+        <div className="space-y-3 p-3">
+          {/* Quick ranges — one tap sets Dan/Gacha; the pickers below still allow a custom span. */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {DATE_PRESET_ORDER.map((key) => {
+              const r = datePreset(key, new Date());
+              const on = from === r.from && to === r.to;
+              return (
+                <button
+                  key={key} type="button"
+                  onClick={() => { onChange(r.from, r.to); setOpen(false); }}
+                  className={cn(
+                    'rounded-lg border px-2 py-1.5 text-xs font-medium transition',
+                    on
+                      ? 'border-brand-400 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/10',
+                  )}
+                >{DATE_PRESET_LABELS[key]}</button>
+              );
+            })}
+          </div>
+          <div className="h-px bg-gray-100 dark:bg-white/10" />
           <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">
             Dan
             <div className="mt-1"><DatePicker value={from} onChange={(v) => onChange(v, to)} /></div>

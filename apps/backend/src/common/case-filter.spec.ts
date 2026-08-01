@@ -1,5 +1,5 @@
 import {
-  matchesCaseFilter, activeFilterCount, EMPTY_CASE_FILTER,
+  matchesCaseFilter, activeFilterCount, EMPTY_CASE_FILTER, datePreset,
   type CaseFilter, type CreditCaseListItem, LoanProduct,
 } from '@credit-core/shared';
 
@@ -81,6 +81,55 @@ describe('the date range compares by day, inclusive of both ends', () => {
   it('an open end filters on only the other bound', () => {
     expect(matchesCaseFilter(filter({ from: '2026-03-10T00:00:00.000Z' }), row({ createdAt: '2026-03-15T10:00:00.000Z' }))).toBe(true);
     expect(matchesCaseFilter(filter({ from: '2026-03-20T00:00:00.000Z' }), row({ createdAt: '2026-03-15T10:00:00.000Z' }))).toBe(false);
+  });
+});
+
+describe('the quick date ranges resolve against a fixed «today»', () => {
+  // A Wednesday deliberately mid-month and mid-year, so every boundary is easy to read.
+  const now = new Date('2026-03-18T09:00:00.000Z');
+  const day = (iso: string) => iso.slice(0, 10);
+
+  it('last 7 days is today plus the six before it', () => {
+    const r = datePreset('last7', now);
+    expect(day(r.from)).toBe('2026-03-12');
+    expect(day(r.to)).toBe('2026-03-18');
+  });
+
+  it('last 30 days ends today and starts 29 days back', () => {
+    const r = datePreset('last30', now);
+    expect(day(r.from)).toBe('2026-02-17');
+    expect(day(r.to)).toBe('2026-03-18');
+  });
+
+  it('previous month is the whole of February', () => {
+    const r = datePreset('prevMonth', now);
+    expect(day(r.from)).toBe('2026-02-01');
+    expect(day(r.to)).toBe('2026-02-28'); // 2026 is not a leap year
+  });
+
+  it('this year runs from 1 January to today', () => {
+    const r = datePreset('thisYear', now);
+    expect(day(r.from)).toBe('2026-01-01');
+    expect(day(r.to)).toBe('2026-03-18');
+  });
+
+  it('last year is the whole of the previous year', () => {
+    const r = datePreset('lastYear', now);
+    expect(day(r.from)).toBe('2025-01-01');
+    expect(day(r.to)).toBe('2025-12-31');
+  });
+
+  it('previous month handles the January → December rollover', () => {
+    const r = datePreset('prevMonth', new Date('2026-01-10T00:00:00.000Z'));
+    expect(day(r.from)).toBe('2025-12-01');
+    expect(day(r.to)).toBe('2025-12-31');
+  });
+
+  it('a preset actually filters — a case inside the last-7 window passes, one just before fails', () => {
+    const r = datePreset('last7', now);
+    const f: CaseFilter = { ...EMPTY_CASE_FILTER, from: r.from, to: r.to };
+    expect(matchesCaseFilter(f, row({ createdAt: '2026-03-15T12:00:00.000Z' }))).toBe(true);
+    expect(matchesCaseFilter(f, row({ createdAt: '2026-03-11T23:00:00.000Z' }))).toBe(false);
   });
 });
 
