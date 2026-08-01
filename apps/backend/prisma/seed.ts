@@ -4,27 +4,47 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Lender master data (id 'default') — document letterhead/requisites read this.
+  /*
+    Lender master data (id 'default') — every document's letterhead and requisites block reads this.
+
+    Copied cell by cell from the «Д0» sheet of the reference workbook «АВТО мфл APEX (2).xlsx», the
+    owner's own current form. The spelling is theirs and is kept exactly: «шахар», «кучаси», «МЧЖ»
+    after the name rather than before it.
+
+    Two carried over unchanged and are worth a second look before the first real contract: the
+    licence («61», 22.06.2019) is character-for-character what the previous organisation had, which
+    reads more like a cell nobody edited than a coincidence, and both phone numbers are placeholder
+    patterns («90-000-79-25»).
+
+    The account and MFO are stored WITHOUT the «№» that sits in front of them in the sheet —
+    doc-layout.ts prints «р/с: №…» itself, and keeping it here produced «№№».
+  */
+  const org = {
+    tradeMark: 'FINCOM INVEST',
+    nameMixed: '«FINCOM INVEST» MIKROMOLIYA TASHKILOTI МЧЖ',
+    nameUpper: '«FINCOM INVEST» MIKROMOLIYA TASHKILOTI МЧЖ',
+    nameSuffix: '«FINCOM INVEST» MIKROMOLIYA TASHKILOTI МЧЖ',
+    // The reference prints the short form in the opening paragraph too — this is not an abbreviation
+    // of some longer name we are missing.
+    directorShort: 'Таджибаев А.Ю',
+    directorFull: 'Таджибаев А.Ю',
+    legalBasis: 'Низом',
+    address: 'Тошкент шахар, Чилонзор тумани, Катта Чилонзор-3 МФЙ Чилонзор кучаси 82в-уй',
+    bankAccount: '2021 6000 8073 0412 2001',
+    bankMfo: '01196',
+    bankName: '«APEX BANK» АЖ',
+    phone: '90-000-79-25',
+    phone2: '70-224-00-60',
+    inn: '312 356 239',
+    licenseNo: '61',
+    licenseDate: new Date('2019-06-22T00:00:00Z'),
+  };
   await prisma.organization.upsert({
     where: { id: 'default' },
-    update: { tradeMark: 'PULMAKON' }, // backfill the trademark on existing deployments
-    create: {
-      id: 'default',
-      tradeMark: 'PULMAKON',
-      nameMixed: 'МЧЖ «CLEVER Mikromoliya Tashkiloti»',
-      nameUpper: 'МЧЖ «CLEVER MIKROMOLIYA TASHKILOTI»',
-      nameSuffix: '«CLEVER MIKROMOLIYA TASHKILOTI» МЧЖ',
-      directorShort: 'Б.Исмоилов',
-      directorFull: 'Исмоилов Баҳромжон Ахрор ўғли',
-      address: 'Тошкент шахар, Олмазор тумани, Сагбон 30 берк кўча, 6 уй',
-      bankAccount: '20216000105068380006',
-      bankMfo: '01183',
-      bankName: 'АЖ «ANORBANK»',
-      phone: '78 113-31-33',
-      inn: '306365847',
-      licenseNo: '61',
-      licenseDate: new Date('2019-06-22T00:00:00Z'),
-    },
+    // An existing deployment carries the previous lender's details, so this has to overwrite rather
+    // than only fill — otherwise the old name keeps printing on every new contract.
+    update: org,
+    create: { id: 'default', ...org },
   });
 
   const branch = await prisma.branch.upsert({

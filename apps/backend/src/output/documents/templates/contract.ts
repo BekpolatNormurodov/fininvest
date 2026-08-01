@@ -84,9 +84,13 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
   const orgName = org?.nameMixed ?? '—';
   const orgAddress = org?.address ?? '—';
   const orgBankAccount = org?.bankAccount ?? '—';
-  const orgBankMfo = [org?.bankMfo, org?.bankName].filter(Boolean).join(' ') || '—';
+  // «МФО: №01196 в «APEX BANK» АЖ» — the contract puts «в» before the bank's name; the bosh kelishuv
+  // does not. Each sheet is followed as written. The stored value carries no «№», so it is added here.
+  const orgBankMfo = [org?.bankMfo ? `№${org.bankMfo}` : null, org?.bankName ? `в ${org.bankName}` : null]
+    .filter(Boolean).join(' ') || '—';
   const orgInn = org?.inn ?? '—';
   const orgPhone = org?.phone ?? null;
+  const orgPhone2 = org?.phone2 ?? null;
   const directorFull = org?.directorFull ?? '—';
 
   return {
@@ -304,11 +308,12 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
               { text: '«Микромолия ташкилоти»', bold: true },
               { text: orgName, margin: [0, 4, 0, 2] },
               { text: `Манзил: ${orgAddress}`, margin: [0, 1, 0, 1] },
-              { text: `х/р: ${orgBankAccount}`, margin: [0, 1, 0, 1] },
+              { text: `х/р: № ${orgBankAccount}`, margin: [0, 1, 0, 1] },
               { text: `МФО: ${orgBankMfo}`, margin: [0, 1, 0, 1] },
               { text: `СТИР: ${orgInn}`, margin: [0, 1, 0, 1] },
-              // The firm's contact line — the debtor column has always carried one, this one did not.
+              // Two contact lines, the second bare — as the reference block prints them.
               ...(orgPhone ? [{ text: `Тел: ${orgPhone}`, margin: [0, 1, 0, 1] as [number, number, number, number] }] : []),
+              ...(orgPhone2 ? [{ text: orgPhone2, margin: [0, 1, 0, 1] as [number, number, number, number] }] : []),
               // Extra air above the signature — the phone line left the director crowding the requisites.
               { text: 'Ижрочи директор', margin: [0, 16, 0, 2] },
               { text: directorFull },

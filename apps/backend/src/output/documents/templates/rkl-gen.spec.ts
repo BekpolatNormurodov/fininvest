@@ -57,15 +57,15 @@ describe('rklGenTemplate', () => {
     expect(text).toContain('РКЛ-0042');
   });
 
-  it('opens with the «PULMAKON» trade mark before the org name, as the sheet does', () => {
+  it('opens with the trade mark before the org name, as the sheet does', () => {
     const text = flattenDocText(rklGenTemplate(mockCaseDoc()));
-    expect(text).toContain('«PULMAKON» Савдо белгиси МЧЖ «CLEVER MIKROMOLIYA TASHKILOTI»');
+    expect(text).toContain('«FINCOM INVEST» Савдо белгиси «FINCOM INVEST» MIKROMOLIYA TASHKILOTI МЧЖ');
   });
 
   it('falls back to the plain org name when no trade mark is configured', () => {
     const text = flattenDocText(rklGenTemplate(mockCaseDoc({ organization: { tradeMark: null as unknown as never } })));
     expect(text).not.toContain('Савдо белгиси');
-    expect(text).toContain('МЧЖ «CLEVER MIKROMOLIYA TASHKILOTI»');
+    expect(text).toContain('«FINCOM INVEST» MIKROMOLIYA TASHKILOTI МЧЖ');
   });
 
   it('carries no org letterhead (the sheet has none)', () => {

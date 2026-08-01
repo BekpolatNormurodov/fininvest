@@ -6,7 +6,7 @@ describe('obloshkaTemplate (обложка — cover page)', () => {
     const c = mockCaseDoc();
     const text = flattenDocText(obloshkaTemplate(c));
 
-    expect(text).toContain('МЧЖ «CLEVER MIKROMOLIYA TASHKILOTI»');
+    expect(text).toContain('«FINCOM INVEST» MIKROMOLIYA TASHKILOTI МЧЖ');
     expect(text).toContain('ЖЎЛДИБАЕВ РУСЛАН');
     expect(text).toContain('СОНЛИ МИКРОМОЛИЯ ЛИНИЯСИ ОЧИШ БЎЙИЧА БОШ КЕЛИШУВ');
     expect(text).toContain('Фоиз ставкаси: 55%');

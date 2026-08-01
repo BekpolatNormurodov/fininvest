@@ -519,6 +519,8 @@ model Organization {
   bankName      String
   /// Printed in the firm's requisites block on the contract and the bosh kelishuv.
   phone         String?
+  /// Second line of that block — the reference forms print two numbers, not one.
+  phone2        String?
   inn           String
   licenseNo     String
   licenseDate   DateTime?

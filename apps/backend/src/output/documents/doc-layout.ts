@@ -93,12 +93,12 @@ export function partyRequisites(c: CaseDocData): Content {
     { text: `р/с: №${org?.bankAccount ?? '—'}` },
     { text: `МФО: №${org?.bankMfo ?? '—'} в ${org?.bankName ?? '—'}` },
     { text: `ИНН: ${org?.inn ?? '—'}` },
-    // The firm's own contact line — the debtor side has always carried one, this side did not.
+    // The firm's own contact lines — the reference block prints two numbers, the second bare.
     ...(org?.phone ? [{ text: `Тел: ${org.phone}` }] : []),
+    ...(org?.phone2 ? [{ text: org.phone2 }] : []),
     { text: ' ' },
     { text: 'Ижрочи директор' },
     { text: org?.directorShort ?? '—', bold: true },
-    { text: '________________', margin: [0, 6, 0, 0] },
   ];
   const debtor: Content[] = [
     { text: '«Қарздор»', bold: true },
@@ -106,14 +106,17 @@ export function partyRequisites(c: CaseDocData): Content {
     { text: `Манзил: ${b?.regAddress ?? b?.address ?? '—'}` },
     { text: passportLine },
     { text: `Тел: ${b?.phone ?? '—'}` },
-    { text: ' ' },
-    { text: ' ' },
-    { text: ' ' },
-    { text: ' ' },
-    // Keeps the two signature lines level: the firm's side gains a row when it has a phone.
-    ...(org?.phone ? [{ text: ' ' }] : []),
-    { text: '________________ (имзо)', margin: [0, 6, 0, 0] },
   ];
+  /*
+    Pad the shorter column instead of counting blank rows by hand.
+    The two signature lines have to sit level, and the number of rows above them changes with the
+    data — a second firm phone, a missing passport. The old fixed spacers had to be re-counted every
+    time a row was added, and were wrong the moment one was.
+  */
+  while (mmt.length < debtor.length) mmt.splice(mmt.length - 2, 0, { text: ' ' });
+  while (debtor.length < mmt.length) debtor.push({ text: ' ' });
+  mmt.push({ text: '________________', margin: [0, 6, 0, 0] });
+  debtor.push({ text: '________________ (имзо)', margin: [0, 6, 0, 0] });
   return {
     columns: [
       { width: '*', stack: mmt, fontSize: 9 },

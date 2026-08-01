@@ -54,6 +54,6 @@ describe('МИЖОЗ АНКЕТАСИ — the rows that were printing dashes', (
 
 describe('the firm\'s phone reaches the documents that carry its requisites', () => {
   it.each(['contract', 'rklGen', 'grafik'])('%s prints it', (key) => {
-    expect(flattenDocText(DOC_REGISTRY[key]!.build(mockCaseDoc()))).toContain('78 113-31-33');
+    expect(flattenDocText(DOC_REGISTRY[key]!.build(mockCaseDoc()))).toContain('90-000-79-25');
   });
 });

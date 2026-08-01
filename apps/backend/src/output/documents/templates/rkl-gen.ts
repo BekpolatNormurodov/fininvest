@@ -127,11 +127,20 @@ export function rklGenTemplate(c: CaseDocData, notary = false): TDocumentDefinit
           { text: '«Микромолия ташкилоти»', bold: true },
           { text: org?.nameMixed ?? '—', margin: [0, 4, 0, 2] as [number, number, number, number] },
           { text: `Манзил: ${org?.address ?? '—'}` },
-          { text: `х/р: ${org?.bankAccount ?? '—'}` },
-          { text: `МФО: ${org?.bankMfo ?? '—'}` },
+          /*
+            «№» and the bank's name were both missing: the reference reads «х/р: № 2021 …» and
+            «МФО: №01196 «APEX BANK» АЖ», while this printed the account bare and the MFO without
+            saying which bank it belongs to.
+
+            The bosh kelishuv leaves out the «в» that the contract puts before the bank name. Each
+            sheet is followed as written.
+          */
+          { text: `х/р: № ${org?.bankAccount ?? '—'}` },
+          { text: `МФО: №${org?.bankMfo ?? '—'} ${org?.bankName ?? '—'}` },
           { text: `СТИР: ${org?.inn ?? '—'}` },
-          // The firm's contact line, as on the contract and the schedule.
+          // Two contact lines, the second bare — as the reference block prints them.
           ...(org?.phone ? [{ text: `Тел: ${org.phone}` }] : []),
+          ...(org?.phone2 ? [{ text: org.phone2 }] : []),
           // Extra air above the signature: with the phone line added the director's name sat
           // right under the requisites with nowhere to sign.
           { text: 'Ижрочи директор', margin: [0, 16, 0, 2] as [number, number, number, number] },
