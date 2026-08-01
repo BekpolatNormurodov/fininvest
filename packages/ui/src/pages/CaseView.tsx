@@ -217,8 +217,15 @@ export function CaseView() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      {/*
+        3:2 split, not 2:1. At a third of the width the right-hand cards — Amaliyot, Yakunlash,
+        Ariza ma'lumotlari — wrapped their labels onto extra lines and ran tall and narrow. Two
+        fifths gives them room to read on one line each. `lg:self-start` stops the column being
+        stretched to the (usually taller) left one, and `lg:sticky` keeps the actions in view while
+        the long left column scrolls.
+      */}
+      <div className="grid items-start gap-6 lg:grid-cols-5">
+        <div className="space-y-6 lg:col-span-3">
           <Detail c={c} canUpload={canUpload} canManage={canManageDocs} />
 
           {showFinance && loan && (
@@ -327,7 +334,7 @@ export function CaseView() {
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:col-span-2 lg:sticky lg:top-6 lg:self-start">
           {(myTransitions.length > 0 || canPauseResume) && (
             <Card className="space-y-4">
               <div className="flex items-center justify-between gap-2">
@@ -563,8 +570,8 @@ function CaseViewSkeleton() {
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-6 w-24 rounded-full" />
       </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid items-start gap-6 lg:grid-cols-5">
+        <div className="space-y-6 lg:col-span-3">
           <Card className="space-y-4">
             <Skeleton className="h-5 w-48" />
             <div className="grid gap-4 sm:grid-cols-2">
@@ -581,7 +588,7 @@ function CaseViewSkeleton() {
             <Skeleton className="h-24 w-full rounded-xl" />
           </Card>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 lg:col-span-2">
           <Card className="space-y-3">
             <Skeleton className="h-5 w-28" />
             <Skeleton className="h-16 w-full rounded-lg" />
