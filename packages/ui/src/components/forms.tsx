@@ -23,7 +23,21 @@ export function Popover({
       const r = anchorRef.current!.getBoundingClientRect();
       const spaceBelow = window.innerHeight - r.bottom;
       const openUp = spaceBelow < 280 && r.top > spaceBelow;
-      setPos({ left: r.left, top: openUp ? r.top : r.bottom, width: width ?? r.width, openUp });
+      const w = width ?? r.width;
+      /*
+        Keep the popover on screen horizontally.
+
+        It used to open at the anchor's left edge and extend right by its width, so a chip near the
+        right of the page — «Сана», «Сугурта» — pushed the panel off the edge and its fields were
+        clipped. Now it aligns to the anchor's left when that fits, flips to align on the RIGHT edge
+        when the left overflows, and finally clamps to an 8px gutter so it can never leave the
+        viewport whichever side it is on.
+      */
+      const GUTTER = 8;
+      let left = r.left;
+      if (left + w > window.innerWidth - GUTTER) left = r.right - w; // right-align to the anchor
+      left = Math.min(Math.max(left, GUTTER), window.innerWidth - w - GUTTER);
+      setPos({ left, top: openUp ? r.top : r.bottom, width: w, openUp });
     };
     place();
     window.addEventListener('scroll', place, true);
