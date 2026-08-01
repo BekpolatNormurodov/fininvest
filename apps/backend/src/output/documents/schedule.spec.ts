@@ -22,10 +22,19 @@ describe('scheduleForCase', () => {
     // Annuity: the loan is fully repaid — closing balance of the last row is 0.
     const last = s!.installments[11];
     expect(Math.round(last.openingBalance - last.principal)).toBe(0);
-    // Every row reconciles: total = principal + interest, no NaN.
-    for (const i of s!.installments) {
-      expect(i.total).toBeCloseTo(i.principal + i.interest, 4);
+    /*
+      Every row reconciles, but from row 2 on the workbook rounds the total UP to the next thousand
+      — «G = CEILING(SUM(D:F), 1000)» — so it is principal + interest raised, not equal to it. Row 1
+      is the sheet's own exception and carries the unrounded sum.
+    */
+    for (const [n, i] of s!.installments.entries()) {
       expect(Number.isNaN(i.total)).toBe(false);
+      if (n === 0) {
+        expect(i.total).toBeCloseTo(i.principal + i.interest, 4);
+      } else {
+        expect(i.total).toBe(Math.ceil((i.principal + i.interest) / 1000) * 1000);
+        expect(i.total - (i.principal + i.interest)).toBeLessThan(1000);
+      }
     }
   });
 

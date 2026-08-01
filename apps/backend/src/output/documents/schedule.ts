@@ -122,6 +122,30 @@ export function scheduleForCase(c: CaseDocData): DocSchedule | null {
   const annuity = pmt(monthlyRate, termMonths, principal);
   const flatPrincipal = principal / termMonths;
 
+  /*
+    The rows are the workbook's, formula for formula — «График N мес», identical in every reference
+    file, TRUST and APEX alike:
+
+      F (interest)   = C × I3 / 365 × (Bₙ − Bₙ₋₁)      balance × annual rate ÷ 365 × ACTUAL days
+      D (principal)  row 1  PPMT(I3/12, 1, I2, −C8)     = annuity − P × rate/12
+                     rows 2..n−1  I6 − F                 the annuity less that row's interest
+                     row n  = C                          whatever is left, which closes the schedule
+      G (total)      row 1  D + F                        not rounded
+                     rows 2..n  CEILING(D + F, 1000)     rounded UP to the nearest 1000
+
+    We had interest at balance × rate/12 — equal months, no day count — and no rounding. The monthly
+    payment came out identical either way, because both derive it from the same PMT, so nothing
+    looked wrong. What differed was the split printed in the «асосий қарз» and «фоизлар» columns,
+    which is what the client reads, and the total: rounding up to 1000 costs about 710 so'm a month.
+
+    Row 1 is genuinely different in the sheet and not a slip: its interest runs from the DISBURSEMENT
+    date to the first payment, which is rarely a whole month, while its principal comes from PPMT at
+    the monthly rate. Its total is left unrounded.
+
+    The last row repays the remaining balance outright. That is what keeps the day-count interest
+    from accumulating into a residue — without it the schedule ends 527 530 so'm past zero on a
+    150M/24-month line.
+  */
   const installments: DocInstallment[] = [];
   let balance = principal;
   let prevDate = new Date(disbursementDate);
@@ -129,11 +153,18 @@ export function scheduleForCase(c: CaseDocData): DocSchedule | null {
     const dueDate = addMonthsClamped(disbursementDate, m, payDay);
     const days = daysBetween(dueDate, prevDate);
     const openingBalance = balance;
-    const interest = openingBalance * monthlyRate;
-    let principalPortion = method === 'DIFFERENTIATED' ? flatPrincipal : annuity - interest;
-    if (m === termMonths) principalPortion = openingBalance; // absorb rounding on the final row
+    const interest = openingBalance * annualRate / 365 * days;
+
+    let principalPortion: number;
+    if (m === termMonths) principalPortion = openingBalance;
+    else if (method === 'DIFFERENTIATED') principalPortion = flatPrincipal;
+    else if (m === 1) principalPortion = annuity - openingBalance * monthlyRate;
+    else principalPortion = annuity - interest;
     principalPortion = Math.min(Math.max(principalPortion, 0), openingBalance);
-    const total = principalPortion + interest;
+
+    const raw = principalPortion + interest;
+    const total = m === 1 ? raw : Math.ceil(raw / 1000) * 1000;
+
     balance = Math.max(0, openingBalance - principalPortion);
     installments.push({ seq: m, dueDate, openingBalance, principal: principalPortion, interest, total, days });
     prevDate = dueDate;
