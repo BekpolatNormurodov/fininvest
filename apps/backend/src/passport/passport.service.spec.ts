@@ -15,6 +15,14 @@ const VALID_TD1 = [
   'QODIROVA<<XOLISXON<<<<<<<<<<<<',
 ].join('\n');
 
+/*
+  These render real images through sharp — an upscale plus four orientation passes — even
+  though the OCR itself is stubbed. That is well under a second on an idle machine and can
+  cross Jest's 5s default when the whole suite runs the box hot, which showed up as a
+  different one of them timing out on each run. The work is expected; the ceiling was not.
+*/
+jest.setTimeout(30_000);
+
 describe('PassportService', () => {
   const svc = new PassportService();
   // A realistic-scan-sized blank (OCR is stubbed, so content is irrelevant — but a 12px image would

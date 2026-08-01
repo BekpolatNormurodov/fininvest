@@ -39,6 +39,9 @@ const backResult = (fullName: string): PassportScanResult => ({
 
 const noViz = {} as never;
 
+// Some cases below drive the full service (sharp preprocessing); see the note above that describe.
+jest.setTimeout(30_000);
+
 describe('a degraded front read never truncates a complete MRZ name', () => {
   it('keeps the three-part MRZ name when the front read only the surname', () => {
     const merged = mergeIdResult(backResult('QODIROV ALISHER BAXTIYOROVICH'), { fullName: 'QODIROV' } as never, noViz);
@@ -71,6 +74,11 @@ describe('a degraded front read never truncates a complete MRZ name', () => {
   The bug being fixed is that the salvage was gated on `format === 'TD1'`, and that gate lives in
   passport.service.ts. A test that calls namesFromMrzLine with the prefix already sliced off passes
   on the broken code too — it never touches the gate.
+
+  These service-level cases render real images through sharp — an upscale plus four orientation
+  passes — even though the OCR itself is stubbed. Well under a second on an idle machine, but it can
+  cross Jest's 5s default when the whole suite runs the box hot, which showed up as a different one
+  of them timing out on each run. The raised ceiling at the top of the file covers it.
 */
 describe('a passport MRZ yields all three names, not just the surname', () => {
   const svc = new PassportService();
