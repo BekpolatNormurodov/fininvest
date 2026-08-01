@@ -25,7 +25,15 @@ export function ddmmyyyyToIso(s: string | null | undefined): string | null {
   return new Date(Date.UTC(yyyy, mm - 1, dd)).toISOString();
 }
 
-const NAME = /^[A-Z][A-Z'`‘’-]{3,29}$/; // a single uppercase name token (≥4 chars, drops OCR noise)
+/*
+  A single uppercase name token.
+
+  The floor was four characters, which dropped short real given names — ALI, OLIM, and any three-
+  letter patronymic root — so a card belonging to «QODIROV ALI ALIYEVICH» came back as two names.
+  Three is the shortest name that actually occurs; NAME_STOP and the '/'-label skip below are what
+  filter junk, not the length.
+*/
+const NAME = /^[A-Z][A-Z'`‘’-]{2,29}$/;
 // Header/label words that are all-caps and could be mistaken for a name when the OCR is noisy (e.g.
 // the "GUVOHNOMASI" anchor is unreadable). Compared apostrophe-stripped, uppercased.
 const NAME_STOP = new Set([
@@ -193,7 +201,27 @@ export function mergeIdResult(back: PassportScanResult, front: IdFrontFields, vi
     frontSurname.length >= 4 &&
     mrzSurname.length >= 4 &&
     (mrzSurname === frontSurname || mrzSurname.includes(frontSurname) || frontSurname.includes(mrzSurname));
-  let chosenName = front.fullName && (agree || !mrzSurname) ? front.fullName : back.fields.fullName;
+  /*
+    A poorer front read must never overwrite a richer MRZ name.
+
+    «факат фамилиясини тортвоти» — the scan filled in the surname alone. When the front OCR degrades
+    to a single token (glare, a wrinkled laminate, all three names printed on one line), its surname
+    still agrees with the MRZ, so `agree` was true and that one token replaced a full «SURNAME GIVEN
+    PATRONYMIC» read from the MRZ. Requiring the front to be at least as complete keeps the richer
+    source whenever the front has lost part of the name.
+
+    Tokens under three characters are not counted: OCR filler leaves stray single letters
+    («QODIROVA XOLISXON K L» off a polluted MRZ line), and those would otherwise inflate the MRZ
+    side and beat a genuine three-part front name.
+
+    `>=`, not `>`: on an equal count the front still wins, which is the existing behaviour for a
+    front that is richer or an MRZ surname that is noisy.
+  */
+  const nameTokens = (s: string) => (s || '').split(' ').filter((t) => t.length >= 3).length;
+  let chosenName =
+    front.fullName && (agree || !mrzSurname) && nameTokens(front.fullName) >= nameTokens(back.fields.fullName)
+      ? front.fullName
+      : back.fields.fullName;
   // Strip a leading OCR-noise glyph from the surname when front and MRZ corroborate the true core
   // (e.g. MRZ "VASKAROV" + front "TASKAROV" → "ASKAROV").
   const fixedSurname = reconcileSurname(mrzSurname, frontSurname);

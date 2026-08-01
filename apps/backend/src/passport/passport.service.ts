@@ -227,14 +227,25 @@ export class PassportService {
     // that normalizeMrzLines padded into a parseable shape. Surface a clean "not found".
     if (!best || best.conf === 0) return emptyResult();
     const fields = mapMrzToBorrower(best.parsed.fields ?? {});
-    // The strict parser nulls the given name when OCR leaves junk in the name field's filler (TD1:
-    // "VASKAROV<<MUXTOR<<<<<<<20L46" → firstName null → "MUXTOR" lost). Re-derive from the raw TD1
-    // name line (its last line) and take it when it recovers more name tokens.
-    if (best.parsed.format === 'TD1') {
-      const raw = namesFromMrzLine(best.lines[best.lines.length - 1] || '');
-      if (raw.split(' ').filter(Boolean).length > fields.fullName.split(' ').filter(Boolean).length) {
-        fields.fullName = raw;
-      }
+    /*
+      The strict parser nulls the given name when OCR leaves junk in the name field's filler
+      («VASKAROV<<MUXTOR<<<<<<<20L46» → firstName null → "MUXTOR" lost, and the scan reports the
+      surname alone). Re-derive from the raw name line and take it when it recovers more tokens.
+
+      This ran for TD1 only, so a passport — TD3 — kept losing the given name and the patronymic:
+      «P<UZBKARIMOV<<ALISHER<BAXTIYOROVICH<<<<20L46» came back as "KARIMOV". The name line is the
+      LAST line on a TD1 and the FIRST on a TD3/TD2, where it is prefixed by the document code and
+      the issuing state («P<UZB»), five characters that have to come off before the names start.
+
+      Verified not to fire on a clean read: on an unpolluted TD3 the salvaged token count equals the
+      parsed one, so the parser's own value stands.
+    */
+    const nameLine = best.parsed.format === 'TD1'
+      ? (best.lines[best.lines.length - 1] || '')
+      : (best.lines[0] || '').slice(5);
+    const raw = namesFromMrzLine(nameLine);
+    if (raw.split(' ').filter(Boolean).length > fields.fullName.split(' ').filter(Boolean).length) {
+      fields.fullName = raw;
     }
     const perField = ((best.parsed.details ?? []) as MrzDetail[])
       .filter((d) => d.field.endsWith('CheckDigit'))
