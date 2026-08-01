@@ -145,7 +145,7 @@ export function rklGenTemplate(c: CaseDocData, notary = false): TDocumentDefinit
           // right under the requisites with nowhere to sign.
           { text: 'Ижрочи директор', margin: [0, 16, 0, 2] as [number, number, number, number] },
           { text: org?.directorFull ?? '—' },
-          { text: '\n___________________ (imzo)', margin: [0, 4, 0, 0] as [number, number, number, number] },
+          { text: '\n___________________ (имзо)', margin: [0, 4, 0, 0] as [number, number, number, number] },
         ] },
         { width: '*', stack: [
           { text: '«Қарздор»', bold: true },
@@ -154,7 +154,7 @@ export function rklGenTemplate(c: CaseDocData, notary = false): TDocumentDefinit
           { text: `Паспорт: ${passport || '—'}` },
           { text: `Тел: ${b?.phone ?? '—'}` },
           { text: name, margin: [0, 10, 0, 2] as [number, number, number, number] },
-          { text: '\n___________________ (imzo)', margin: [0, 4, 0, 0] as [number, number, number, number] },
+          { text: '\n___________________ (имзо)', margin: [0, 4, 0, 0] as [number, number, number, number] },
         ] },
       ], columnGap: 16, margin: [0, 6, 0, 0] as [number, number, number, number] },
       ...(notary ? [notaryBlock(c)] : []),

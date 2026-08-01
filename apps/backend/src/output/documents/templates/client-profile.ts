@@ -2,7 +2,7 @@ import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interface
 import { scoreForCase, MICRO_THRESHOLD, type ScorableCase } from '@credit-core/shared';
 import { dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { gridTable, plainMoney, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
+import { gridTable, plainMoney, cyrillicPicklist, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
 import { activityLine } from './_shared';
 
 // Trims: a field cleared to spaces is a blank to fill, not a value. Without this every row of the
@@ -87,7 +87,7 @@ export function clientProfileTemplate(c: CaseDocData): TDocumentDefinitions {
   const body: TableCell[][] = [
     ...single('Мижоз фамилия исм шарифи', dash(b?.fullName)),
     ...single('Жинси', b?.gender === 'FEMALE' ? 'Аёл' : b?.gender === 'MALE' ? 'Эркак' : '—'),
-    ...single('фуқаролиги', dash(b?.citizenship)),
+    ...single('фуқаролиги', dash(cyrillicPicklist(b?.citizenship))),
     ...single('Фамилия ўзгарган тақдирда аввалги фамилияси', b?.previousName?.trim() || 'йук'),
     ...single('Туғилган санаси', b?.birthDate ? dateToRuCyrillic(b.birthDate) : '—'),
     ...single('СТИР', dash(b?.inn)),
@@ -122,7 +122,7 @@ export function clientProfileTemplate(c: CaseDocData): TDocumentDefinitions {
         writes that status here rather than an activity sector — it is what the larger loan turns
         on. Below the threshold the sector stands.
       */
-      ['Соха', dash(isMicrocredit ? (b?.entrepreneurType ?? emp?.sector) : emp?.sector)],
+      ['Соха', dash(cyrillicPicklist(isMicrocredit ? (b?.entrepreneurType ?? emp?.sector) : emp?.sector))],
       ['Лавозими', dash(emp?.position)],
       ['мехнат давомийлиги', dash(emp?.experienceBand)],
     ]),

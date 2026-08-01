@@ -3,7 +3,7 @@ import {
   sumToWordsUz, dateToUzbekWords, moneyWithWordsCyr, integerToUzbekWordsCyrillic,
 } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
-import { borrowerAddress } from '../doc-layout';
+import { borrowerAddress, cyrillicPicklist } from '../doc-layout';
 
 /** Justified body paragraph. */
 export const p = (text: string): Content => ({ text, margin: [0, 3, 0, 3], alignment: 'justify' });
@@ -55,7 +55,7 @@ export function loanWord(c: CaseDocData): string {
  * none. `||` throughout, so a blank falls through instead of ending the chain.
  */
 export function activityLine(c: CaseDocData): string {
-  const cert = [c.borrower?.entrepreneurType, c.borrower?.entrepreneurCertNo]
+  const cert = [cyrillicPicklist(c.borrower?.entrepreneurType), c.borrower?.entrepreneurCertNo]
     .map((x) => (typeof x === 'string' ? x.trim() : ''))
     .filter(Boolean)
     .join(' № ');

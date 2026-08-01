@@ -260,7 +260,7 @@ function requisitesBlock(c: CaseDocData): Content {
           ...(org?.phone2 ? [{ text: org.phone2, margin: [0, 1, 0, 1] as [number, number, number, number] }] : []),
           { text: 'Ижрочи директор', margin: [0, 16, 0, 2] },
           { text: org?.directorShort ?? '—' },
-          { text: '\n_______________ (imzo)', margin: [0, 4, 0, 0] },
+          { text: '\n_______________ (имзо)', margin: [0, 4, 0, 0] },
         ],
       },
       {
@@ -273,7 +273,7 @@ function requisitesBlock(c: CaseDocData): Content {
           { text: `ЖШШИР: ${b?.pinfl ?? '—'}`, margin: [0, 1, 0, 1] },
           { text: `Тел: ${b?.phone ?? '—'}`, margin: [0, 1, 0, 1] },
           { text: b?.fullName ?? '—', margin: [0, 10, 0, 2] },
-          { text: '\n_______________ (imzo)', margin: [0, 4, 0, 0] },
+          { text: '\n_______________ (имзо)', margin: [0, 4, 0, 0] },
         ],
       },
     ],

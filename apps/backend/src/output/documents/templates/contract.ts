@@ -328,7 +328,7 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
               // Extra air above the signature — the phone line left the director crowding the requisites.
               { text: 'Ижрочи директор', margin: [0, 16, 0, 2] },
               { text: directorFull },
-              { text: '\n_______________ (imzo)', margin: [0, 4, 0, 0] },
+              { text: '\n_______________ (имзо)', margin: [0, 4, 0, 0] },
             ],
           },
           {
@@ -340,7 +340,7 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
               { text: `Паспорт: ${passport}, ${passportIssuer} томонидан ${passportIssueDateStr} берилган`, margin: [0, 1, 0, 1] },
               { text: `Тел: ${phonesStr}`, margin: [0, 1, 0, 1] },
               { text: borrowerName, margin: [0, 10, 0, 2] },
-              { text: '\n_______________ (imzo)', margin: [0, 4, 0, 0] },
+              { text: '\n_______________ (имзо)', margin: [0, 4, 0, 0] },
             ],
           },
         ],

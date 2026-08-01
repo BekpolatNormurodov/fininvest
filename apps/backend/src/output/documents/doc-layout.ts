@@ -8,10 +8,10 @@ import { dateToRuCyrillic } from '../../common/sum-to-words.util';
  * cancelled → red. null when no watermark applies (e.g. DRAFT — no documents yet).
  */
 export function watermarkForStatus(status: string): { text: string; color: string } | null {
-  if (status === 'REJECTED') return { text: 'RAD ETILGAN', color: '#dc2626' };
-  if (status === 'CANCELLED') return { text: 'BEKOR QILINGAN', color: '#dc2626' };
-  if (status === 'MODERATION' || status === 'DIRECTOR_REVIEW') return { text: 'TASDIQLANMAGAN', color: '#9ca3af' };
-  if (status === 'ADMIN_FINALIZE' || status === 'FINALIZED') return { text: 'TASDIQLANGAN', color: '#16a34a' };
+  if (status === 'REJECTED') return { text: 'РАД ЭТИЛГАН', color: '#dc2626' };
+  if (status === 'CANCELLED') return { text: 'БЕКОР ҚИЛИНГАН', color: '#dc2626' };
+  if (status === 'MODERATION' || status === 'DIRECTOR_REVIEW') return { text: 'ТАСДИҚЛАНМАГАН', color: '#9ca3af' };
+  if (status === 'ADMIN_FINALIZE' || status === 'FINALIZED') return { text: 'ТАСДИҚЛАНГАН', color: '#16a34a' };
   return null;
 }
 
@@ -41,6 +41,60 @@ export function docBadgeForStatus(status: string): { label: string; tone: DocBad
 
 export const money = (n: unknown): string =>
   n == null ? '—' : new Intl.NumberFormat('ru-RU').format(Number(n)) + " so'm";
+
+/**
+ * Picklist values stored in Latin, rendered in the alphabet the documents are written in.
+ *
+ * «где то лотинча где то кирил». Two of the wizard's dropdowns are code-owned constants in Latin —
+ * ENTREPRENEUR_TYPES and NATIONALITY_UZ — and both print straight into Cyrillic forms: «Yakka
+ * tartibdagi tadbirkor» lands in «Фаолият жойи» on the анкета, the score report and the credit
+ * application; «O‘zbekiston Respublikasi» lands in «фуқаролиги».
+ *
+ * Translating at print time rather than editing the constants is deliberate. Rows already in the
+ * database hold the Latin strings, so changing the source would fix new cases and leave every
+ * existing one printing Latin — the same complaint with a smaller blast radius. This catches both
+ * and needs no migration.
+ *
+ * Anything not in the table passes through untouched — a name, an employer, a hand-typed value.
+ * This translates a closed list; it does not transliterate Uzbek.
+ */
+const CYRILLIC_PICKLIST: Record<string, string> = {
+  // ENTREPRENEUR_TYPES. Apostrophes vary by keyboard, so keys are normalised before lookup.
+  'yakka tartibdagi tadbirkor': 'Якка тартибдаги тадбиркор',
+  'ozini ozi band qilgan': 'Ўзини ўзи банд қилган',
+  // NATIONALITY_UZ — the ones an Uzbek MFI actually sees.
+  'ozbekiston respublikasi': 'Ўзбекистон Республикаси',
+  'ozbekiston': 'Ўзбекистон',
+  'rossiya federatsiyasi': 'Россия Федерацияси',
+  'qozogiston': 'Қозоғистон',
+  'qirgiziston': 'Қирғизистон',
+  'tojikiston': 'Тожикистон',
+  'turkmaniston': 'Туркманистон',
+  'ozarbayjon': 'Озарбайжон',
+  'armaniston': 'Арманистон',
+  'gruziya': 'Грузия',
+  'belarus': 'Беларусь',
+  'ukraina': 'Украина',
+  'moldova': 'Молдова',
+  'turkiya': 'Туркия',
+  'afgoniston': 'Афғонистон',
+  'xitoy': 'Хитой',
+  'janubiy koreya': 'Жанубий Корея',
+  'hindiston': 'Ҳиндистон',
+  'pokiston': 'Покистон',
+  'eron': 'Эрон',
+  'aqsh': 'АҚШ',
+  'germaniya': 'Германия',
+  'buyuk britaniya': 'Буюк Британия',
+};
+
+/** Cyrillic form of a known picklist value; the value itself when it is not one. */
+export function cyrillicPicklist(v: string | null | undefined): string | null | undefined {
+  if (typeof v !== 'string') return v;
+  // «O‘zbekiston», «O'zbekiston» and «Ozbekiston» are one answer typed on three keyboards.
+  const key = v.toLowerCase().replace(/[’‘'`ʻʼ]/g, '').replace(/\s+/g, ' ').trim();
+  return CYRILLIC_PICKLIST[key] ?? v;
+}
 
 /**
  * The one address the forms print for the borrower — «Манзил».
