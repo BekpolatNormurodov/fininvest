@@ -40,6 +40,12 @@ describe('collectionScopeWhere — list scoping mirrors the applications list', 
     expect(collectionScopeWhere(Role.DIRECTOR, 'u1', [])).toEqual({});
     expect(collectionScopeWhere(Role.ADMIN, 'u1', [])).toEqual({});
   });
+
+  it('collector sees collections assigned to them OR in a branch they cover', () => {
+    expect(collectionScopeWhere(Role.COLLECTOR, 'col1', ['b1', 'b2'])).toEqual({
+      OR: [{ assignedCollectorId: 'col1' }, { case: { branchId: { in: ['b1', 'b2'] } } }],
+    });
+  });
 });
 
 describe('collectionNotifications — who gets pinged', () => {

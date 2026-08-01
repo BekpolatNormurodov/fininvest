@@ -56,6 +56,12 @@ export class CollectionsService {
         select: { id: true },
       });
       branchIds = assigned.map((b) => b.id);
+    } else if (user.role === Role.COLLECTOR) {
+      const covered = await this.prisma.branch.findMany({
+        where: { collectors: { some: { id: user.id } } },
+        select: { id: true },
+      });
+      branchIds = covered.map((b) => b.id);
     }
     return collectionScopeWhere(user.role, user.id, branchIds);
   }

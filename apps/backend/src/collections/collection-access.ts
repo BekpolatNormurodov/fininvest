@@ -12,17 +12,25 @@ import { Role } from '@credit-core/shared';
 export { canManageCollection, canDeleteCollection } from '@credit-core/shared';
 
 /**
- * The `where` that scopes a collection list to the caller, mirroring the applications list:
- * operator → their own cases, moderator → their branches, director/admin → everything.
- * `moderatorBranchIds` is only consulted for the moderator branch.
+ * The `where` that scopes a collection list to the caller:
+ *  - operator  → their own cases (applications list parity),
+ *  - moderator → their branches,
+ *  - collector → collections assigned to them OR in a branch they cover (the mobile app view),
+ *  - director/admin → everything.
+ *
+ * `branchIds` are the caller's covered branches — their `moderatedBranches` for a moderator, their
+ * `collectedBranches` for a collector; ignored for the other roles.
  */
 export function collectionScopeWhere(
   role: Role,
   userId: string,
-  moderatorBranchIds: string[],
+  branchIds: string[],
 ): Prisma.CollectionWhereInput {
   if (role === Role.OPERATOR) return { case: { createdById: userId } };
-  if (role === Role.MODERATOR) return { case: { branchId: { in: moderatorBranchIds } } };
+  if (role === Role.MODERATOR) return { case: { branchId: { in: branchIds } } };
+  if (role === Role.COLLECTOR) {
+    return { OR: [{ assignedCollectorId: userId }, { case: { branchId: { in: branchIds } } }] };
+  }
   return {}; // DIRECTOR, ADMIN — unrestricted (same as the case list)
 }
 
