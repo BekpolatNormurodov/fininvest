@@ -18,7 +18,12 @@ export function obloshkaTemplate(c: CaseDocData): TDocumentDefinitions {
   const termText = line?.termMonths != null ? `${line.termMonths} ойгача` : '—';
   const rateText = line?.interestRate != null ? `${Math.round(Number(line.interestRate) * 100)}%` : '—';
   const amount = line?.amountTotal ?? c.amount ?? null;
-  const dateText = line?.lineDate ? dateToRuCyrillic(line.lineDate) : '—';
+  /*
+    This sheet closes with «г.», not the «й.» every other form uses — «Тошкент шахар, 23 Июль
+    2026 г.» Changed here rather than in dateToRuCyrillic, which the contract, the бош келишув and
+    the акт all read and which is right for them.
+  */
+  const dateText = line?.lineDate ? dateToRuCyrillic(line.lineDate).replace(/ й\.$/, ' г.') : '—';
 
   return {
     defaultStyle: DOC_DEFAULT_STYLE,
@@ -40,25 +45,33 @@ export function obloshkaTemplate(c: CaseDocData): TDocumentDefinitions {
         lineColor: '#111111',
       }],
     }),
-    content: [
-      { text: org?.nameUpper ?? 'ММТ', bold: true, alignment: 'center', fontSize: 14, decoration: 'underline' },
+    /*
+      Type sizes are the sheet's own — 20 / 36 / 16 / 11, read off the cells rather than chosen.
 
-      // The borrower's name, large and centered, is the visual anchor of the cover.
-      { text: b?.fullName ?? '—', bold: true, alignment: 'center', fontSize: 26, margin: [0, 150, 0, 0] },
+      The 36pt name is the point of the page: it wraps to two or three lines on a long name, which
+      is what the reference cover does and what makes a dossier findable in a stack of them. The
+      gaps between the blocks are in the proportion of the sheet's own empty rows (9 : 6 : 5 : 8).
+
+      The three terms lines carry a leading space because the cells do.
+    */
+    content: [
+      { text: org?.nameUpper ?? 'ММТ', bold: true, alignment: 'center', fontSize: 20, decoration: 'underline' },
+
+      { text: b?.fullName ?? '—', bold: true, alignment: 'center', fontSize: 36, margin: [0, 170, 0, 0] },
 
       {
         text: `№ ${lineNo} СОНЛИ МИКРОМОЛИЯ ЛИНИЯСИ ОЧИШ БЎЙИЧА БОШ КЕЛИШУВ`,
         bold: true,
         alignment: 'center',
-        fontSize: 12,
-        margin: [0, 130, 0, 0],
+        fontSize: 16,
+        margin: [0, 135, 0, 0],
       },
 
-      { text: `Фоиз ставкаси: ${rateText}`, bold: true, fontSize: 9, margin: [0, 60, 0, 0] },
-      { text: `Микромолия линияси муддати: ${termText}`, bold: true, fontSize: 9 },
-      { text: `Микромолия линияси  микдори: ${amount != null ? `${plainMoney(amount)} сум` : '—'}`, bold: true, fontSize: 9 },
+      { text: ` Фоиз ставкаси: ${rateText}`, bold: true, fontSize: 11, margin: [0, 85, 0, 0] },
+      { text: ` Микромолия линияси муддати: ${termText}`, bold: true, fontSize: 11 },
+      { text: ` Микромолия линияси  миқдори: ${amount != null ? `${plainMoney(amount)} сум` : '—'}`, bold: true, fontSize: 11 },
 
-      { text: `Тошкент шахар, ${dateText}`, bold: true, alignment: 'center', fontSize: 9, margin: [0, 150, 0, 0] },
+      { text: `Тошкент шахар, ${dateText}`, bold: true, alignment: 'center', fontSize: 11, margin: [0, 110, 0, 0] },
     ],
   };
 }
