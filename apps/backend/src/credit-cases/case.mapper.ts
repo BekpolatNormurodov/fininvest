@@ -211,19 +211,33 @@ export function toCaseDto(c: CaseWithRelations): CreditCaseDto {
   };
 }
 
+/** The relations toListItem needs. One constant so every list query includes the same set. */
+export const listItemInclude = {
+  branch: true,
+  borrower: true,
+  createdBy: true,
+  // Only the insurance flag is read, so the line and its policy select down to that one field.
+  creditLine: { select: { insurance: { select: { insured: true } } } },
+} satisfies Prisma.CreditCaseInclude;
+
 export function toListItem(
-  c: Prisma.CreditCaseGetPayload<{ include: { branch: true; borrower: true; createdBy: true } }>,
+  c: Prisma.CreditCaseGetPayload<{ include: typeof listItemInclude }>,
 ): CreditCaseListItem {
   return {
     id: c.id,
     number: c.number,
     contractNumber: c.contractNumber ?? null,
     productType: c.productType,
+    product: c.product ?? null,
     status: c.status,
     amount: num(c.amount),
     borrowerName: c.borrower?.fullName ?? null,
     branchSymbol: c.branch?.symbol ?? null,
+    branchName: c.branch?.name ?? null,
+    region: c.branch?.region ?? null,
+    insured: c.creditLine?.insurance?.insured ?? false,
     createdByName: c.createdBy?.fullName ?? null,
+    createdAt: c.createdAt.toISOString(),
     stepDeadlineAt: iso(c.stepDeadlineAt),
     updatedAt: c.updatedAt.toISOString(),
     deletedAt: iso(c.deletedAt),

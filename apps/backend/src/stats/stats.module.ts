@@ -4,6 +4,7 @@ import { CaseStatus, DEADLINE_STEPS, ProductType, Role, StatsResponse } from '@c
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
+import { toListItem, listItemInclude } from '../credit-cases/case.mapper';
 
 async function scopeFor(prisma: PrismaService, user: RequestUser): Promise<Prisma.CreditCaseWhereInput> {
   if (user.role === Role.OPERATOR) return { createdById: user.id };
@@ -109,7 +110,7 @@ class StatsController {
 
     const recentRaw = await this.prisma.creditCase.findMany({
       where,
-      include: { branch: true, borrower: true },
+      include: listItemInclude,
       orderBy: { updatedAt: 'desc' },
       take: 5,
     });
@@ -136,19 +137,8 @@ class StatsController {
       activeCount,
       overdueCount,
       pausedCount,
-      recent: recentRaw.map((c) => ({
-        id: c.id,
-        number: c.number,
-        contractNumber: c.contractNumber ?? null,
-        productType: c.productType,
-        status: c.status,
-        amount: c.amount ? Number(c.amount) : null,
-        borrowerName: c.borrower?.fullName ?? null,
-        createdByName: null,
-        branchSymbol: c.branch?.symbol ?? null,
-        stepDeadlineAt: c.stepDeadlineAt ? c.stepDeadlineAt.toISOString() : null,
-        updatedAt: c.updatedAt.toISOString(),
-      })),
+      // One mapper for the whole app — this list drifted from CreditCaseListItem when it was hand-built.
+      recent: recentRaw.map(toListItem),
     };
   }
 }

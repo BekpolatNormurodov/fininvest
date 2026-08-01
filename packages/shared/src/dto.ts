@@ -469,11 +469,20 @@ export interface CreditCaseListItem {
   /** Auto MFL contract number, e.g. "1023 MFL 913 PS" (null until submitted). */
   contractNumber: string | null;
   productType: ProductType;
+  /** The lending product (ADM TEAM / OSON / AVTO / IPOTEKA); null on legacy cases. */
+  product: LoanProduct | null;
   status: CaseStatus;
   amount: number | null;
   borrowerName: string | null;
   branchSymbol: string | null;
+  /** Branch name and region — the applications-list filters read these. */
+  branchName: string | null;
+  region: string | null;
+  /** Whether the case carries a credit-risk insurance policy. */
+  insured: boolean;
   createdByName: string | null;
+  /** When the application was created — the field the date filter and its sort read. */
+  createdAt: string;
   /** SLA deadline for the current step (null when the step has no timer). */
   stepDeadlineAt: string | null;
   updatedAt: string;

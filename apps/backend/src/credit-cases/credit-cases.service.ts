@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
 import { WorkflowService } from './workflow.service';
-import { caseInclude, toCaseDto, toListItem } from './case.mapper';
+import { caseInclude, toCaseDto, toListItem, listItemInclude } from './case.mapper';
 import {
   AffordabilityInput, BorrowerInput, CaseSectionDto, CollateralInput, CreditHistoryInput, CreditLineInput,
   DisbursementInput, EmploymentInput, TransitionDto, UpsertCaseDto,
@@ -310,7 +310,7 @@ export class CreditCasesService {
             : {},
         ],
       },
-      include: { branch: true, borrower: true, createdBy: true },
+      include: listItemInclude,
       orderBy: { deletedAt: 'desc' },
     });
     return cases.map(toListItem);
@@ -484,7 +484,7 @@ export class CreditCasesService {
 
     const cases = await this.prisma.creditCase.findMany({
       where,
-      include: { branch: true, borrower: true, createdBy: true },
+      include: listItemInclude,
       orderBy: { updatedAt: 'desc' },
     });
     return cases.map(toListItem);
@@ -533,7 +533,7 @@ export class CreditCasesService {
           },
         ],
       },
-      include: { branch: true, borrower: true, createdBy: true },
+      include: listItemInclude,
       orderBy: { updatedAt: 'desc' },
       take: 8,
     });
