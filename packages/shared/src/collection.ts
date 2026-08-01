@@ -1,4 +1,4 @@
-import { CollectionStatus } from './enums';
+import { CollectionStatus, Role } from './enums';
 
 /**
  * Undiruv (debt-collection) domain — shared shapes and browser-free logic.
@@ -106,6 +106,8 @@ export interface CollectorListItem {
   id: string;
   fullName: string;
   login: string;
+  /** Admin-visible credential, for handing the collector their login (internal tool). */
+  plainPassword: string | null;
   phone: string | null;
   isActive: boolean;
   branches: CollectorBranchRef[];
@@ -137,6 +139,18 @@ export interface NotificationDto {
   caseId: string | null;
   read: boolean;
   createdAt: string;
+}
+
+// ── access rules (shared so web + backend agree) ──────────────────────────────
+
+/** Roles allowed to create / edit / assign a collection (qarzdorlikni belgilash). */
+export function canManageCollection(role: Role): boolean {
+  return role === Role.ADMIN || role === Role.DIRECTOR || role === Role.MODERATOR;
+}
+
+/** Roles allowed to delete an unclosed collection. */
+export function canDeleteCollection(role: Role): boolean {
+  return role === Role.ADMIN || role === Role.DIRECTOR;
 }
 
 // ── pure logic ────────────────────────────────────────────────────────────────

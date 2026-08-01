@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
-import { BarChart3, FilePlus2, LayoutGrid, Calculator, Messages, Building, UserAdd, Bell as BellIcon, Settings, RotateCcw, FileCheck } from './lib/icons';
+import { BarChart3, FilePlus2, LayoutGrid, Calculator, Messages, Building, UserAdd, Bell as BellIcon, Settings, RotateCcw, FileCheck, Money, People } from './lib/icons';
 import { Role, ROLE_LABEL } from '@credit-core/shared';
 import { AuthProvider, useAuth } from './lib/auth';
 import { ThemeProvider } from './lib/theme';
@@ -35,6 +35,8 @@ import { CreditCalculator } from './pages/CreditCalculator';
 import { ChatsPage } from './pages/ChatsPage';
 import { BranchesPage } from './pages/BranchesPage';
 import { UsersPage } from './pages/UsersPage';
+import { CollectionsPage } from './pages/CollectionsPage';
+import { CollectorsPage } from './pages/CollectorsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -49,10 +51,12 @@ function navFor(role: Role, t: (k: string) => string): NavItem[] {
   base.push({ to: '/calculator', label: t('nav.calculator'), icon: Calculator, section: main });
   base.push({ to: '/chats', label: t('nav.chats'), icon: Messages, badgeKey: 'unread', section: main });
   base.push({ to: '/analytics', label: t('nav.monitoring'), icon: BarChart3, section: main });
+  base.push({ to: '/undiruv', label: 'Undiruv', icon: Money, section: main });
   base.push({ to: '/notifications', label: t('nav.notifications'), icon: BellIcon, badgeKey: 'unread', section: main });
   if (role === Role.ADMIN) {
     base.push({ to: '/branches', label: t('nav.branches'), icon: Building, section: 'Boshqaruv' });
     base.push({ to: '/users', label: t('nav.users'), icon: UserAdd, section: 'Boshqaruv' });
+    base.push({ to: '/collectors', label: 'Undiruvchilar', icon: People, section: 'Boshqaruv' });
     base.push({ to: '/settings', label: t('nav.settings'), icon: Settings, section: 'Boshqaruv' });
   }
   return base;
@@ -89,10 +93,12 @@ function Shell({ role, title }: { role: Role; title: string }) {
         <Route path="/calculator" element={<CreditCalculator />} />
         <Route path="/chats" element={<ChatsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/undiruv" element={<CollectionsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         {role === Role.ADMIN && <Route path="/branches" element={<BranchesPage />} />}
         {role === Role.ADMIN && <Route path="/users" element={<UsersPage />} />}
+        {role === Role.ADMIN && <Route path="/collectors" element={<CollectorsPage />} />}
         {role === Role.ADMIN && <Route path="/settings" element={<SettingsPage />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

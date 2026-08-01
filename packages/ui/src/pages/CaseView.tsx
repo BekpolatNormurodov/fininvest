@@ -18,6 +18,7 @@ import { Select, MoneyInput } from '../components/forms';
 import { CaseTimeline } from '../components/CaseTimeline';
 import { SignDialog } from '../components/SignDialog';
 import { ScorePanel } from '../components/ScorePanel';
+import { CollectionCaseCard } from '../components/CollectionCaseCard';
 import { useToast } from '../components/Toast';
 import { cn, formatMoney } from '../lib/cn';
 
@@ -335,6 +336,7 @@ export function CaseView() {
         </div>
 
         <div className="space-y-6 lg:col-span-2 lg:sticky lg:top-6 lg:self-start">
+          <CollectionCaseCard caseId={c.id} caseLabel={c.contractNumber ?? c.number} />
           {(myTransitions.length > 0 || canPauseResume) && (
             <Card className="space-y-4">
               <div className="flex items-center justify-between gap-2">

@@ -50,6 +50,7 @@ type CollectorRow = {
   id: string;
   fullName: string;
   login: string;
+  plainPassword: string | null;
   phone: string | null;
   isActive: boolean;
   createdAt: Date;
@@ -62,6 +63,7 @@ function toCollector(u: CollectorRow): CollectorListItem {
     id: u.id,
     fullName: u.fullName,
     login: u.login,
+    plainPassword: u.plainPassword,
     phone: u.phone,
     isActive: u.isActive,
     branches: u.collectedBranches,

@@ -4,20 +4,12 @@ import { Role } from '@credit-core/shared';
 /**
  * Pure access + notification helpers for the undiruv (collection) domain.
  *
- * These carry the rules that are easy to get subtly wrong — who may see or manage a collection, and
- * who gets pinged when — as plain functions, so the jest suite exercises them without a database
- * (matching how the rest of the backend tests its logic).
+ * The scope and notification-targeting rules live here (easy to get subtly wrong, so tested without
+ * a database). The role guards themselves are shared with the web via `@credit-core/shared`.
  */
 
-/** Roles allowed to create / edit / assign a collection (qarzdorlikni belgilash). */
-export function canManageCollection(role: Role): boolean {
-  return role === Role.ADMIN || role === Role.DIRECTOR || role === Role.MODERATOR;
-}
-
-/** Roles allowed to delete an unclosed collection. */
-export function canDeleteCollection(role: Role): boolean {
-  return role === Role.ADMIN || role === Role.DIRECTOR;
-}
+// The can-manage / can-delete role guards are shared with the web UI.
+export { canManageCollection, canDeleteCollection } from '@credit-core/shared';
 
 /**
  * The `where` that scopes a collection list to the caller, mirroring the applications list:

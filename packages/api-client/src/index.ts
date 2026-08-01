@@ -24,7 +24,25 @@ import type {
   UpsertCasePayload,
   SellerDto,
   SellerInput,
+  CollectionDto,
+  CollectionListItem,
+  CollectionStats,
+  CreateCollectionInput,
+  UpdateCollectionInput,
+  CollectorListItem,
+  CreateCollectorInput,
+  UpdateCollectorInput,
+  NotificationDto,
 } from '@credit-core/shared';
+
+/** Query params for the undiruv (collection) list + statistics. */
+export type CollectionListParams = {
+  status?: string;
+  collectorId?: string;
+  branchId?: string;
+  from?: string;
+  to?: string;
+};
 
 const TOKEN_KEY = 'cc_token';
 
@@ -451,6 +469,68 @@ export const api = {
   async getAuditLog(params: { caseId?: string; actorId?: string; action?: string } = {}): Promise<AuditLogDto[]> {
     const { data } = await http.get<AuditLogDto[]>('/audit', { params });
     return data;
+  },
+
+  // ── Undiruv (debt collection) — SP-1 ────────────────────────────────────────
+  async collections(params: CollectionListParams = {}): Promise<CollectionListItem[]> {
+    const { data } = await http.get<CollectionListItem[]>('/collections', { params });
+    return data;
+  },
+  async collectionStats(params: CollectionListParams = {}): Promise<CollectionStats> {
+    const { data } = await http.get<CollectionStats>('/collections/stats', { params });
+    return data;
+  },
+  async collection(id: string): Promise<CollectionDto> {
+    const { data } = await http.get<CollectionDto>(`/collections/${id}`);
+    return data;
+  },
+  async collectionForCase(caseId: string): Promise<CollectionDto | null> {
+    const { data } = await http.get<CollectionDto | null>(`/collections/by-case/${caseId}`);
+    return data;
+  },
+  async createCollection(payload: CreateCollectionInput): Promise<CollectionDto> {
+    const { data } = await http.post<CollectionDto>('/collections', payload);
+    return data;
+  },
+  async updateCollection(id: string, payload: UpdateCollectionInput): Promise<CollectionDto> {
+    const { data } = await http.patch<CollectionDto>(`/collections/${id}`, payload);
+    return data;
+  },
+  async deleteCollection(id: string): Promise<void> {
+    await http.delete(`/collections/${id}`);
+  },
+
+  // collector accounts (admin) ──────────────────────────────────────────────
+  async collectors(): Promise<CollectorListItem[]> {
+    const { data } = await http.get<CollectorListItem[]>('/collectors');
+    return data;
+  },
+  async createCollector(payload: CreateCollectorInput): Promise<CollectorListItem> {
+    const { data } = await http.post<CollectorListItem>('/collectors', payload);
+    return data;
+  },
+  async updateCollector(id: string, payload: UpdateCollectorInput): Promise<CollectorListItem> {
+    const { data } = await http.patch<CollectorListItem>(`/collectors/${id}`, payload);
+    return data;
+  },
+  async deleteCollector(id: string): Promise<void> {
+    await http.delete(`/collectors/${id}`);
+  },
+
+  // bell notifications (new Notification model, distinct from the message feed) ──
+  async myNotifications(unread = false): Promise<NotificationDto[]> {
+    const { data } = await http.get<NotificationDto[]>('/notifications', { params: unread ? { unread: 1 } : {} });
+    return data;
+  },
+  async notificationUnreadCount(): Promise<number> {
+    const { data } = await http.get<{ count: number }>('/notifications/unread-count');
+    return data.count;
+  },
+  async markNotificationRead(id: string): Promise<void> {
+    await http.post(`/notifications/${id}/read`);
+  },
+  async markAllNotificationsRead(): Promise<void> {
+    await http.post('/notifications/read-all');
   },
 };
 
