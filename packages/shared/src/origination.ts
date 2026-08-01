@@ -35,6 +35,30 @@ export const ENTREPRENEUR_TYPES = ['Yakka tartibdagi tadbirkor', 'O‘zini o‘z
  * Monthly payment day-of-month, derived from the formalization (tranche application) date: the day
  * the client is formalized, capped at the 15th. Formalized on the 7th → pays on the 7th each month;
  * on the 20th → capped to the 15th. (Was an Excel rule; now system-computed.)
+ *
+ * TWO OPEN QUESTIONS about this number, both measured, neither settled. Read before changing it.
+ *
+ * The workbooks do not agree with each other. Scanning the `=IF(DAY(I1)>N,N,DAY(I1))` cell across
+ * all seven reference files:
+ *
+ *   sheet17        15 in six of them; 10 in «АВТО мфл APEX (2).xlsx» ALONE — its own earlier
+ *                  version, both other APEX books and all three TRUST books say 15
+ *   sheets 18–23   25 in every one of the seven
+ *
+ * So «the new workbook changed the cap to 10» is true of one sheet in one file, which is as likely
+ * to be a local edit as a new rule — and if it is a rule, it is AVTO-only, which a single global
+ * constant cannot express. Left at 15 until the office says which.
+ *
+ * The larger divergence is the second row: every schedule sheet after the first caps at 25, and we
+ * cap everything at 15. A client formalized on the 20th is moved to the 15th where the workbook
+ * would leave them on the 20th.
+ *
+ * Both are date-only and money-neutral TODAY, because schedule.ts prices interest at annualRate/12
+ * rather than the workbook's actual/365. Under the workbook's engine the same 15→10 move is worth
+ * −3 165 157 so'm of interest on the reference case, so if that engine is ever adopted these stop
+ * being free and must be priced together.
+ *
+ * Locked by apps/backend/src/common/payment-formula.spec.ts.
  */
 export const PAYMENT_DAY_CAP = 15;
 export function paymentDayFor(dateIso: string | null | undefined): number | null {
