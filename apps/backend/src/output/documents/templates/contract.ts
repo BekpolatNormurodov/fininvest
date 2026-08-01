@@ -1,11 +1,24 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
+import { LoanProduct, loanProductProfile, LoanProductKind } from '@credit-core/shared';
 import { moneyWithWordsCyr, dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { sectionTitle } from '../doc-layout';
 import { mapDocStrings } from '../sanitize';
 import { p, loanWord } from './_shared';
 import { contractCollateralProse } from './_collateral';
+import { contractApexTemplate } from './contract-apex';
+
+/**
+ * True when the case buys an asset (AVTO / IPOTEKA) rather than handing over cash.
+ *
+ * Only those two get the APEX contract. The cash form below is what ADM TEAM and OSON have been
+ * signing and matches their workbooks line for line, so it is left exactly as it is.
+ */
+function isAssetProduct(c: CaseDocData): boolean {
+  const product = c.product as LoanProduct | null | undefined;
+  if (!product) return false;
+  return loanProductProfile(product)?.kind === LoanProductKind.ASSET;
+}
 
 /** Bold section heading, e.g. "4. Микромолия ташкилотининг ҳуқуқ ва мажбуриятлари". */
 const h = (text: string): Content => sectionTitle(text);
@@ -24,6 +37,7 @@ function amountWithWords(amount: number | null): string {
  * boilerplate; the preamble, 1.1/2.3, 3.1.x and 12 splice in this case's data.
  */
 export function contractTemplate(c: CaseDocData): TDocumentDefinitions {
+  if (isAssetProduct(c)) return contractApexTemplate(c);
   const def = buildContract(c);
   // The workbooks print this contract with "Микроқарз" for a microloan and "Микрокредит" for a
   // microcredit — swap the word across the finished document rather than in 43 separate clauses.
@@ -157,10 +171,7 @@ function buildContract(c: CaseDocData): TDocumentDefinitions {
       p(
         insurance?.insured
           ? `3.1.2  ${insurance.company ?? '—'} суғурта компаниясининг кредит қайтмаслилиги хавфи полиси. Сугурта полисининг киймати ${amountWithWords(insuredSum)}. Тулик шартлари Сугурта компания ва Микромолия ташкилоти уртасида имзоланган келишувда курсатилиб утилган.`
-          // Asset products: the purchased asset is insured (KASKO / property). Cash/legacy keep the sheet's own text.
-          : assetInsuranceLabelCyr(c.product as LoanProduct | null)
-            ? `3.1.2  Гаров объекти ${assetInsuranceLabelCyr(c.product as LoanProduct | null)} бўйича суғурталанади.` // TODO(legal)
-            : '3.1.2  Кредит бўйича суғурта расмийлаштирилмаган. Гаров объекти сугурталанмайди.',
+          : '3.1.2  Кредит бўйича суғурта расмийлаштирилмаган. Гаров объекти сугурталанмайди.',
       ),
       p(
         '3.2. Қонун ҳужжатларига мувофиқ расмийлаштирилган, «Гаров предмети» ҳисобланган нотариал тасдиқланган гаров шартномаси Қарз олувчи томонидан ушбу шартнома тузилгандан сўнг 10 банк куни мобайнида Микромолия ташкилотига тақдим этилиши лозим. Гаров шартномаси белгиланган муддатда тақдим этилмаган ҳолларда, Микромолия ташкилоти Қарз олувчининг манзилига ёзма билдиришнома юбориш орқали микроқарз беришни рад этиш ва / ёки ушбу шартномани бир томонлама бекор қилиш ҳуқуқига эгадир. Бунда ушбу шартнома Қарз олувчи томонидан талабнома олинган вақтда ёки талабнома почта хизмати орқали юборилгандан кейин учинчи куни бекор қилинган ҳисобланади.',

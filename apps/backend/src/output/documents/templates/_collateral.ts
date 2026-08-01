@@ -1,5 +1,4 @@
 import type { Content, TableCell } from 'pdfmake/interfaces';
-import { assetInsuranceLabelCyr, type LoanProduct } from '@credit-core/shared';
 import { moneyWithWordsCyr } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, shortDate } from '../doc-layout';
@@ -285,12 +284,16 @@ export function contractCollateralProse(
   const actDate = opts.actDateStr ?? '—';
   const borrower = c.borrower?.fullName ?? '—';
 
-  // Asset products (AVTO/IPOTEKA): the purchased asset IS insured (KASKO / property). Cash and legacy
-  // cases return null → the sheet's own «сугурталанмайди» is preserved byte-for-byte.
-  const insCyr = assetInsuranceLabelCyr(c.product as LoanProduct | null);
-  const insuranceSentence = insCyr
-    ? `Гаров объекти ${insCyr} бўйича суғурталанади.` // TODO(legal): yakuniy so'zlashuvni tasdiqlang
-    : 'Гаров объекти сугурталанмайди.';
+  /*
+    The sheet's own sentence, and only it.
+
+    This paragraph used to branch on the product and write «Гаров объекти КАСКО бўйича
+    суғурталанади» for AVTO and IPOTEKA — a wording nobody had approved, standing in for the real
+    policy. Those two products now print the APEX contract (contract-apex.ts), whose 4.1.2 names the
+    actual insurer and the actual premium, so the branch was unreachable as well as unapproved.
+    What is left is what the cash workbook says.
+  */
+  const insuranceSentence = 'Гаров объекти сугурталанмайди.';
 
   return cols.map((col) => {
     const pledgor = col.owners?.[0]?.fullName ?? borrower;

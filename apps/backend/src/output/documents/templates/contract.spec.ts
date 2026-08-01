@@ -74,18 +74,19 @@ describe('contractTemplate', () => {
     expect(text).not.toContain('КАСКО');
   });
 
-  it('AVTO states the purchased asset is insured (KASKO), never "not insured"', () => {
-    const c = mockCaseDoc({ product: 'AVTO' as unknown as never });
-    const text = flattenDocText(contractTemplate(c));
-    expect(text).toContain('КАСКО');
-    expect(text).not.toContain('сугурталанмайди');
-  });
+  /*
+    AVTO and IPOTEKA used to be served this same cash contract with one sentence swapped: «Гаров
+    объекти КАСКО бўйича суғурталанади» — a wording invented here rather than taken from any sheet.
 
-  it('IPOTEKA states the purchased asset is insured (property)', () => {
-    const c = mockCaseDoc({ product: 'IPOTEKA' as unknown as never });
-    const text = flattenDocText(contractTemplate(c));
-    expect(text).toContain('мол-мулк суғуртаси');
-    expect(text).not.toContain('сугурталанмайди');
+    They now print their own form, the APEX contract (contract-apex.ts), whose 4.1.2 names the
+    insurer and the premium the case actually carries. So what is asserted here is that they are no
+    longer served this document; their own clauses are covered by contract-apex.spec.ts.
+  */
+  it.each(['AVTO', 'IPOTEKA'])('%s is not served the cash contract at all', (product) => {
+    const text = flattenDocText(contractTemplate(mockCaseDoc({ product: product as unknown as never })));
+    expect(text).toContain('Микрокредит шартномаси №');
+    expect(text).not.toContain('КАСКО');
+    expect(text).not.toContain('мол-мулк суғуртаси');
   });
 
   it('does not leak a raw Date toString/ISO value anywhere (no GMT, no HH:MM:SS)', () => {
