@@ -151,7 +151,10 @@ export function AppShell({ title, nav, children }: { title: string; nav: NavItem
         <span className={cn('flex-1 truncate', rail && 'xl:hidden')}>{item.label}</span>
         {!!badge && badge > 0 && (
           <span className={cn(
-            'shrink-0 rounded-full bg-brand-500 px-1.5 text-[10px] font-semibold leading-5 text-white',
+            // A count badge is a circle for one digit and a pill for more — a fixed height with a
+            // matching min-width and centred text, so a single «3» is round rather than squeezed
+            // narrow. `leading-5` alone set the height but not the width, which made it an oval.
+            'inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-brand-500 px-1.5 text-[10px] font-semibold leading-none text-white',
             rail && 'xl:hidden',
           )}>{badge > 99 ? '99+' : badge}</span>
         )}
