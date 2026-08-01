@@ -1,5 +1,5 @@
 import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { scoreForCase, MICRO_THRESHOLD, type ScorableCase } from '@credit-core/shared';
+import { scoreForCase, type ScorableCase } from '@credit-core/shared';
 import { dateToRuCyrillic } from '../../../common/sum-to-words.util';
 import { CaseDocData } from '../case-document.loader';
 import { gridTable, plainMoney, cyrillicPicklist, DOC_DEFAULT_STYLE, DOC_PAGE_MARGINS } from '../doc-layout';
@@ -62,7 +62,6 @@ export function clientProfileTemplate(c: CaseDocData): TDocumentDefinitions {
   const extra = (i: number): string => dash(extras[i]);
 
   const amountTotal = c.creditLine?.amountTotal ?? c.amount ?? null;
-  const isMicrocredit = Number(amountTotal ?? 0) > MICRO_THRESHOLD;
 
   const n = (v: unknown): number => (v == null ? 0 : Number(v));
   const income = n(af?.mainActivityIncome) + n(af?.secondaryIncome) + n(af?.familyIncome) + n(af?.otherIncome);
@@ -118,11 +117,18 @@ export function clientProfileTemplate(c: CaseDocData): TDocumentDefinitions {
       ['Фаолият жойи', activityLine(c)],
       ['Фаолият манзили', dash(emp?.employerAddress)],
       /*
-        Over 100 million the client is registered as a sole trader or self-employed, and the office
-        writes that status here rather than an activity sector — it is what the larger loan turns
-        on. Below the threshold the sector stands.
+        Д1!C38 — the activity sector, and only that.
+
+        Over 100 million this row used to print the entrepreneur status instead, because that status
+        was reaching no other row and the office needed it somewhere. «Фаолият жойи» above carries
+        it now, so the substitution only printed the same string twice, one line apart. Owner's
+        call: «Соха kerak emas hozircha».
+
+        It reads «—» on most cases because the wizard stopped collecting `sector`. That is worth
+        more attention than this row: factor 9 «Сфера деятельности» scores 0 of 6 for every borrower
+        for the same reason — 6 points of a 100-point scale dead across the whole book.
       */
-      ['Соха', dash(cyrillicPicklist(isMicrocredit ? (b?.entrepreneurType ?? emp?.sector) : emp?.sector))],
+      ['Соха', dash(cyrillicPicklist(emp?.sector))],
       ['Лавозими', dash(emp?.position)],
       ['мехнат давомийлиги', dash(emp?.experienceBand)],
     ]),

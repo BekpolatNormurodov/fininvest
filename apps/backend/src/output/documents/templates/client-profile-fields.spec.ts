@@ -36,19 +36,32 @@ describe('МИЖОЗ АНКЕТАСИ — the rows that were printing dashes', (
     expect((block.match(/қўшимча —/g) ?? []).length).toBe(3);
   });
 
-  it('writes the entrepreneur status into «Соха» over 100 million', () => {
-    const t = profile({ creditLine: { amountTotal: 150_000_000 as unknown as never } });
-    expect(t.slice(t.indexOf('Соха'), t.indexOf('Соха') + 50)).toContain("O'ZINI O'ZI BAND QILGAN FUQARO");
+  /*
+    «Соха» is Д1!C38, the activity sector, at any amount.
+
+    Over 100 million it used to print the entrepreneur status instead — put there when that status
+    was reaching no other row on the form. «Фаолият жойи» carries it now (see activity-line.spec),
+    so the substitution only printed the same string twice, one line apart, and the owner asked for
+    it to go. The assertion that encoded the substitution is replaced by one that forbids it.
+  */
+  it('carries the activity sector, at any amount', () => {
+    for (const amountTotal of [50_000_000, 150_000_000]) {
+      const t = profile({
+        creditLine: { amountTotal: amountTotal as unknown as never },
+        employment: { sector: 'Савдо / Сотув' as unknown as never },
+      });
+      const seg = t.slice(t.indexOf('Соха'), t.indexOf('Соха') + 50);
+      expect(seg).toContain('Савдо / Сотув');
+      expect(seg).not.toContain('BAND QILGAN');
+      expect(seg).not.toContain('БАНД ҚИЛГАН');
+    }
   });
 
-  it('leaves the activity sector in «Соха» below the threshold', () => {
-    const t = profile({
-      creditLine: { amountTotal: 50_000_000 as unknown as never },
-      employment: { sector: 'Савдо / Сотув' as unknown as never },
-    });
+  it('does not repeat the entrepreneur status one line below «Фаолият жойи»', () => {
+    const t = profile({ creditLine: { amountTotal: 150_000_000 as unknown as never } });
     const seg = t.slice(t.indexOf('Соха'), t.indexOf('Соха') + 50);
-    expect(seg).toContain('Савдо / Сотув');
-    expect(seg).not.toContain('BAND QILGAN');
+    expect(seg).not.toContain('тадбиркор');
+    expect(seg).not.toContain('банд');
   });
 });
 
