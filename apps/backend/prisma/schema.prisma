@@ -12,6 +12,14 @@ enum Role {
   MODERATOR
   DIRECTOR
   ADMIN
+  COLLECTOR // undiruvchi — field debt collector (mobile app, SP-3)
+}
+
+enum CollectionStatus {
+  NEW // yaratilgan, undiruvchi biriktirilmagan
+  ASSIGNED // undiruvchi biriktirilgan, hali harakat yo'q
+  IN_PROGRESS // undiruvchi ish boshlagan (SP-2 tashriflar)
+  CLOSED // yopilgan (to'liq undirilgan yoki qo'lda)
 }
 
 enum ProductType {
@@ -105,6 +113,8 @@ model Branch {
   // Moderators responsible for this branch (many-to-many; a branch may have
   // several moderators and a moderator may cover several branches).
   moderators User[]       @relation("BranchModerators")
+  // Collectors (undiruvchi) covering this branch (m-n). SP-1.
+  collectors User[]       @relation("BranchCollectors")
   cases      CreditCase[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -123,6 +133,8 @@ model User {
   branchId          String?
   // Branches this moderator is responsible for (m-n, see Branch.moderators).
   moderatedBranches Branch[]        @relation("BranchModerators")
+  // Branches this collector (undiruvchi) covers (m-n, see Branch.collectors). SP-1.
+  collectedBranches Branch[]        @relation("BranchCollectors")
   isActive          Boolean         @default(true)
   createdCases      CreditCase[]    @relation("CaseCreatedBy")
   signedCases       CaseSignature[] @relation("CaseSignedBy")
@@ -130,6 +142,11 @@ model User {
   events            WorkflowEvent[]
   auditLogs         AuditLog[]      @relation("AuditActor")
   sentMessages      Message[]       @relation("MessageSender")
+  // Undiruv (collection) relations — SP-1.
+  assignedCollections   Collection[]   @relation("CollectionCollector")
+  assignedByCollections Collection[]   @relation("CollectionAssignedBy")
+  createdCollections    Collection[]   @relation("CollectionCreatedBy")
+  notifications         Notification[] @relation("UserNotifications")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -196,6 +213,7 @@ model CreditCase {
   auditLogs    AuditLog[]
   importJobs   ImportJob[]
   messages     Message[]
+  collections  Collection[] // undiruv (debt collection) cycles — SP-1
 
   creditLine        CreditLine?
   employment        Employment?
@@ -489,6 +507,73 @@ model WorkflowEvent {
   createdAt  DateTime         @default(now())
 
   @@index([caseId])
+}
+
+// ── SP-1: Undiruv (debt collection) domain ──────────────────────────────
+
+/// A collection cycle over one credit case: the manually-entered arrears
+/// (there is no external core-banking feed), plus the assigned collector.
+/// One active (status ≠ CLOSED) collection per case; closed ones stay as history.
+model Collection {
+  id     String           @id @default(cuid())
+  case   CreditCase       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+  status CollectionStatus @default(NEW)
+
+  months          CollectionMonth[]
+  penalty         Decimal           @default(0) @db.Decimal(18, 2) // penya
+  fine            Decimal           @default(0) @db.Decimal(18, 2) // shtraf
+  totalDebt       Decimal           @default(0) @db.Decimal(18, 2) // Σ months + penya + shtraf (denormalized)
+  collectedAmount Decimal           @default(0) @db.Decimal(18, 2) // filled by SP-2 visits
+  note            String?           @db.Text
+
+  assignedCollector   User?     @relation("CollectionCollector", fields: [assignedCollectorId], references: [id])
+  assignedCollectorId String?
+  assignedBy          User?     @relation("CollectionAssignedBy", fields: [assignedById], references: [id])
+  assignedById        String?
+  assignedAt          DateTime?
+
+  createdBy   User      @relation("CollectionCreatedBy", fields: [createdById], references: [id])
+  createdById String
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([caseId])
+  @@index([assignedCollectorId])
+  @@index([status])
+}
+
+/// One unpaid month of a collection: `plannedAmount` pre-fills from the payment
+/// schedule; `amount` is the arrears actually entered by the officer.
+model CollectionMonth {
+  id            String     @id @default(cuid())
+  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId  String
+  year          Int
+  month         Int // 1..12
+  plannedAmount Decimal    @default(0) @db.Decimal(18, 2) // schedule's monthly payment (default)
+  amount        Decimal    @default(0) @db.Decimal(18, 2) // entered arrears amount
+
+  @@unique([collectionId, year, month])
+  @@index([collectionId])
+}
+
+/// A per-user notification. Minimal by design (SP-1); mobile push (SP-4) reads it later.
+model Notification {
+  id     String  @id @default(cuid())
+  user   User    @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  type   String // 'COLLECTION_CREATED' | 'COLLECTION_ASSIGNED' | 'COLLECTION_PROGRESS'
+  title  String
+  body   String? @db.Text
+  caseId String?
+  read   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
 }
 
 model ImportJob {

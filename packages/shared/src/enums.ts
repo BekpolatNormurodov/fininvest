@@ -10,8 +10,18 @@ export const Role = {
   MODERATOR: 'MODERATOR',
   DIRECTOR: 'DIRECTOR',
   ADMIN: 'ADMIN',
+  COLLECTOR: 'COLLECTOR', // undiruvchi — field debt collector (mobile app, SP-3)
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
+
+/** Status of an undiruv (debt-collection) cycle over a case. SP-1. */
+export const CollectionStatus = {
+  NEW: 'NEW', // created, no collector assigned yet
+  ASSIGNED: 'ASSIGNED', // collector assigned, no action yet
+  IN_PROGRESS: 'IN_PROGRESS', // collector started working (SP-2 visits)
+  CLOSED: 'CLOSED', // closed (fully collected or manually)
+} as const;
+export type CollectionStatus = (typeof CollectionStatus)[keyof typeof CollectionStatus];
 
 /** Collateral product type. Foundation phase implements REAL_ESTATE fully. */
 export const ProductType = {

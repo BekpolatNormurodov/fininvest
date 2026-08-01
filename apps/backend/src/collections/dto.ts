@@ -1,0 +1,41 @@
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+import { CollectionStatus } from '@credit-core/shared';
+
+export class CollectionMonthDto {
+  @IsInt() @Min(2000) @Max(2100) year!: number;
+  @IsInt() @Min(1) @Max(12) month!: number;
+  @IsNumber() @Min(0) amount!: number;
+}
+
+export class CreateCollectionDto {
+  @IsString() @MinLength(1) caseId!: string;
+  @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => CollectionMonthDto)
+  months!: CollectionMonthDto[];
+  @IsOptional() @IsNumber() @Min(0) penalty?: number;
+  @IsOptional() @IsNumber() @Min(0) fine?: number;
+  @IsOptional() @IsString() note?: string;
+  @IsOptional() @IsString() assignedCollectorId?: string;
+}
+
+export class UpdateCollectionDto {
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => CollectionMonthDto)
+  months?: CollectionMonthDto[];
+  @IsOptional() @IsNumber() @Min(0) penalty?: number;
+  @IsOptional() @IsNumber() @Min(0) fine?: number;
+  @IsOptional() @IsString() note?: string;
+  @IsOptional() @IsString() assignedCollectorId?: string | null;
+  @IsOptional() @IsEnum(CollectionStatus) status?: CollectionStatus;
+}

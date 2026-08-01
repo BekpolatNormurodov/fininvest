@@ -1,4 +1,4 @@
-import { CaseStatus, DocumentType, ProductType, Role } from './enums';
+import { CaseStatus, CollectionStatus, DocumentType, ProductType, Role } from './enums';
 
 /** Uzbek UI labels (primary language). */
 export const ROLE_LABEL: Record<Role, string> = {
@@ -6,6 +6,14 @@ export const ROLE_LABEL: Record<Role, string> = {
   [Role.MODERATOR]: 'Moderator',
   [Role.DIRECTOR]: 'Direktor',
   [Role.ADMIN]: 'Administrator',
+  [Role.COLLECTOR]: 'Undiruvchi',
+};
+
+export const COLLECTION_STATUS_LABEL: Record<CollectionStatus, string> = {
+  [CollectionStatus.NEW]: 'Yangi',
+  [CollectionStatus.ASSIGNED]: 'Biriktirilgan',
+  [CollectionStatus.IN_PROGRESS]: 'Jarayonda',
+  [CollectionStatus.CLOSED]: 'Yopilgan',
 };
 
 export const STATUS_LABEL: Record<CaseStatus, string> = {

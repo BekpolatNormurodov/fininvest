@@ -80,4 +80,6 @@ export const ROLE_INBOX_STATUS: Record<Role, CaseStatus | null> = {
   [Role.DIRECTOR]: CaseStatus.DIRECTOR_REVIEW,
   // Admin is no longer a workflow step — director approval is final. No inbox for admin.
   [Role.ADMIN]: null,
+  // Collector is outside the origination workflow — they work undiruv, not case steps.
+  [Role.COLLECTOR]: null,
 };
