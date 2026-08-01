@@ -13,6 +13,8 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:demo": "ts-node prisma/seed-demo.ts",
     "repair:filenames": "ts-node prisma/repair-filenames.ts",
+    "render:case": "ts-node scripts/render-case.ts",
+    "sync:org": "ts-node prisma/sync-organization.ts",
     "db:push": "prisma db push",
     "setup:ocr": "node scripts/fetch-ocr-model.mjs",
     "test": "jest",

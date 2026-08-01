@@ -1,3 +1,9 @@
+/*
+  Loaded explicitly: run through `prisma` the CLI reads .env for us, but a plain `ts-node` does not,
+  and the failure is a Prisma validation error about a missing DATABASE_URL rather than anything
+  that points here.
+*/
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { decodeUploadName } from '../src/common/upload-name.util';
 

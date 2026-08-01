@@ -48,3 +48,6 @@ apps/backend/tessdata/
 
 # passport scan fixtures — real documents (PII), kept local only for the OCR integration test
 apps/backend/test-fixtures/
+
+# Local output of `npm run render:case` — real client data, never committed.
+rendered/

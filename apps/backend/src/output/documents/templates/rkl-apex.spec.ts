@@ -115,6 +115,17 @@ describe('the six slots carry the case', () => {
     «Если обеспечывается только автомобилем полис скрыть» — the sheet's own note to whoever fills
     it. An instruction, not a clause: it is obeyed, not printed.
   */
+  /*
+    With no insurer named the sheet's own A27 wording stands, and that cell is written throughout in
+    the simplified spelling — «сугурта», «хар кандай», «микдоридан», «чикиб», with no қ or ҳ. Copied
+    as it is: a sweep for «микдори» flags it, and the answer is that the form says микдори there.
+  */
+  it('the unnamed-insurer wording is the sheet\'s cell, spelling and all', () => {
+    const t = apex({ creditLine: { insurance: { insured: true, company: null } as never } });
+    expect(t).toContain('микрокарз/микрокредит микдоридан келиб чикиб белгиланади');
+    expect(t).toContain('ММТ ни каноатлантирадиган хар кандай сугурта компанияси');
+  });
+
   it('hides 3.1.2 on a car-only case with no policy, and never prints the operator note', () => {
     const t = apex({
       collaterals: [{ id: 'c1', type: 'AUTO', model: 'Chevrolet Cobalt', agreedValue: 180_000_000, owners: [] }] as never,
