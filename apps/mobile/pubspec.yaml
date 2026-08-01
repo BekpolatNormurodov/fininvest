@@ -1,0 +1,61 @@
+name: fininvest_undiruv
+description: "FinInvest Undiruv — dala qarz undirish"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0-290.4.beta
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management (bloc/cubit) + value equality.
+  flutter_bloc: ^9.0.0
+  equatable: ^2.0.7
+
+  # Networking.
+  dio: ^5.7.0
+
+  # Dependency injection.
+  get_it: ^8.0.3
+
+  # Routing.
+  go_router: ^14.6.2
+
+  # Local + secure storage.
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.3
+
+  # Connectivity (network checker).
+  connectivity_plus: ^6.1.0
+
+  # Icons — Iconsax.
+  iconsax: ^0.0.8
+
+  # Runtime permissions (location, camera).
+  permission_handler: ^11.3.1
+
+  # Misc.
+  intl: ^0.20.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.2
+
+# Launcher icon generation — run: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#0F5FA6"
+  adaptive_icon_foreground: "assets/images/logo_foreground.png"
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
