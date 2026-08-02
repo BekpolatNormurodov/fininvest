@@ -506,6 +506,13 @@ export const api = {
   async deleteCollection(id: string): Promise<void> {
     await http.delete(`/collections/${id}`);
   },
+  /** Open a visit's photo/video (bearer-authenticated) in a new tab. */
+  async viewVisitMedia(mediaId: string): Promise<void> {
+    const { data } = await http.get<Blob>(`/collections/visits/media/${mediaId}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(data);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
   async createVisit(collectionId: string, payload: CreateVisitInput, media: File[] = []): Promise<CollectionDto> {
     const fd = new FormData();
     fd.append('amount', String(payload.amount));

@@ -39,9 +39,12 @@ class _VisitFormPageState extends State<VisitFormPage> {
   String _letter = 'NONE';
   double? _lat;
   double? _lng;
-  File? _photo;
+  final List<File> _media = [];
   bool _locating = false;
   bool _submitting = false;
+
+  static final _videoExt = RegExp(r'\.(mp4|mov|m4v|avi|mkv|webm|3gp)$', caseSensitive: false);
+  bool _isVideo(File f) => _videoExt.hasMatch(f.path);
 
   @override
   void dispose() {
@@ -73,10 +76,12 @@ class _VisitFormPageState extends State<VisitFormPage> {
     }
   }
 
-  Future<void> _pickPhoto() async {
+  Future<void> _addMedia({required ImageSource source, bool video = false}) async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 60, maxWidth: 1600);
-    if (file != null) setState(() => _photo = File(file.path));
+    final XFile? file = video
+        ? await picker.pickVideo(source: source, maxDuration: const Duration(minutes: 2))
+        : await picker.pickImage(source: source, imageQuality: 60, maxWidth: 1600);
+    if (file != null) setState(() => _media.add(File(file.path)));
   }
 
   Future<void> _submit() async {
@@ -90,7 +95,7 @@ class _VisitFormPageState extends State<VisitFormPage> {
         comment: _commentController.text.trim(),
         lat: _lat,
         lng: _lng,
-        photos: _photo != null ? [_photo!] : const [],
+        photos: _media,
       );
       if (mounted) Navigator.pop(context, true);
     } on ApiException catch (e) {
@@ -140,7 +145,14 @@ class _VisitFormPageState extends State<VisitFormPage> {
           const SizedBox(height: 16),
           _LocationCard(lat: _lat, lng: _lng, locating: _locating, onGet: _getLocation, label: lang.tr('visit.getLocation')),
           const SizedBox(height: 12),
-          _PhotoCard(photo: _photo, onPick: _pickPhoto, label: lang.tr('visit.photo')),
+          _MediaCard(
+            media: _media,
+            isVideo: _isVideo,
+            onCamera: () => _addMedia(source: ImageSource.camera),
+            onGallery: () => _addMedia(source: ImageSource.gallery),
+            onVideo: () => _addMedia(source: ImageSource.camera, video: true),
+            onRemove: (i) => setState(() => _media.removeAt(i)),
+          ),
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: _submitting ? null : _submit,
@@ -221,36 +233,102 @@ class _LocationCard extends StatelessWidget {
   }
 }
 
-class _PhotoCard extends StatelessWidget {
-  const _PhotoCard({required this.photo, required this.onPick, required this.label});
+class _MediaCard extends StatelessWidget {
+  const _MediaCard({
+    required this.media,
+    required this.isVideo,
+    required this.onCamera,
+    required this.onGallery,
+    required this.onVideo,
+    required this.onRemove,
+  });
 
-  final File? photo;
-  final VoidCallback onPick;
-  final String label;
+  final List<File> media;
+  final bool Function(File) isVideo;
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
+  final VoidCallback onVideo;
+  final void Function(int) onRemove;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (photo != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.file(photo!, width: 56, height: 56, fit: BoxFit.cover),
-              )
-            else
-              Container(
-                width: 56, height: 56,
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Iconsax.gallery, size: 22),
+            Row(
+              children: [
+                const Icon(Iconsax.gallery, size: 18),
+                const SizedBox(width: 8),
+                Text('Fayllar (${media.length})', style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            if (media.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var i = 0; i < media.length; i++)
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: isVideo(media[i])
+                              ? Container(
+                                  width: 64, height: 64,
+                                  color: Colors.black87,
+                                  child: const Icon(Iconsax.video5, color: Colors.white, size: 24),
+                                )
+                              : Image.file(media[i], width: 64, height: 64, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          right: -6, top: -6,
+                          child: IconButton(
+                            iconSize: 18,
+                            icon: const Icon(Iconsax.close_circle5, color: AppTheme.danger),
+                            onPressed: () => onRemove(i),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
               ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(photo != null ? 'Rasm tanlandi' : label)),
-            TextButton.icon(onPressed: onPick, icon: const Icon(Iconsax.camera, size: 18), label: Text(label)),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _AddButton(icon: Iconsax.camera, label: 'Kamera', onTap: onCamera),
+                const SizedBox(width: 8),
+                _AddButton(icon: Iconsax.gallery_add, label: 'Galereya', onTap: onGallery),
+                const SizedBox(width: 8),
+                _AddButton(icon: Iconsax.video_add, label: 'Video', onTap: onVideo),
+              ],
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AddButton extends StatelessWidget {
+  const _AddButton({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10), minimumSize: const Size(0, 0)),
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
       ),
     );
   }

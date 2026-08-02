@@ -297,7 +297,9 @@ export class CollectionsService {
     const stored = await Promise.all(
       files.map(async (f) => {
         const saved = await this.storage.save(f.buffer, f.originalName, f.mimeType, `collections/${collectionId}/visits`);
-        return { path: saved.storagePath, kind: f.mimeType.startsWith('video') ? 'video' : 'image' };
+        // Classify by mime OR extension — mobile multipart often lacks a video content-type.
+        const isVideo = f.mimeType.startsWith('video') || /\.(mp4|mov|m4v|avi|mkv|webm|3gp)$/i.test(f.originalName);
+        return { path: saved.storagePath, kind: isVideo ? 'video' : 'image' };
       }),
     );
 

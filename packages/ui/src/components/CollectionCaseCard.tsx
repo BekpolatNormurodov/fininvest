@@ -10,6 +10,7 @@ import { api } from '@credit-core/api-client';
 import { useAuth } from '../lib/auth';
 import { Button, Card, Skeleton } from './primitives';
 import { CollectionForm } from './CollectionForm';
+import { CollectionVisits } from './CollectionVisits';
 import { Money, Edit, Plus } from '../lib/icons';
 import { cn, formatMoney } from '../lib/cn';
 
@@ -68,6 +69,11 @@ export function CollectionCaseCard({ caseId, caseLabel }: { caseId: string; case
           </dl>
           {canManage && (
             <Button variant="secondary" className="w-full" onClick={() => setOpen(true)}><Edit className="h-4 w-4" /> Tahrirlash</Button>
+          )}
+          {collection.visits.length > 0 && (
+            <div className="border-t border-gray-100 pt-3 dark:border-white/10">
+              <CollectionVisits visits={collection.visits} />
+            </div>
           )}
         </>
       ) : (

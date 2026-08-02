@@ -10,6 +10,7 @@ import { api, getErrorMessage } from '@credit-core/api-client';
 import { Modal } from './Modal';
 import { Button, Field } from './primitives';
 import { MoneyInput, Select } from './forms';
+import { CollectionVisits } from './CollectionVisits';
 import { useToast } from './Toast';
 import { cn, formatMoney } from '../lib/cn';
 
@@ -258,6 +259,12 @@ export function CollectionForm({
             className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-400 dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
           />
         </Field>
+
+        {editing && collection && collection.visits.length > 0 && (
+          <div className="border-t border-gray-100 pt-4 dark:border-white/10">
+            <CollectionVisits visits={collection.visits} />
+          </div>
+        )}
       </div>
     </Modal>
   );
