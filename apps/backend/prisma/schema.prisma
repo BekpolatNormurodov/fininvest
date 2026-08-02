@@ -156,6 +156,7 @@ model User {
   collectionVisits      CollectionVisit[] @relation("VisitCollector")
   notifications         Notification[] @relation("UserNotifications")
   deviceTokens          DeviceToken[]  @relation("UserDeviceTokens")
+  workSessions          WorkSession[]  @relation("WorkSessionCollector")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -599,6 +600,36 @@ model VisitMedia {
   createdAt DateTime        @default(now())
 
   @@index([visitId])
+}
+
+/// A collector's work shift: check-in → check-out, with the location at each end and periodic pings
+/// while on shift, so admin/director see when they started/finished and where they were. SP-4.
+model WorkSession {
+  id          String         @id @default(cuid())
+  collector   User           @relation("WorkSessionCollector", fields: [collectorId], references: [id], onDelete: Cascade)
+  collectorId String
+  startedAt   DateTime       @default(now())
+  startLat    Float?
+  startLng    Float?
+  endedAt     DateTime?
+  endLat      Float?
+  endLng      Float?
+  pings       LocationPing[]
+
+  @@index([collectorId])
+  @@index([startedAt])
+}
+
+/// One location sample taken during a shift.
+model LocationPing {
+  id        String      @id @default(cuid())
+  session   WorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  lat       Float
+  lng       Float
+  at        DateTime    @default(now())
+
+  @@index([sessionId])
 }
 
 /// A device's push token (FCM), so the backend can send a mobile push when a notification is

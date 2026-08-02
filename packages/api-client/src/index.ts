@@ -35,6 +35,7 @@ import type {
   CreateVisitInput,
   NotificationDto,
   ScheduleRow,
+  WorkSessionDto,
 } from '@credit-core/shared';
 
 /** Query params for the undiruv (collection) list + statistics. */
@@ -556,6 +557,27 @@ export const api = {
   },
   async markAllNotificationsRead(): Promise<void> {
     await http.post('/notifications/read-all');
+  },
+
+  // work shifts (SP-4) ──────────────────────────────────────────────────────
+  async workStart(lat?: number, lng?: number): Promise<WorkSessionDto> {
+    const { data } = await http.post<WorkSessionDto>('/work/start', { lat, lng });
+    return data;
+  },
+  async workEnd(lat?: number, lng?: number): Promise<WorkSessionDto | null> {
+    const { data } = await http.post<WorkSessionDto | null>('/work/end', { lat, lng });
+    return data;
+  },
+  async workPing(lat: number, lng: number): Promise<void> {
+    await http.post('/work/ping', { lat, lng });
+  },
+  async workCurrent(): Promise<WorkSessionDto | null> {
+    const { data } = await http.get<WorkSessionDto | null>('/work/current');
+    return data;
+  },
+  async workSessions(params: { collectorId?: string; from?: string; to?: string } = {}): Promise<WorkSessionDto[]> {
+    const { data } = await http.get<WorkSessionDto[]>('/work/sessions', { params });
+    return data;
   },
 };
 

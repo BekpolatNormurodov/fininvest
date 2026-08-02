@@ -14,6 +14,8 @@ import '../../features/collections/data/collections_api.dart';
 import '../../features/collections/data/collections_repository.dart';
 import '../../features/notifications/data/notifications_api.dart';
 import '../../features/notifications/data/notifications_repository.dart';
+import '../../features/work/data/work_api.dart';
+import '../../features/work/data/work_repository.dart';
 
 /// Service locator. Composition happens once at startup in [configureDependencies].
 final GetIt sl = GetIt.instance;
@@ -42,6 +44,10 @@ Future<void> configureDependencies() async {
   // Notifications feature.
   sl.registerLazySingleton<NotificationsApi>(() => NotificationsApi(sl<Dio>()));
   sl.registerLazySingleton<NotificationsRepository>(() => NotificationsRepository(sl<NotificationsApi>()));
+
+  // Work shifts feature.
+  sl.registerLazySingleton<WorkApi>(() => WorkApi(sl<Dio>()));
+  sl.registerLazySingleton<WorkRepository>(() => WorkRepository(sl<WorkApi>()));
 }
 
 /// Apply a new API base URL at runtime (from the login-screen server dialog).

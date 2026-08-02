@@ -50,6 +50,11 @@ class S {
 
     'common.retry': {AppLang.uz: 'Qayta urinish', AppLang.ru: 'Повторить'},
     'common.cancel': {AppLang.uz: 'Bekor', AppLang.ru: 'Отмена'},
+
+    'work.start': {AppLang.uz: 'Ishni boshlash', AppLang.ru: 'Начать смену'},
+    'work.end': {AppLang.uz: 'Ishni tugatish', AppLang.ru: 'Завершить'},
+    'work.onShift': {AppLang.uz: 'Ishdasiz', AppLang.ru: 'На смене'},
+    'work.off': {AppLang.uz: 'Ish boshlanmagan', AppLang.ru: 'Смена не начата'},
   };
 
   static String t(AppLang lang, String key) => _table[key]?[lang] ?? key;

@@ -58,6 +58,7 @@ export function generatePassword(): string {
 const collectorInclude = {
   collectedBranches: { select: { id: true, name: true, symbol: true } },
   assignedCollections: { where: { status: { not: CollectionStatus.CLOSED } }, select: { id: true } },
+  workSessions: { where: { endedAt: null }, orderBy: { startedAt: 'desc' as const }, take: 1, select: { startedAt: true } },
 };
 
 type CollectorRow = {
@@ -70,6 +71,7 @@ type CollectorRow = {
   createdAt: Date;
   collectedBranches: { id: string; name: string; symbol: string }[];
   assignedCollections: { id: string }[];
+  workSessions: { startedAt: Date }[];
 };
 
 function toCollector(u: CollectorRow): CollectorListItem {
@@ -82,6 +84,7 @@ function toCollector(u: CollectorRow): CollectorListItem {
     isActive: u.isActive,
     branches: u.collectedBranches,
     activeCount: u.assignedCollections.length,
+    onShiftSince: u.workSessions[0]?.startedAt.toISOString() ?? null,
     createdAt: u.createdAt.toISOString(),
   };
 }

@@ -8,6 +8,7 @@ export * from './contract-number';
 export * from './dto';
 export * from './case-filter';
 export * from './collection';
+export * from './work';
 export * from './nationality';
 export * from './collateral-owner';
 export * from './scoring';

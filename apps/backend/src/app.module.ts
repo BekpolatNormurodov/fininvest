@@ -29,6 +29,7 @@ import { CollectionsModule } from './collections/collections.module';
 import { CollectorsModule } from './collectors/collectors.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule as PaymentScheduleModule } from './schedule/schedule.module';
+import { WorkModule } from './work/work.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { ScheduleModule as PaymentScheduleModule } from './schedule/schedule.mod
     CollectorsModule,
     NotificationsModule,
     PaymentScheduleModule,
+    WorkModule,
   ],
 })
 export class AppModule {}

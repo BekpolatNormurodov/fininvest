@@ -139,6 +139,8 @@ export interface CollectorListItem {
   isActive: boolean;
   branches: CollectorBranchRef[];
   activeCount: number; // open collections assigned to them
+  /** When their current work shift started, or null when off-shift. */
+  onShiftSince: string | null;
   createdAt: string;
 }
 

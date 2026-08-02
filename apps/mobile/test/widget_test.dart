@@ -19,9 +19,9 @@ void main() {
     });
   });
 
-  testWidgets('AppLogo renders the wordmark', (tester) async {
+  testWidgets('AppLogo renders the mark and wordmark', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AppLogo())));
-    expect(find.text('FinInvest'), findsOneWidget);
-    expect(find.text('UNDIRUV'), findsOneWidget);
+    expect(find.byType(LogoMark), findsOneWidget);
+    expect(find.text('UNDIRUVCHI'), findsOneWidget);
   });
 }

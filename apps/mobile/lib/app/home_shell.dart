@@ -11,6 +11,8 @@ import '../features/collections/presentation/stats_page.dart';
 import '../features/collections/presentation/cubit/collections_cubit.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/notifications/presentation/cubit/notifications_cubit.dart';
+import '../features/work/presentation/work_cubit.dart';
+import '../app/theme.dart';
 
 /// The signed-in home: bottom-nav across undiruv list, statistics, notifications and profile, with
 /// an offline banner driven by the network checker.
@@ -31,11 +33,13 @@ class _HomeShellState extends State<HomeShell> {
       providers: [
         BlocProvider<CollectionsCubit>(create: (_) => CollectionsCubit(sl())..load()),
         BlocProvider<NotificationsCubit>(create: (_) => NotificationsCubit(sl())..load()),
+        BlocProvider<WorkCubit>(create: (_) => WorkCubit(sl())..load()),
       ],
       child: Scaffold(
         body: Column(
           children: [
             const _OfflineBanner(),
+            const _WorkBanner(),
             Expanded(
               child: IndexedStack(
                 index: _index,
@@ -71,6 +75,65 @@ class _HomeShellState extends State<HomeShell> {
           },
         ),
       ),
+    );
+  }
+}
+
+/// Shift check-in / check-out bar. Green while on shift (shows start time), brand otherwise.
+class _WorkBanner extends StatelessWidget {
+  const _WorkBanner();
+
+  String _time(String iso) {
+    final d = DateTime.tryParse(iso)?.toLocal();
+    if (d == null) return '';
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.hour)}:${two(d.minute)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = context.watch<LocaleCubit>().state;
+    return BlocBuilder<WorkCubit, WorkState>(
+      builder: (context, state) {
+        if (state.loading) return const SizedBox.shrink();
+        final active = state.active;
+        final color = active ? AppTheme.success : AppTheme.brand;
+        return Material(
+          color: color.withValues(alpha: 0.10),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(active ? Iconsax.clock : Iconsax.play_circle, size: 18, color: color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      active
+                          ? '${lang.tr('work.onShift')} • ${_time(state.startedAt ?? '')} dan'
+                          : lang.tr('work.off'),
+                      style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: state.busy ? null : () => context.read<WorkCubit>().toggle(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: color,
+                      minimumSize: const Size(0, 34),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    child: state.busy
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(active ? lang.tr('work.end') : lang.tr('work.start')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

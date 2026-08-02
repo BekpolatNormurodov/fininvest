@@ -6,8 +6,9 @@ import { Button, Field, Input, PasswordInput, Skeleton } from '../components/pri
 import { MultiSelect, PhoneInput } from '../components/forms';
 import { DataTable, type Column } from '../components/DataTable';
 import { Modal, ConfirmDialog } from '../components/Modal';
+import { WorkSessionsModal } from '../components/WorkSessionsModal';
 import { useToast } from '../components/Toast';
-import { Plus, Edit, Copy, Check } from '../lib/icons';
+import { Plus, Edit, Copy, Check, Clock } from '../lib/icons';
 import { cn } from '../lib/cn';
 
 interface FormState {
@@ -27,6 +28,7 @@ export function CollectorsPage() {
   const [modal, setModal] = useState<{ mode: 'create' | 'edit'; id?: string } | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [confirm, setConfirm] = useState<CollectorListItem | null>(null);
+  const [sessionsFor, setSessionsFor] = useState<CollectorListItem | null>(null);
 
   const branchOpts = useMemo(() => (branches ?? []).map((b) => ({ value: b.id, label: `${b.symbol} — ${b.name}` })), [branches]);
 
@@ -72,7 +74,15 @@ export function CollectorsPage() {
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-600 text-xs font-semibold text-white">
             {c.fullName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
           </span>
-          <span className="font-medium text-gray-800 dark:text-white">{c.fullName}</span>
+          <span className="min-w-0">
+            <span className="block font-medium text-gray-800 dark:text-white">{c.fullName}</span>
+            {c.onShiftSince && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success-600 dark:text-success-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-success-500" />
+                Ishda • {new Date(c.onShiftSince).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} dan
+              </span>
+            )}
+          </span>
         </div>
       ),
     },
@@ -115,6 +125,7 @@ export function CollectorsPage() {
     {
       key: 'actions', header: '', align: 'right', render: (c) => (
         <div className="flex justify-end gap-1.5">
+          <Button variant="secondary" className="px-2.5 py-1.5 text-xs" title="Ish vaqtlari" onClick={(e) => { e.stopPropagation(); setSessionsFor(c); }}><Clock className="h-4 w-4" /></Button>
           <Button variant="secondary" className="px-2.5 py-1.5 text-xs" onClick={(e) => { e.stopPropagation(); openEdit(c); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="secondary" className="px-2.5 py-1.5 text-xs" onClick={(e) => { e.stopPropagation(); setConfirm(c); }}>
             {c.isActive ? 'Bloklash' : 'Faollash'}
@@ -184,6 +195,11 @@ export function CollectorsPage() {
         confirmLabel={confirm?.isActive ? 'Bloklash' : 'Faollash'}
         tone={confirm?.isActive ? 'danger' : 'primary'}
         loading={toggleBlock.isPending}
+      />
+
+      <WorkSessionsModal
+        collector={sessionsFor ? { id: sessionsFor.id, fullName: sessionsFor.fullName } : null}
+        onClose={() => setSessionsFor(null)}
       />
     </div>
   );
