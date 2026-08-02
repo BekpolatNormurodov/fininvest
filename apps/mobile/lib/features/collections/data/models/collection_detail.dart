@@ -21,6 +21,50 @@ class CollectionMonth extends Equatable {
   List<Object?> get props => [year, month, amount];
 }
 
+class VisitItem extends Equatable {
+  const VisitItem({
+    required this.id,
+    required this.collectorName,
+    required this.lat,
+    required this.lng,
+    required this.amount,
+    required this.letterType,
+    required this.comment,
+    required this.mediaCount,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String? collectorName;
+  final double? lat;
+  final double? lng;
+  final double amount;
+  final String letterType;
+  final String? comment;
+  final int mediaCount;
+  final String createdAt;
+
+  bool get hasLocation => lat != null && lng != null;
+
+  factory VisitItem.fromJson(Map<String, dynamic> json) {
+    final media = json['media'] as List<dynamic>? ?? [];
+    return VisitItem(
+      id: json['id'] as String,
+      collectorName: json['collectorName'] as String?,
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
+      amount: _toDouble(json['amount']),
+      letterType: json['letterType'] as String? ?? 'NONE',
+      comment: json['comment'] as String?,
+      mediaCount: media.length,
+      createdAt: json['createdAt'] as String? ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, amount, letterType];
+}
+
 /// Full undiruv detail (mirrors the shared `CollectionDto`).
 class CollectionDetail extends Equatable {
   const CollectionDetail({
@@ -38,6 +82,7 @@ class CollectionDetail extends Equatable {
     required this.collectedAmount,
     required this.note,
     required this.collectorName,
+    required this.visits,
     required this.createdAt,
   });
 
@@ -55,6 +100,7 @@ class CollectionDetail extends Equatable {
   final double collectedAmount;
   final String? note;
   final String? collectorName;
+  final List<VisitItem> visits;
   final String createdAt;
 
   double get remaining {
@@ -81,6 +127,9 @@ class CollectionDetail extends Equatable {
       collectedAmount: _toDouble(json['collectedAmount']),
       note: json['note'] as String?,
       collectorName: (json['collector'] as Map<String, dynamic>?)?['fullName'] as String?,
+      visits: (json['visits'] as List<dynamic>? ?? [])
+          .map((v) => VisitItem.fromJson(v as Map<String, dynamic>))
+          .toList(),
       createdAt: json['createdAt'] as String? ?? '',
     );
   }

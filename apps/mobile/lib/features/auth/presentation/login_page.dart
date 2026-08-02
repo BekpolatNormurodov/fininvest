@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/widgets/server_dialog.dart';
 import 'cubit/auth_cubit.dart';
 
 class LoginPage extends StatefulWidget {
@@ -35,7 +36,25 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                tooltip: 'Server manzili',
+                icon: const Icon(Iconsax.setting_2, size: 20),
+                onPressed: () => showServerDialog(context),
+              ),
+            ),
+            _form(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _form(BuildContext context) {
+    return Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
@@ -107,8 +126,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 }

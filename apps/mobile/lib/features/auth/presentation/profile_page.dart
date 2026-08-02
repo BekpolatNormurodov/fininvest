@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/i18n/locale_cubit.dart';
+import '../../../core/i18n/strings.dart';
 import 'cubit/auth_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -35,8 +37,9 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.select((AuthCubit c) => c.state.user);
+    final lang = context.watch<LocaleCubit>().state;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(title: Text(lang.tr('nav.profile'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -70,8 +73,31 @@ class ProfilePage extends StatelessWidget {
               children: [
                 _InfoTile(icon: Iconsax.user, label: 'Login', value: user?.login ?? '—'),
                 const Divider(height: 1),
-                _InfoTile(icon: Iconsax.call, label: 'Telefon', value: user?.phone ?? '—'),
+                _InfoTile(icon: Iconsax.call, label: lang.tr('profile.phone'), value: user?.phone ?? '—'),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Iconsax.global, size: 20, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 12),
+                  Text(lang.tr('profile.language')),
+                  const Spacer(),
+                  SegmentedButton<AppLang>(
+                    segments: const [
+                      ButtonSegment(value: AppLang.uz, label: Text("O‘zbek")),
+                      ButtonSegment(value: AppLang.ru, label: Text('Русский')),
+                    ],
+                    selected: {lang},
+                    onSelectionChanged: (s) => context.read<LocaleCubit>().set(s.first),
+                    showSelectedIcon: false,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -84,7 +110,7 @@ class ProfilePage extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             icon: const Icon(Iconsax.logout, size: 20),
-            label: const Text('Chiqish'),
+            label: Text(lang.tr('profile.logout')),
           ),
         ],
       ),
