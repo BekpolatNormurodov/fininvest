@@ -23,6 +23,15 @@ export const CollectionStatus = {
 } as const;
 export type CollectionStatus = (typeof CollectionStatus)[keyof typeof CollectionStatus];
 
+/** The letter a collector served during a field visit. SP-2. */
+export const LetterType = {
+  NONE: 'NONE',
+  WARNING: 'WARNING', // ogohlantirish
+  EXPLANATION: 'EXPLANATION', // tushuntirish
+  OTHER: 'OTHER',
+} as const;
+export type LetterType = (typeof LetterType)[keyof typeof LetterType];
+
 /** Collateral product type. Foundation phase implements REAL_ESTATE fully. */
 export const ProductType = {
   REAL_ESTATE: 'REAL_ESTATE',

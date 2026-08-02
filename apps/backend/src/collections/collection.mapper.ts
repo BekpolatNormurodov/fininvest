@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { CollectionDto, CollectionListItem, CollectionMonthDto } from '@credit-core/shared';
+import type { CollectionDto, CollectionListItem, CollectionMonthDto, VisitDto } from '@credit-core/shared';
 
 /** Turns a Decimal | number | null into a plain number (0 when absent). */
 const num = (v: Prisma.Decimal | number | null | undefined): number => (v == null ? 0 : Number(v));
@@ -50,6 +50,10 @@ export function toCollectionListItem(c: CollectionListRow): CollectionListItem {
 
 export const collectionDetailInclude = {
   months: { orderBy: [{ year: 'asc' }, { month: 'asc' }] },
+  visits: {
+    orderBy: { createdAt: 'desc' },
+    include: { collector: { select: { fullName: true } }, media: { select: { id: true, kind: true } } },
+  },
   case: {
     select: {
       number: true,
@@ -88,6 +92,19 @@ export function toCollectionDto(c: CollectionDetailRow): CollectionDto {
     totalDebt: num(c.totalDebt),
     collectedAmount: num(c.collectedAmount),
     note: c.note,
+    visits: c.visits.map(
+      (v): VisitDto => ({
+        id: v.id,
+        collectorName: v.collector?.fullName ?? null,
+        lat: v.lat,
+        lng: v.lng,
+        amount: num(v.amount),
+        letterType: v.letterType,
+        comment: v.comment,
+        media: v.media.map((m) => ({ id: m.id, kind: m.kind === 'video' ? 'video' : 'image' })),
+        createdAt: v.createdAt.toISOString(),
+      }),
+    ),
     collector: c.assignedCollector ? { id: c.assignedCollector.id, fullName: c.assignedCollector.fullName } : null,
     assignedByName: c.assignedBy?.fullName ?? null,
     assignedAt: c.assignedAt?.toISOString() ?? null,

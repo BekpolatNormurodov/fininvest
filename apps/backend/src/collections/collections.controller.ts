@@ -1,16 +1,36 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CollectionStatus, Role } from '@credit-core/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
+import { StorageService } from '../documents/storage.service';
+import { decodeUploadName } from '../common/upload-name.util';
 import { CollectionsService, type CollectionListFilters } from './collections.service';
-import { CreateCollectionDto, UpdateCollectionDto } from './dto';
+import { CreateCollectionDto, CreateVisitDto, UpdateCollectionDto } from './dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('collections')
 export class CollectionsController {
-  constructor(private readonly service: CollectionsService) {}
+  constructor(
+    private readonly service: CollectionsService,
+    private readonly storage: StorageService,
+  ) {}
 
   @Get()
   list(
@@ -39,6 +59,39 @@ export class CollectionsController {
   @Get('by-case/:caseId')
   forCase(@CurrentUser() user: RequestUser, @Param('caseId') caseId: string) {
     return this.service.forCase(user, caseId);
+  }
+
+  // Field visit media (bearer-authenticated) — streamed to the collector / manager.
+  @Get('visits/media/:mediaId')
+  async media(@CurrentUser() user: RequestUser, @Param('mediaId') mediaId: string, @Res() res: Response) {
+    const { path } = await this.service.resolveMedia(user, mediaId);
+    const ext = path.split('.').pop()?.toLowerCase();
+    const mime =
+      ext === 'png' ? 'image/png'
+      : ext === 'webp' ? 'image/webp'
+      : ext === 'mp4' ? 'video/mp4'
+      : ext === 'mov' ? 'video/quicktime'
+      : 'image/jpeg';
+    res.setHeader('Content-Type', mime);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    this.storage.stream(path).pipe(res);
+  }
+
+  // A collector logs a field visit (multipart: media files + fields).
+  @UseInterceptors(FilesInterceptor('media', 8))
+  @Post(':id/visits')
+  createVisit(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: CreateVisitDto,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    const media = (files ?? []).map((f) => ({
+      buffer: f.buffer,
+      originalName: decodeUploadName(f.originalname),
+      mimeType: f.mimetype,
+    }));
+    return this.service.createVisit(user, id, dto, media);
   }
 
   @Get(':id')

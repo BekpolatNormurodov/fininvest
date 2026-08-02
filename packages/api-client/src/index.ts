@@ -32,6 +32,7 @@ import type {
   CollectorListItem,
   CreateCollectorInput,
   UpdateCollectorInput,
+  CreateVisitInput,
   NotificationDto,
 } from '@credit-core/shared';
 
@@ -498,6 +499,17 @@ export const api = {
   },
   async deleteCollection(id: string): Promise<void> {
     await http.delete(`/collections/${id}`);
+  },
+  async createVisit(collectionId: string, payload: CreateVisitInput, media: File[] = []): Promise<CollectionDto> {
+    const fd = new FormData();
+    fd.append('amount', String(payload.amount));
+    fd.append('letterType', payload.letterType);
+    if (payload.comment) fd.append('comment', payload.comment);
+    if (payload.lat != null) fd.append('lat', String(payload.lat));
+    if (payload.lng != null) fd.append('lng', String(payload.lng));
+    for (const file of media) fd.append('media', file);
+    const { data } = await http.post<CollectionDto>(`/collections/${collectionId}/visits`, fd);
+    return data;
   },
 
   // collector accounts (admin) ──────────────────────────────────────────────

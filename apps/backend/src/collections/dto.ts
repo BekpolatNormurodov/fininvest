@@ -12,7 +12,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { CollectionStatus } from '@credit-core/shared';
+import { CollectionStatus, LetterType } from '@credit-core/shared';
 
 export class CollectionMonthDto {
   @IsInt() @Min(2000) @Max(2100) year!: number;
@@ -38,4 +38,13 @@ export class UpdateCollectionDto {
   @IsOptional() @IsString() note?: string;
   @IsOptional() @IsString() assignedCollectorId?: string | null;
   @IsOptional() @IsEnum(CollectionStatus) status?: CollectionStatus;
+}
+
+/** A field visit, submitted as multipart (files under `media`) — fields arrive as strings, coerced. */
+export class CreateVisitDto {
+  @Type(() => Number) @IsNumber() @Min(0) amount!: number;
+  @IsEnum(LetterType) letterType!: LetterType;
+  @IsOptional() @IsString() comment?: string;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) lat?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) lng?: number;
 }

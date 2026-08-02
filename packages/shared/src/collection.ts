@@ -1,4 +1,4 @@
-import { CollectionStatus, Role } from './enums';
+import { CollectionStatus, LetterType, Role } from './enums';
 
 /**
  * Undiruv (debt-collection) domain — shared shapes and browser-free logic.
@@ -28,6 +28,32 @@ export interface CollectorRef {
   fullName: string;
 }
 
+export interface VisitMediaDto {
+  id: string;
+  kind: 'image' | 'video';
+}
+
+/** A logged field visit (SP-2). */
+export interface VisitDto {
+  id: string;
+  collectorName: string | null;
+  lat: number | null;
+  lng: number | null;
+  amount: number;
+  letterType: LetterType;
+  comment: string | null;
+  media: VisitMediaDto[];
+  createdAt: string;
+}
+
+export interface CreateVisitInput {
+  amount: number;
+  letterType: LetterType;
+  comment?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+}
+
 /** Full collection detail (case page + edit form). */
 export interface CollectionDto {
   id: string;
@@ -44,6 +70,7 @@ export interface CollectionDto {
   totalDebt: number;
   collectedAmount: number;
   note: string | null;
+  visits: VisitDto[];
   collector: CollectorRef | null;
   assignedByName: string | null;
   assignedAt: string | null;

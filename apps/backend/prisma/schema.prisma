@@ -22,6 +22,13 @@ enum CollectionStatus {
   CLOSED // yopilgan (to'liq undirilgan yoki qo'lda)
 }
 
+enum LetterType {
+  NONE // xat yo'q
+  WARNING // ogohlantirish xati
+  EXPLANATION // tushuntirish xati
+  OTHER // boshqa
+}
+
 enum ProductType {
   REAL_ESTATE
   AUTO
@@ -146,6 +153,7 @@ model User {
   assignedCollections   Collection[]   @relation("CollectionCollector")
   assignedByCollections Collection[]   @relation("CollectionAssignedBy")
   createdCollections    Collection[]   @relation("CollectionCreatedBy")
+  collectionVisits      CollectionVisit[] @relation("VisitCollector")
   notifications         Notification[] @relation("UserNotifications")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
@@ -527,6 +535,7 @@ model Collection {
   collectedAmount Decimal           @default(0) @db.Decimal(18, 2) // filled by SP-2 visits
   note            String?           @db.Text
 
+  visits          CollectionVisit[]
   assignedCollector   User?     @relation("CollectionCollector", fields: [assignedCollectorId], references: [id])
   assignedCollectorId String?
   assignedBy          User?     @relation("CollectionAssignedBy", fields: [assignedById], references: [id])
@@ -557,6 +566,38 @@ model CollectionMonth {
 
   @@unique([collectionId, year, month])
   @@index([collectionId])
+}
+
+/// A field visit a collector logged against a collection (SP-2): where they were (lat/lng),
+/// how much they collected, which letter was served, a comment, and any photo/video evidence.
+model CollectionVisit {
+  id           String        @id @default(cuid())
+  collection   Collection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+  collector    User          @relation("VisitCollector", fields: [collectorId], references: [id])
+  collectorId  String
+  lat          Float?
+  lng          Float?
+  amount       Decimal       @default(0) @db.Decimal(18, 2) // collected at this visit
+  letterType   LetterType    @default(NONE)
+  comment      String?       @db.Text
+  media        VisitMedia[]
+  createdAt    DateTime      @default(now())
+
+  @@index([collectionId])
+  @@index([collectorId])
+}
+
+/// One photo or video attached to a visit. `path` is the storage-relative key.
+model VisitMedia {
+  id        String          @id @default(cuid())
+  visit     CollectionVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  visitId   String
+  path      String
+  kind      String // 'image' | 'video'
+  createdAt DateTime        @default(now())
+
+  @@index([visitId])
 }
 
 /// A per-user notification. Minimal by design (SP-1); mobile push (SP-4) reads it later.

@@ -1,4 +1,11 @@
-import { CaseStatus, CollectionStatus, DocumentType, ProductType, Role } from './enums';
+import { CaseStatus, CollectionStatus, DocumentType, LetterType, ProductType, Role } from './enums';
+
+export const LETTER_TYPE_LABEL: Record<LetterType, string> = {
+  [LetterType.NONE]: 'Xatsiz',
+  [LetterType.WARNING]: 'Ogohlantirish xati',
+  [LetterType.EXPLANATION]: 'Tushuntirish xati',
+  [LetterType.OTHER]: 'Boshqa',
+};
 
 /** Uzbek UI labels (primary language). */
 export const ROLE_LABEL: Record<Role, string> = {

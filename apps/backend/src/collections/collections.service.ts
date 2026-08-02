@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client';
 import {
   CollectionStatus,
+  LetterType,
   Role,
   collectionStats,
   collectionTotal,
@@ -16,6 +17,7 @@ import {
   type CollectionStats,
 } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../documents/storage.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import {
   canDeleteCollection,
@@ -42,9 +44,26 @@ export interface CollectionListFilters {
   to?: string;
 }
 
+export interface CreateVisitData {
+  amount: number;
+  letterType: LetterType;
+  comment?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+}
+
+export interface VisitMediaFile {
+  buffer: Buffer;
+  originalName: string;
+  mimeType: string;
+}
+
 @Injectable()
 export class CollectionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   // ── scoping ───────────────────────────────────────────────────────────────
 
@@ -247,6 +266,95 @@ export class CollectionsService {
     if (!c) throw new NotFoundException('Undiruv topilmadi');
     if (c.status === CollectionStatus.CLOSED) throw new BadRequestException('Yopilgan undiruvni o‘chirib bo‘lmaydi');
     await this.prisma.collection.delete({ where: { id } });
+  }
+
+  // ── field visits (SP-2) ───────────────────────────────────────────────────
+
+  /** A collector (or a manager) logs a field visit: location, collected amount, letter, media. */
+  async createVisit(
+    user: RequestUser,
+    collectionId: string,
+    data: CreateVisitData,
+    files: VisitMediaFile[] = [],
+  ): Promise<CollectionDto> {
+    if (user.role !== Role.COLLECTOR && !canManageCollection(user.role)) {
+      throw new ForbiddenException('Tashrif qo‘shishga ruxsat yo‘q');
+    }
+    const scope = await this.scopeWhere(user);
+    const collection = await this.prisma.collection.findFirst({
+      where: { AND: [{ id: collectionId }, scope] },
+      select: {
+        id: true, status: true, collectedAmount: true, createdById: true, assignedById: true,
+        case: { select: { id: true, number: true, borrower: { select: { fullName: true } } } },
+      },
+    });
+    if (!collection) throw new NotFoundException('Undiruv topilmadi');
+    if (collection.status === CollectionStatus.CLOSED) {
+      throw new BadRequestException('Yopilgan undiruvga tashrif qo‘shib bo‘lmaydi');
+    }
+
+    // Persist any media first (outside the DB transaction — files live on the shared volume).
+    const stored = await Promise.all(
+      files.map(async (f) => {
+        const saved = await this.storage.save(f.buffer, f.originalName, f.mimeType, `collections/${collectionId}/visits`);
+        return { path: saved.storagePath, kind: f.mimeType.startsWith('video') ? 'video' : 'image' };
+      }),
+    );
+
+    const amount = data.amount > 0 ? data.amount : 0;
+    await this.prisma.$transaction([
+      this.prisma.collectionVisit.create({
+        data: {
+          collectionId,
+          collectorId: user.id,
+          lat: data.lat ?? null,
+          lng: data.lng ?? null,
+          amount,
+          letterType: data.letterType,
+          comment: data.comment ?? null,
+          media: stored.length ? { create: stored } : undefined,
+        },
+      }),
+      this.prisma.collection.update({
+        where: { id: collectionId },
+        data: {
+          collectedAmount: { increment: amount },
+          status: CollectionStatus.IN_PROGRESS,
+        },
+      }),
+    ]);
+
+    // Notify whoever created/assigned this collection (never the actor).
+    const who = collection.case.borrower?.fullName ? `${collection.case.number} — ${collection.case.borrower.fullName}` : collection.case.number;
+    const targets = [...new Set([collection.assignedById, collection.createdById].filter((id): id is string => !!id && id !== user.id))];
+    if (targets.length) {
+      try {
+        await this.prisma.notification.createMany({
+          data: targets.map((userId) => ({
+            userId,
+            type: 'COLLECTION_PROGRESS',
+            title: 'Undiruv bo‘yicha tashrif',
+            body: `${who} bo‘yicha undiruvchi tashrif kiritdi.`,
+            caseId: collection.case.id,
+          })),
+        });
+      } catch {
+        /* advisory */
+      }
+    }
+
+    return this.get(user, collectionId);
+  }
+
+  /** Resolve a visit media's storage path, enforcing that the caller can see its collection. */
+  async resolveMedia(user: RequestUser, mediaId: string): Promise<{ path: string }> {
+    const scope = await this.scopeWhere(user);
+    const media = await this.prisma.visitMedia.findFirst({
+      where: { id: mediaId, visit: { collection: scope } },
+      select: { path: true },
+    });
+    if (!media) throw new NotFoundException('Fayl topilmadi');
+    return { path: media.path };
   }
 
   // ── helpers ─────────────────────────────────────────────────────────────────
