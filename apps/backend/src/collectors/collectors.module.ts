@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { IsArray, IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
 import * as bcrypt from 'bcryptjs';
+import { randomInt } from 'crypto';
 import { CollectionStatus, Role, type CollectorListItem } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -27,18 +28,31 @@ import { Roles } from '../auth/roles.decorator';
 
 class CreateCollectorDto {
   @IsString() @MinLength(1) fullName!: string;
-  @IsString() @MinLength(3) login!: string;
-  @IsString() @MinLength(4) password!: string;
-  @IsOptional() @IsString() phone?: string;
+  // The phone IS the unique login. Password is optional — empty means the server generates one.
+  @IsString() @MinLength(7) phone!: string;
+  @IsOptional() @IsString() @MinLength(6) password?: string;
   @IsArray() @IsString({ each: true }) branchIds!: string[];
 }
 
 class UpdateCollectorDto {
   @IsOptional() @IsString() fullName?: string;
-  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() @MinLength(7) phone?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) branchIds?: string[];
   @IsOptional() @IsBoolean() isActive?: boolean;
-  @IsOptional() @IsString() @MinLength(4) password?: string;
+  @IsOptional() @IsString() @MinLength(6) password?: string;
+}
+
+/** Phone → canonical login: digits only (so formatting differences never split one collector in two). */
+export function phoneToLogin(phone: string): string {
+  return phone.replace(/\D/g, '');
+}
+
+/** A readable 6-character password (no ambiguous chars) — used when the admin leaves it blank. */
+export function generatePassword(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < 6; i++) out += alphabet[randomInt(alphabet.length)];
+  return out;
 }
 
 const collectorInclude = {
@@ -90,16 +104,20 @@ class CollectorsController {
 
   @Post()
   async create(@Body() dto: CreateCollectorDto): Promise<CollectorListItem> {
-    await this.assertLoginFree(dto.login);
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const login = phoneToLogin(dto.phone);
+    if (login.length < 7) throw new BadRequestException('Telefon raqami noto‘g‘ri');
+    await this.assertLoginFree(login);
+    // Empty password → the system generates a readable one; the admin sees it in the list.
+    const password = dto.password && dto.password.length >= 6 ? dto.password : generatePassword();
+    const passwordHash = await bcrypt.hash(password, 10);
     const created = await this.prisma.user.create({
       data: {
         fullName: dto.fullName,
-        login: dto.login,
+        login,
         role: Role.COLLECTOR,
-        phone: dto.phone ?? null,
+        phone: dto.phone,
         passwordHash,
-        plainPassword: dto.password,
+        plainPassword: password,
         collectedBranches: dto.branchIds.length ? { connect: dto.branchIds.map((id) => ({ id })) } : undefined,
       },
       include: collectorInclude,
@@ -117,6 +135,12 @@ class CollectorsController {
       phone: dto.phone,
       isActive: dto.isActive,
     };
+    if (dto.phone !== undefined) {
+      const login = phoneToLogin(dto.phone);
+      if (login.length < 7) throw new BadRequestException('Telefon raqami noto‘g‘ri');
+      await this.assertLoginFree(login, id);
+      data.login = login;
+    }
     if (dto.branchIds !== undefined) data.collectedBranches = { set: dto.branchIds.map((bid) => ({ id: bid })) };
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 10);
@@ -135,9 +159,9 @@ class CollectorsController {
     return { ok: true };
   }
 
-  private async assertLoginFree(login: string): Promise<void> {
+  private async assertLoginFree(login: string, exceptId?: string): Promise<void> {
     const existing = await this.prisma.user.findUnique({ where: { login }, select: { id: true } });
-    if (existing) throw new BadRequestException('Bu login band');
+    if (existing && existing.id !== exceptId) throw new BadRequestException('Bu telefon raqami band');
   }
 }
 

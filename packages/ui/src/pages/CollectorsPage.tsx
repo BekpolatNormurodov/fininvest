@@ -12,12 +12,11 @@ import { cn } from '../lib/cn';
 
 interface FormState {
   fullName: string;
-  login: string;
   password: string;
   phone: string;
   branchIds: string[];
 }
-const emptyForm: FormState = { fullName: '', login: '', password: '', phone: '', branchIds: [] };
+const emptyForm: FormState = { fullName: '', password: '', phone: '', branchIds: [] };
 
 export function CollectorsPage() {
   const qc = useQueryClient();
@@ -33,7 +32,7 @@ export function CollectorsPage() {
 
   const openCreate = () => { setForm(emptyForm); setModal({ mode: 'create' }); };
   const openEdit = (c: CollectorListItem) => {
-    setForm({ fullName: c.fullName, login: c.login, password: '', phone: c.phone ?? '', branchIds: c.branches.map((b) => b.id) });
+    setForm({ fullName: c.fullName, password: '', phone: c.phone ?? '', branchIds: c.branches.map((b) => b.id) });
     setModal({ mode: 'edit', id: c.id });
   };
 
@@ -41,12 +40,12 @@ export function CollectorsPage() {
     mutationFn: async () => {
       if (modal?.mode === 'create') {
         return api.createCollector({
-          fullName: form.fullName, login: form.login, password: form.password,
-          phone: form.phone || null, branchIds: form.branchIds,
+          fullName: form.fullName, phone: form.phone, branchIds: form.branchIds,
+          ...(form.password ? { password: form.password } : {}),
         });
       }
       return api.updateCollector(modal!.id!, {
-        fullName: form.fullName, phone: form.phone || null, branchIds: form.branchIds,
+        fullName: form.fullName, phone: form.phone, branchIds: form.branchIds,
         ...(form.password ? { password: form.password } : {}),
       });
     },
@@ -78,7 +77,7 @@ export function CollectorsPage() {
       ),
     },
     {
-      key: 'login', header: 'Login / Parol', render: (c) => (
+      key: 'login', header: 'Telefon (login) / Parol', render: (c) => (
         <div className="flex flex-col gap-0.5 text-xs">
           <button type="button" onClick={() => copy(c.login)} className="inline-flex items-center gap-1 text-gray-600 hover:text-brand-600 dark:text-gray-300">
             <Copy className="h-3 w-3" /> {c.login}
@@ -125,7 +124,9 @@ export function CollectorsPage() {
     },
   ];
 
-  const canSave = form.fullName.trim() && form.login.trim().length >= 3 && (modal?.mode === 'edit' || form.password.length >= 4);
+  const phoneDigits = form.phone.replace(/\D/g, '');
+  const passwordOk = form.password.length === 0 || form.password.length >= 6;
+  const canSave = !!form.fullName.trim() && phoneDigits.length >= 7 && passwordOk;
 
   return (
     <div className="space-y-6">
@@ -156,13 +157,18 @@ export function CollectorsPage() {
       >
         <div className="space-y-4">
           <Field label="F.I.O" required><Input value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} placeholder="Familiya Ism Sharif" /></Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Login" required><Input value={form.login} onChange={(e) => setForm((f) => ({ ...f, login: e.target.value }))} placeholder="login" disabled={modal?.mode === 'edit'} /></Field>
-            <Field label={modal?.mode === 'edit' ? 'Yangi parol' : 'Parol'} required={modal?.mode === 'create'} hint={modal?.mode === 'edit' ? 'Bo‘sh qoldirsangiz o‘zgarmaydi' : undefined}>
-              <PasswordInput value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="••••" />
-            </Field>
-          </div>
-          <Field label="Telefon"><PhoneInput value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></Field>
+          <Field label="Telefon" required hint="Telefon raqami login sifatida ishlatiladi (unmost)">
+            <PhoneInput value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
+          </Field>
+          <Field
+            label={modal?.mode === 'edit' ? 'Yangi parol' : 'Parol'}
+            error={form.password.length > 0 && form.password.length < 6 ? 'Kamida 6 ta belgi' : undefined}
+            hint={modal?.mode === 'edit'
+              ? 'Bo‘sh qoldirsangiz o‘zgarmaydi'
+              : 'Bo‘sh qoldirsangiz tizim generatsiya qiladi (kamida 6 ta belgi)'}
+          >
+            <PasswordInput value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="••••••" />
+          </Field>
           <Field label="Filiallar" hint="Undiruvchi qamragan filiallar">
             <MultiSelect value={form.branchIds} onChange={(v) => setForm((f) => ({ ...f, branchIds: v }))} options={branchOpts} placeholder="Filiallarni tanlang" />
           </Field>

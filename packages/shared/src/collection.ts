@@ -117,9 +117,10 @@ export interface CollectorListItem {
 
 export interface CreateCollectorInput {
   fullName: string;
-  login: string;
-  password: string;
-  phone?: string | null;
+  /** The phone doubles as the unique login. */
+  phone: string;
+  /** Optional — min 6 chars; when omitted the server generates a password. */
+  password?: string;
   branchIds: string[];
 }
 
