@@ -56,6 +56,8 @@ services:
       BACKEND_PORT: 3000
     volumes:
       - uploads:/data/uploads
+      # FCM service-account key (place the JSON at deploy/secrets/ on the host).
+      - ./deploy/secrets/fcm-service-account.json:/app/secrets/fcm-service-account.json:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -75,6 +77,8 @@ services:
       BACKEND_PORT: 3000
     volumes:
       - uploads:/data/uploads
+      # FCM service-account key (place the JSON at deploy/secrets/ on the host).
+      - ./deploy/secrets/fcm-service-account.json:/app/secrets/fcm-service-account.json:ro
     # API is light — 3 replicas for concurrency/resilience (nginx round-robins). No cron here.
     deploy:
       replicas: 3

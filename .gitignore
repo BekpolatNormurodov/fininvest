@@ -3,6 +3,10 @@ node_modules/
 .pnp
 .pnp.js
 
+# Secrets — FCM service-account keys, never committed (mounted into the container instead).
+apps/backend/secrets/
+deploy/secrets/
+
 # builds
 dist/
 build/
