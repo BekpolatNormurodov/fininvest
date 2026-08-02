@@ -1,6 +1,6 @@
 import { Body, Controller, ForbiddenException, Get, Module, Post, Query, UseGuards } from '@nestjs/common';
 import { IsNumber, IsOptional, Max, Min } from 'class-validator';
-import { Role, workSessionDuration, type WorkSessionDto } from '@credit-core/shared';
+import { Role, workSessionDuration, type LiveLocationDto, type WorkSessionDto } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
@@ -88,6 +88,32 @@ class WorkController {
     if (!open) return { ok: false };
     await this.prisma.locationPing.create({ data: { sessionId: open.id, lat: dto.lat, lng: dto.lng } });
     return { ok: true };
+  }
+
+  /** Latest position of every on-shift collector — the admin/director live map polls this. */
+  @Get('live')
+  async live(@CurrentUser() user: RequestUser): Promise<LiveLocationDto[]> {
+    if (user.role !== Role.ADMIN && user.role !== Role.DIRECTOR && user.role !== Role.MODERATOR) return [];
+    const sessions = await this.prisma.workSession.findMany({
+      where: { endedAt: null },
+      include: { collector: { select: { fullName: true } }, pings: { orderBy: { at: 'desc' }, take: 1 } },
+    });
+    const out: LiveLocationDto[] = [];
+    for (const s of sessions) {
+      const p = s.pings[0];
+      const lat = p?.lat ?? s.startLat;
+      const lng = p?.lng ?? s.startLng;
+      if (lat == null || lng == null) continue;
+      out.push({
+        collectorId: s.collectorId,
+        name: s.collector?.fullName ?? '',
+        lat,
+        lng,
+        at: (p?.at ?? s.startedAt).toISOString(),
+        since: s.startedAt.toISOString(),
+      });
+    }
+    return out;
   }
 
   @Get('current')

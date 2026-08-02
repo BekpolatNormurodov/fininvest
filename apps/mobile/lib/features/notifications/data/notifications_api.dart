@@ -22,4 +22,7 @@ class NotificationsApi {
   Future<void> markRead(String id) => _dio.post('/notifications/$id/read');
 
   Future<void> markAll() => _dio.post('/notifications/read-all');
+
+  Future<void> registerDeviceToken(String token, String platform) =>
+      _dio.post('/notifications/device-token', data: {'token': token, 'platform': platform});
 }

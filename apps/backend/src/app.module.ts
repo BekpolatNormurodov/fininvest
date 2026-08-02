@@ -28,6 +28,7 @@ import { SellersModule } from './sellers/sellers.module';
 import { CollectionsModule } from './collections/collections.module';
 import { CollectorsModule } from './collectors/collectors.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { FcmModule } from './notifications/fcm.service';
 import { ScheduleModule as PaymentScheduleModule } from './schedule/schedule.module';
 import { WorkModule } from './work/work.module';
 
@@ -58,6 +59,7 @@ import { WorkModule } from './work/work.module';
     CollectionsModule,
     CollectorsModule,
     NotificationsModule,
+    FcmModule,
     PaymentScheduleModule,
     WorkModule,
   ],

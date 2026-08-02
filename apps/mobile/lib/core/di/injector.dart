@@ -23,6 +23,7 @@ import '../../features/face/data/face_capture_service.dart';
 import '../../features/face/data/face_service.dart';
 import '../../features/chat/data/chat_api.dart';
 import '../../features/chat/data/chat_repository.dart';
+import '../push/push_service.dart';
 
 /// Service locator. Composition happens once at startup in [configureDependencies].
 final GetIt sl = GetIt.instance;
@@ -66,6 +67,9 @@ Future<void> configureDependencies() async {
   // Chat feature (reuses the web messages endpoints).
   sl.registerLazySingleton<ChatApi>(() => ChatApi(sl<Dio>()));
   sl.registerLazySingleton<ChatRepository>(() => ChatRepository(sl<ChatApi>()));
+
+  // Push notifications (FCM).
+  sl.registerLazySingleton<PushService>(() => PushService(sl<NotificationsApi>()));
 }
 
 /// Apply a new API base URL at runtime (from the login-screen server dialog).

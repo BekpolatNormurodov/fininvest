@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "835414934020",
+    "project_id": "fininvest-undiruv",
+    "storage_bucket": "fininvest-undiruv.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835414934020:android:0f58bcac6433c7571eeb51",
+        "android_client_info": {
+          "package_name": "uz.fininvest.fininvest_undiruv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCX45oOa2y8c7la7YUZ_ZlLZ5WCPDgBWwU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

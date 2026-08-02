@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../core/di/injector.dart';
 import '../core/i18n/locale_cubit.dart';
 import '../core/i18n/strings.dart';
+import '../core/push/push_service.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import 'router.dart';
@@ -45,7 +46,10 @@ class _FinInvestAppState extends State<FinInvestApp> {
         BlocProvider<AuthCubit>.value(value: _authCubit),
         BlocProvider<LocaleCubit>.value(value: _localeCubit),
       ],
-      child: BlocBuilder<LocaleCubit, AppLang>(
+      child: BlocListener<AuthCubit, AuthState>(
+        listenWhen: (prev, cur) => prev.status != cur.status && cur.status == AuthStatus.authenticated,
+        listener: (_, _) => sl<PushService>().registerToken(),
+        child: BlocBuilder<LocaleCubit, AppLang>(
         builder: (context, lang) {
           return MaterialApp.router(
             title: 'FinInvest Undiruv',
@@ -57,6 +61,7 @@ class _FinInvestAppState extends State<FinInvestApp> {
             routerConfig: _router,
           );
         },
+        ),
       ),
     );
   }

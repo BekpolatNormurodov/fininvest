@@ -25,6 +25,18 @@ export interface WorkStartInput {
   lng?: number | null;
 }
 
+/** A collector's latest known position while on shift — feeds the admin/director live map. */
+export interface LiveLocationDto {
+  collectorId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  /** When this position was recorded (ISO). */
+  at: string;
+  /** When the shift started (ISO). */
+  since: string;
+}
+
 export interface WorkPingInput {
   lat: number;
   lng: number;

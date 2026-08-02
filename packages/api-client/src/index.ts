@@ -36,6 +36,7 @@ import type {
   NotificationDto,
   ScheduleRow,
   WorkSessionDto,
+  LiveLocationDto,
 } from '@credit-core/shared';
 
 /** Query params for the undiruv (collection) list + statistics. */
@@ -577,6 +578,10 @@ export const api = {
   },
   async workSessions(params: { collectorId?: string; from?: string; to?: string } = {}): Promise<WorkSessionDto[]> {
     const { data } = await http.get<WorkSessionDto[]>('/work/sessions', { params });
+    return data;
+  },
+  async workLive(): Promise<LiveLocationDto[]> {
+    const { data } = await http.get<LiveLocationDto[]>('/work/live');
     return data;
   },
 };

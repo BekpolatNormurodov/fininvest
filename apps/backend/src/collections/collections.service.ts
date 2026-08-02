@@ -18,6 +18,7 @@ import {
 } from '@credit-core/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../documents/storage.service';
+import { FcmService } from '../notifications/fcm.service';
 import { RequestUser } from '../auth/current-user.decorator';
 import {
   canDeleteCollection,
@@ -63,6 +64,7 @@ export class CollectionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly fcm: FcmService,
   ) {}
 
   // ── scoping ───────────────────────────────────────────────────────────────
@@ -343,6 +345,7 @@ export class CollectionsService {
       } catch {
         /* advisory */
       }
+      await this.fcm.sendToUsers(targets, 'Undiruv bo‘yicha tashrif', `${who} bo‘yicha undiruvchi tashrif kiritdi.`, collection.case.id);
     }
 
     return this.get(user, collectionId);
@@ -391,6 +394,7 @@ export class CollectionsService {
     } catch {
       /* notifications are advisory; a failure here must not fail the collection write */
     }
+    for (const s of seeds) await this.fcm.sendToUsers([s.userId], s.title, s.body, s.caseId);
   }
 }
 

@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/location/bg_location.dart';
 import '../data/work_api.dart';
 import '../data/work_repository.dart';
 
@@ -37,13 +36,12 @@ class WorkCubit extends Cubit<WorkState> {
   WorkCubit(this._repo) : super(const WorkState());
 
   final WorkRepository _repo;
-  Timer? _pingTimer;
 
   Future<void> load() async {
     try {
       final s = await _repo.current();
       emit(state.copyWith(loading: false, session: s, clearSession: s == null));
-      _syncTimer();
+      if (state.active) await startBgLocation();
     } catch (_) {
       emit(state.copyWith(loading: false));
     }
@@ -55,27 +53,16 @@ class WorkCubit extends Cubit<WorkState> {
     try {
       if (state.active) {
         await _repo.end(lat: loc?.$1, lng: loc?.$2);
+        await stopBgLocation();
         emit(state.copyWith(busy: false, clearSession: true));
       } else {
         final s = await _repo.start(lat: loc?.$1, lng: loc?.$2);
+        await startBgLocation();
         emit(state.copyWith(busy: false, session: s, clearSession: s == null));
       }
-      _syncTimer();
     } catch (_) {
       emit(state.copyWith(busy: false, error: 'Amalni bajarib bo‘lmadi'));
     }
-  }
-
-  void _syncTimer() {
-    _pingTimer?.cancel();
-    if (state.active) {
-      _pingTimer = Timer.periodic(const Duration(minutes: 5), (_) => _ping());
-    }
-  }
-
-  Future<void> _ping() async {
-    final loc = await _location();
-    if (loc != null) await _repo.ping(lat: loc.$1, lng: loc.$2);
   }
 
   /// Best-effort current coordinates; null when permission is denied or it fails.
@@ -91,9 +78,4 @@ class WorkCubit extends Cubit<WorkState> {
     }
   }
 
-  @override
-  Future<void> close() {
-    _pingTimer?.cancel();
-    return super.close();
-  }
 }
