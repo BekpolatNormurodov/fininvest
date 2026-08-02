@@ -40,10 +40,21 @@ ApiException mapDioError(Object error) {
   }
 
   final data = response.data;
+  String? serverMessage;
   if (data is Map && data['message'] != null) {
     final message = data['message'];
-    final text = message is List ? message.join(', ') : message.toString();
-    return ApiException(text, statusCode: status);
+    serverMessage = message is List ? message.join(', ') : message.toString();
+  }
+  // A NestJS route-miss ("Cannot POST /api/auth/login") means the server address is wrong or the
+  // backend isn't deployed there — not a real API error. Show a message the user can act on.
+  if (status == 404 && (serverMessage == null || serverMessage.startsWith('Cannot '))) {
+    return const ApiException(
+      'Server manzili noto‘g‘ri yoki backend ishlamayapti. ⚙ orqali manzilni tekshiring.',
+      statusCode: 404,
+    );
+  }
+  if (serverMessage != null) {
+    return ApiException(serverMessage, statusCode: status);
   }
   if (status != null && status >= 500) {
     return ApiException('Serverda xatolik yuz berdi. Birozdan keyin urinib ko‘ring.', statusCode: status);

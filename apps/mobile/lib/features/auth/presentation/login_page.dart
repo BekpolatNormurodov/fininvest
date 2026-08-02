@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/server_dialog.dart';
 import 'cubit/auth_cubit.dart';
 
@@ -104,11 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 24),
                     BlocConsumer<AuthCubit, AuthState>(
                       listenWhen: (prev, cur) => prev.error != cur.error && cur.error != null,
-                      listener: (context, state) {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(SnackBar(content: Text(state.error!)));
-                      },
+                      listener: (context, state) => AppToast.error(state.error!),
                       builder: (context, state) {
                         return FilledButton(
                           onPressed: state.submitting ? null : _submit,
