@@ -8,7 +8,7 @@ class AppConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://10.0.2.2:3000/api',
+    defaultValue: 'https://api.ziyova.uz/api',
   );
 
   static const Duration connectTimeout = Duration(seconds: 15);

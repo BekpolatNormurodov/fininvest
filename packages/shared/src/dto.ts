@@ -491,6 +491,23 @@ export interface CreditCaseListItem {
   deletedReason?: string | null;
 }
 
+/**
+ * One row of a case's payment schedule (grafik). Persisted once the case is finalized, computed on
+ * demand otherwise — the undiruv form reads it to pre-fill each unpaid month's amount.
+ */
+export interface ScheduleRow {
+  seq: number;
+  /** Due date ISO. */
+  dueDate: string;
+  year: number;
+  month: number; // 1..12
+  openingBalance: number;
+  principal: number;
+  interest: number;
+  /** The month's payment — this is what pre-fills the undiruv month. */
+  total: number;
+}
+
 /** Admin-configured SLA: business days allowed per workflow step. */
 export interface StepDeadlineSetting {
   step: CaseStatus;

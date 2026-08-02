@@ -155,6 +155,7 @@ model User {
   createdCollections    Collection[]   @relation("CollectionCreatedBy")
   collectionVisits      CollectionVisit[] @relation("VisitCollector")
   notifications         Notification[] @relation("UserNotifications")
+  deviceTokens          DeviceToken[]  @relation("UserDeviceTokens")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -598,6 +599,20 @@ model VisitMedia {
   createdAt DateTime        @default(now())
 
   @@index([visitId])
+}
+
+/// A device's push token (FCM), so the backend can send a mobile push when a notification is
+/// written. SP-4 scaffolding — the sender is inert until FCM credentials are configured.
+model DeviceToken {
+  id        String   @id @default(cuid())
+  user      User     @relation("UserDeviceTokens", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String   @unique
+  platform  String? // 'android' | 'ios'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 /// A per-user notification. Minimal by design (SP-1); mobile push (SP-4) reads it later.

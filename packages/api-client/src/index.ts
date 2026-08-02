@@ -34,6 +34,7 @@ import type {
   UpdateCollectorInput,
   CreateVisitInput,
   NotificationDto,
+  ScheduleRow,
 } from '@credit-core/shared';
 
 /** Query params for the undiruv (collection) list + statistics. */
@@ -487,6 +488,11 @@ export const api = {
   },
   async collectionForCase(caseId: string): Promise<CollectionDto | null> {
     const { data } = await http.get<CollectionDto | null>(`/collections/by-case/${caseId}`);
+    return data;
+  },
+  /** The case's payment schedule (grafik) — the undiruv form reads it to pre-fill each month. */
+  async caseSchedule(caseId: string): Promise<ScheduleRow[]> {
+    const { data } = await http.get<ScheduleRow[]>(`/cases/${caseId}/schedule`);
     return data;
   },
   async createCollection(payload: CreateCollectionInput): Promise<CollectionDto> {

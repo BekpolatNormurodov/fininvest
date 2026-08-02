@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   collectionTotal,
   type CollectionDto,
@@ -69,9 +69,35 @@ export function CollectionForm({
   const toast = useToast();
   const qc = useQueryClient();
 
+  // The case's payment schedule (grafik) — each unpaid month pre-fills from its scheduled payment.
+  const { data: schedule } = useQuery({
+    queryKey: ['caseSchedule', caseId],
+    queryFn: () => api.caseSchedule(caseId),
+    enabled: open && !!caseId,
+    staleTime: 5 * 60 * 1000,
+  });
+  const scheduleMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of schedule ?? []) m.set(monthKey(r.year, r.month), Math.round(r.total));
+    return m;
+  }, [schedule]);
+  // A representative monthly payment for the «default» field — a middle schedule row (row 1 and the
+  // last row can differ), falling back to the prop.
+  const scheduleMonthly = useMemo(() => {
+    const rows = schedule ?? [];
+    if (!rows.length) return 0;
+    return Math.round(rows[Math.min(1, rows.length - 1)].total);
+  }, [schedule]);
+
   const [monthly, setMonthly] = useState<number>(
     collection?.months.length ? Math.round(collection.months.reduce((s, m) => s + m.amount, 0) / collection.months.length) : defaultMonthly,
   );
+  // Once the schedule loads, adopt its monthly as the default (unless the user already set one).
+  const [monthlyTouched, setMonthlyTouched] = useState(false);
+  useEffect(() => {
+    if (!editing && !monthlyTouched && scheduleMonthly > 0) setMonthly(scheduleMonthly);
+  }, [editing, monthlyTouched, scheduleMonthly]);
+
   // Selected months → amount.
   const [amounts, setAmounts] = useState<Record<string, number>>(() => {
     const seed: Record<string, number> = {};
@@ -92,7 +118,8 @@ export function CollectionForm({
     setAmounts((prev) => {
       const next = { ...prev };
       if (o.key in next) delete next[o.key];
-      else next[o.key] = monthly || 0;
+      // The month's own scheduled payment wins; fall back to the default monthly.
+      else next[o.key] = scheduleMap.get(o.key) ?? monthly ?? 0;
       return next;
     });
 
@@ -157,8 +184,8 @@ export function CollectionForm({
       }
     >
       <div className="space-y-5">
-        <Field label="Oylik to‘lov (default)" hint="Yangi tanlangan oy shu summa bilan to‘ldiriladi">
-          <MoneyInput value={monthly} onChange={(v) => setMonthly(v ?? 0)} />
+        <Field label="Oylik to‘lov (default)" hint="Grafikdan olinadi — tanlangan oy shu summa bilan to‘ldiriladi">
+          <MoneyInput value={monthly} onChange={(v) => { setMonthly(v ?? 0); setMonthlyTouched(true); }} />
         </Field>
 
         <div>
