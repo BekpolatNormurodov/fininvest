@@ -1,0 +1,3 @@
+# Secrets — never commit service-account keys.
+secrets/
+*.serviceaccount.json
