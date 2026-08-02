@@ -12,6 +12,8 @@ import '../features/collections/presentation/cubit/collections_cubit.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/notifications/presentation/cubit/notifications_cubit.dart';
 import '../features/work/presentation/work_cubit.dart';
+import '../features/face/data/face_service.dart';
+import '../features/face/presentation/face_capture_page.dart';
 import '../app/theme.dart';
 
 /// The signed-in home: bottom-nav across undiruv list, statistics, notifications and profile, with
@@ -90,6 +92,27 @@ class _WorkBanner extends StatelessWidget {
     return '${two(d.hour)}:${two(d.minute)}';
   }
 
+  /// Starting a shift is gated by a face check when a template is enrolled; ending is not.
+  Future<void> _onToggle(BuildContext context, bool active) async {
+    final cubit = context.read<WorkCubit>();
+    if (!active && await sl<FaceService>().isEnrolled()) {
+      if (!context.mounted) return;
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const FaceCapturePage(mode: FaceMode.verify)),
+      );
+      if (ok != true) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(const SnackBar(content: Text('Yuz tasdiqlanmadi — ish boshlanmadi')));
+        }
+        return;
+      }
+    }
+    await cubit.toggle();
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LocaleCubit>().state;
@@ -117,7 +140,7 @@ class _WorkBanner extends StatelessWidget {
                     ),
                   ),
                   FilledButton(
-                    onPressed: state.busy ? null : () => context.read<WorkCubit>().toggle(),
+                    onPressed: state.busy ? null : () => _onToggle(context, active),
                     style: FilledButton.styleFrom(
                       backgroundColor: color,
                       minimumSize: const Size(0, 34),

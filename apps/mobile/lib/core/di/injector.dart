@@ -16,6 +16,11 @@ import '../../features/notifications/data/notifications_api.dart';
 import '../../features/notifications/data/notifications_repository.dart';
 import '../../features/work/data/work_api.dart';
 import '../../features/work/data/work_repository.dart';
+import '../../features/face/data/face_embedder.dart';
+import '../../features/face/data/face_matcher.dart';
+import '../../features/face/data/face_store.dart';
+import '../../features/face/data/face_capture_service.dart';
+import '../../features/face/data/face_service.dart';
 
 /// Service locator. Composition happens once at startup in [configureDependencies].
 final GetIt sl = GetIt.instance;
@@ -48,6 +53,13 @@ Future<void> configureDependencies() async {
   // Work shifts feature.
   sl.registerLazySingleton<WorkApi>(() => WorkApi(sl<Dio>()));
   sl.registerLazySingleton<WorkRepository>(() => WorkRepository(sl<WorkApi>()));
+
+  // Face check-in feature (on-device; ported from the government worker app).
+  sl.registerLazySingleton<FaceEmbedder>(() => FaceEmbedder());
+  sl.registerLazySingleton<FaceMatcher>(() => FaceMatcher());
+  sl.registerLazySingleton<FaceStore>(() => FaceStore(sl<FlutterSecureStorage>()));
+  sl.registerLazySingleton<FaceCaptureService>(() => FaceCaptureService(sl<FaceEmbedder>()));
+  sl.registerLazySingleton<FaceService>(() => FaceService(sl<FaceCaptureService>(), sl<FaceStore>(), sl<FaceMatcher>()));
 }
 
 /// Apply a new API base URL at runtime (from the login-screen server dialog).

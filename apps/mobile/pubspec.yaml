@@ -1,7 +1,7 @@
 name: fininvest_undiruv
 description: "FinInvest Undiruv — dala qarz undirish"
 publish_to: 'none'
-version: 1.3.0+4
+version: 1.4.0+5
 
 environment:
   sdk: ^3.10.0-290.4.beta
@@ -37,6 +37,13 @@ dependencies:
   # Runtime permissions (location, camera).
   permission_handler: ^11.3.1
 
+  # On-device face check-in (ported from the government worker app): ML Kit face
+  # detection, MobileFaceNet TFLite embedding, image crop/resize.
+  google_mlkit_face_detection: ^0.13.0
+  tflite_flutter: ^0.11.0
+  image: ^4.3.0
+  path_provider: ^2.1.5
+
   # Brand logo (renders the same SVG mark as the web).
   flutter_svg: ^2.0.10+1
 
@@ -68,3 +75,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/models/

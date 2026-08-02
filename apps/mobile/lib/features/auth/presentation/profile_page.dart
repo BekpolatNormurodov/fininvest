@@ -3,8 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/di/injector.dart';
 import '../../../core/i18n/locale_cubit.dart';
 import '../../../core/i18n/strings.dart';
+import '../../face/data/face_service.dart';
+import '../../face/presentation/face_capture_page.dart';
 import 'cubit/auth_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -100,6 +103,8 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          _FaceCard(workerId: user?.id ?? ''),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: () => _confirmLogout(context),
@@ -113,6 +118,73 @@ class ProfilePage extends StatelessWidget {
             label: Text(lang.tr('profile.logout')),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Face check-in enrollment: shows whether a face is enrolled and opens the enroll capture.
+class _FaceCard extends StatefulWidget {
+  const _FaceCard({required this.workerId});
+
+  final String workerId;
+
+  @override
+  State<_FaceCard> createState() => _FaceCardState();
+}
+
+class _FaceCardState extends State<_FaceCard> {
+  bool? _enrolled;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final e = await sl<FaceService>().isEnrolled();
+    if (mounted) setState(() => _enrolled = e);
+  }
+
+  Future<void> _enroll() async {
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => FaceCapturePage(mode: FaceMode.enroll, workerId: widget.workerId)),
+    );
+    if (ok == true && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Yuz saqlandi')));
+      _refresh();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enrolled = _enrolled ?? false;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Iconsax.scan, size: 22, color: enrolled ? AppTheme.success : Theme.of(context).colorScheme.outline),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Yuz-tasdiq', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    enrolled ? 'Ro‘yxatdan o‘tgan' : 'Ro‘yxatdan o‘tmagan',
+                    style: TextStyle(fontSize: 12, color: enrolled ? AppTheme.success : Theme.of(context).colorScheme.outline),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(onPressed: _enroll, child: Text(enrolled ? 'Qayta' : 'Ro‘yxatga olish')),
+          ],
+        ),
       ),
     );
   }
