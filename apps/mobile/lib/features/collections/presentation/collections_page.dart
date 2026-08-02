@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:iconsax/iconsax.dart';
+
 import '../../../core/widgets/state_views.dart';
 import '../../auth/presentation/cubit/auth_cubit.dart';
+import '../../chat/data/chat_repository.dart';
+import '../../chat/presentation/chat_page.dart';
 import 'cubit/collections_cubit.dart';
 import '../data/models/collection_list_item.dart';
 import 'widgets/collection_card.dart';
@@ -20,6 +24,16 @@ class CollectionsPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Undiruvlar'),
+          actions: [
+            IconButton(
+              tooltip: 'Umumiy chat',
+              icon: const Icon(Iconsax.messages_2),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatPage(channel: ChatChannel.general('Umumiy chat'))),
+              ),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Umumiy (filial)'),

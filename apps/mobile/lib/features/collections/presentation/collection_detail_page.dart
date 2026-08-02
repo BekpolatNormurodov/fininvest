@@ -7,6 +7,8 @@ import '../../../app/theme.dart';
 import '../../../core/di/injector.dart';
 import '../../../core/format.dart';
 import '../../../core/widgets/state_views.dart';
+import '../../chat/data/chat_repository.dart';
+import '../../chat/presentation/chat_page.dart';
 import '../data/collections_repository.dart';
 import '../data/models/collection_detail.dart';
 import 'visit_form_page.dart';
@@ -233,6 +235,15 @@ class _Header extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(data.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                ),
+                IconButton(
+                  tooltip: 'Ariza chati',
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Iconsax.messages_2, size: 20),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ChatPage(channel: ChatChannel.forCase(data.caseId, data.title))),
+                  ),
                 ),
                 StatusChip(status: data.status),
               ],

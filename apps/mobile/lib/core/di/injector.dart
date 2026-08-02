@@ -21,6 +21,8 @@ import '../../features/face/data/face_matcher.dart';
 import '../../features/face/data/face_store.dart';
 import '../../features/face/data/face_capture_service.dart';
 import '../../features/face/data/face_service.dart';
+import '../../features/chat/data/chat_api.dart';
+import '../../features/chat/data/chat_repository.dart';
 
 /// Service locator. Composition happens once at startup in [configureDependencies].
 final GetIt sl = GetIt.instance;
@@ -60,6 +62,10 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<FaceStore>(() => FaceStore(sl<FlutterSecureStorage>()));
   sl.registerLazySingleton<FaceCaptureService>(() => FaceCaptureService(sl<FaceEmbedder>()));
   sl.registerLazySingleton<FaceService>(() => FaceService(sl<FaceCaptureService>(), sl<FaceStore>(), sl<FaceMatcher>()));
+
+  // Chat feature (reuses the web messages endpoints).
+  sl.registerLazySingleton<ChatApi>(() => ChatApi(sl<Dio>()));
+  sl.registerLazySingleton<ChatRepository>(() => ChatRepository(sl<ChatApi>()));
 }
 
 /// Apply a new API base URL at runtime (from the login-screen server dialog).

@@ -316,6 +316,26 @@ class MessagesController {
     return { id };
   }
 
+  // ── General (broadcast) channel — everyone, including collectors on mobile ──
+
+  @Get('messages/general')
+  async generalList(@CurrentUser() user: RequestUser): Promise<MessageDto[]> {
+    const messages = await this.prisma.message.findMany({
+      where: { caseId: null, toUserId: null, toRole: null },
+      include: msgInclude,
+      orderBy: { createdAt: 'asc' },
+      take: 300,
+    });
+    return this.hydrate(messages, user);
+  }
+
+  @Post('messages/general')
+  @UseInterceptors(FilesInterceptor('files', 3))
+  async generalSend(@CurrentUser() user: RequestUser, @Body('text') text: string | undefined, @UploadedFiles() files?: Express.Multer.File[]) {
+    const id = await this.createMessage({ senderId: user.id, caseId: null, toUserId: null, text, files, dir: 'general' });
+    return { id };
+  }
+
   @Get('saved/messages')
   async savedList(@CurrentUser() user: RequestUser): Promise<MessageDto[]> {
     const messages = await this.prisma.message.findMany({ where: savedWhere(user.id), include: msgInclude, orderBy: { createdAt: 'asc' } });
