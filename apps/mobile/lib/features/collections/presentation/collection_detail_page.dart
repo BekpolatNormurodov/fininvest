@@ -262,8 +262,43 @@ class _Header extends StatelessWidget {
                 Text(data.collectorName ?? 'Biriktirilmagan', style: TextStyle(color: outline, fontSize: 13)),
               ],
             ),
+            if (data.status != 'CLOSED' && data.daysLeft != null) ...[
+              const SizedBox(height: 10),
+              _DeadlineChip(daysLeft: data.daysLeft!),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The undiruv deadline chip: grey while there's time, amber within a day, red once overdue.
+class _DeadlineChip extends StatelessWidget {
+  const _DeadlineChip({required this.daysLeft});
+
+  final int daysLeft;
+
+  @override
+  Widget build(BuildContext context) {
+    final overdue = daysLeft < 0;
+    final soon = daysLeft >= 0 && daysLeft <= 1;
+    final color = overdue ? AppTheme.danger : (soon ? const Color(0xFFB45309) : Theme.of(context).colorScheme.outline);
+    final text = overdue
+        ? '${daysLeft.abs()} kun kechikdi'
+        : daysLeft == 0
+            ? 'Bugun tugaydi'
+            : '$daysLeft kun qoldi';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Iconsax.clock, size: 14, color: color),
+          const SizedBox(width: 5),
+          Text('Muddat: $text', style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12.5)),
+        ],
       ),
     );
   }

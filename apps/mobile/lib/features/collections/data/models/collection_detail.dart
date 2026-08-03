@@ -84,6 +84,8 @@ class CollectionDetail extends Equatable {
     required this.collectorName,
     required this.visits,
     required this.createdAt,
+    required this.dueDays,
+    required this.deadlineAt,
   });
 
   final String id;
@@ -102,10 +104,20 @@ class CollectionDetail extends Equatable {
   final String? collectorName;
   final List<VisitItem> visits;
   final String createdAt;
+  final int dueDays;
+  final String? deadlineAt;
 
   double get remaining {
     final r = totalDebt - collectedAmount;
     return r > 0 ? r : 0;
+  }
+
+  /// Whole days left until the deadline (negative = overdue). null when there is no deadline.
+  int? get daysLeft {
+    if (deadlineAt == null) return null;
+    final dl = DateTime.tryParse(deadlineAt!);
+    if (dl == null) return null;
+    return (dl.difference(DateTime.now()).inSeconds / 86400).ceil();
   }
 
   String get title => (contractNumber != null && contractNumber!.isNotEmpty) ? contractNumber! : caseNumber;
@@ -131,6 +143,8 @@ class CollectionDetail extends Equatable {
           .map((v) => VisitItem.fromJson(v as Map<String, dynamic>))
           .toList(),
       createdAt: json['createdAt'] as String? ?? '',
+      dueDays: (json['dueDays'] as num?)?.toInt() ?? 4,
+      deadlineAt: json['deadlineAt'] as String?,
     );
   }
 
