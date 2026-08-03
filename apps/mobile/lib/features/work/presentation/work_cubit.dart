@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -57,8 +59,10 @@ class WorkCubit extends Cubit<WorkState> {
         emit(state.copyWith(busy: false, clearSession: true));
       } else {
         final s = await _repo.start(lat: loc?.$1, lng: loc?.$2);
-        await startBgLocation();
+        // Check-in is done — reflect it immediately, then start the background pinger fire-and-forget
+        // so an OS refusal to start the foreground service can never block or crash the check-in.
         emit(state.copyWith(busy: false, session: s, clearSession: s == null));
+        unawaited(startBgLocation());
       }
     } catch (_) {
       emit(state.copyWith(busy: false, error: 'Amalni bajarib bo‘lmadi'));

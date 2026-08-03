@@ -66,11 +66,23 @@ Future<void> configureBgLocation() async {
 }
 
 Future<void> startBgLocation() async {
-  final service = FlutterBackgroundService();
-  if (!await service.isRunning()) await service.startService();
+  // The OS can refuse to start a location foreground service (Android 14
+  // ForegroundServiceStartNotAllowed if the permission dialog just closed and the app has not fully
+  // regained focus, missing background-location grant, etc.). That must NOT crash check-in — the app
+  // still pings location in the foreground; the background service is best-effort.
+  try {
+    final service = FlutterBackgroundService();
+    if (!await service.isRunning()) await service.startService();
+  } catch (_) {
+    /* background pings unavailable this shift — foreground still works */
+  }
 }
 
 Future<void> stopBgLocation() async {
-  final service = FlutterBackgroundService();
-  if (await service.isRunning()) service.invoke('stopService');
+  try {
+    final service = FlutterBackgroundService();
+    if (await service.isRunning()) service.invoke('stopService');
+  } catch (_) {
+    /* nothing to stop */
+  }
 }

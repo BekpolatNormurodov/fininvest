@@ -42,7 +42,7 @@ class _MapPageState extends State<MapPage> {
       _onPos(pos);
       _sub = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
-      ).listen(_onPos);
+      ).listen(_onPos, onError: (_) {/* transient GPS error — keep the last position */});
     } catch (_) {
       setState(() => _error = 'Lokatsiyani aniqlab bo‘lmadi.');
     }
