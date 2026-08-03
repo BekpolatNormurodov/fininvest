@@ -570,14 +570,14 @@ export const api = {
   },
   async workEnd(lat?: number, lng?: number): Promise<WorkSessionDto | null> {
     const { data } = await http.post<WorkSessionDto | null>('/work/end', { lat, lng });
-    return data;
+    return data || null; // a null result comes back as an empty body → "" via axios; normalise it
   },
   async workPing(lat: number, lng: number): Promise<void> {
     await http.post('/work/ping', { lat, lng });
   },
   async workCurrent(): Promise<WorkSessionDto | null> {
     const { data } = await http.get<WorkSessionDto | null>('/work/current');
-    return data;
+    return data || null; // "not on shift" comes back as an empty body → "" via axios; normalise it
   },
   async workSessions(params: { collectorId?: string; from?: string; to?: string } = {}): Promise<WorkSessionDto[]> {
     const { data } = await http.get<WorkSessionDto[]>('/work/sessions', { params });
