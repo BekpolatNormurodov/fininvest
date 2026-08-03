@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -18,6 +20,37 @@ class _LoginPageState extends State<LoginPage> {
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Surface the last crash (persisted by the global error handler in main.dart) so it can be
+    // screenshotted and sent — the only way to see a crash on a device we can't attach to.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showLastError());
+  }
+
+  Future<void> _showLastError() async {
+    final prefs = await SharedPreferences.getInstance();
+    final err = prefs.getString('last_error');
+    if (err == null || err.isEmpty || !mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Oxirgi xato (skrinshot oling)'),
+        content: SingleChildScrollView(child: SelectableText(err, style: const TextStyle(fontSize: 12))),
+        actions: [
+          TextButton(
+            onPressed: () => Clipboard.setData(ClipboardData(text: err)),
+            child: const Text('Nusxa olish'),
+          ),
+          TextButton(
+            onPressed: () async { await prefs.remove('last_error'); if (ctx.mounted) Navigator.pop(ctx); },
+            child: const Text('Tozalash'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
