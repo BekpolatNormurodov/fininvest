@@ -490,7 +490,10 @@ export const api = {
   },
   async collectionForCase(caseId: string): Promise<CollectionDto | null> {
     const { data } = await http.get<CollectionDto | null>(`/collections/by-case/${caseId}`);
-    return data;
+    // A case with no collection returns 200 with an empty body; axios surfaces that as "" (an
+    // empty string), which is truthy enough to slip past `collection?.…` guards downstream and
+    // crash the undiruv form. Normalise any empty/falsy body to null.
+    return data || null;
   },
   /** The case's payment schedule (grafik) — the undiruv form reads it to pre-fill each month. */
   async caseSchedule(caseId: string): Promise<ScheduleRow[]> {

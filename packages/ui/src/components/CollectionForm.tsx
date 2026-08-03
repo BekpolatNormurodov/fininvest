@@ -91,7 +91,7 @@ export function CollectionForm({
   }, [schedule]);
 
   const [monthly, setMonthly] = useState<number>(
-    collection?.months.length ? Math.round(collection.months.reduce((s, m) => s + m.amount, 0) / collection.months.length) : defaultMonthly,
+    collection?.months?.length ? Math.round(collection.months.reduce((s, m) => s + m.amount, 0) / collection.months.length) : defaultMonthly,
   );
   // Once the schedule loads, adopt its monthly as the default (unless the user already set one).
   const [monthlyTouched, setMonthlyTouched] = useState(false);
@@ -260,7 +260,7 @@ export function CollectionForm({
           />
         </Field>
 
-        {editing && collection && collection.visits.length > 0 && (
+        {editing && collection && (collection.visits?.length ?? 0) > 0 && (
           <div className="border-t border-gray-100 pt-4 dark:border-white/10">
             <CollectionVisits visits={collection.visits} />
           </div>
