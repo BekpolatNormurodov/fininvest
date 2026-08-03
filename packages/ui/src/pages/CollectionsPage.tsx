@@ -15,6 +15,7 @@ import { MetricCard } from '../components/widgets';
 import { DataTable, type Column } from '../components/DataTable';
 import { Select } from '../components/forms';
 import { CollectionForm } from '../components/CollectionForm';
+import { CollectionDeadlineBadge } from '../components/CollectionDeadlineBadge';
 import { Modal } from '../components/Modal';
 import { Money, Bank, Layers, Plus, Percent } from '../lib/icons';
 import { cn, formatMoney } from '../lib/cn';
@@ -92,6 +93,10 @@ export function CollectionsPage() {
       sortValue: (c) => c.collectedAmount, render: (c) => <span className="text-success-600 dark:text-success-400">{formatMoney(c.collectedAmount)}</span>,
     },
     { key: 'status', header: 'Holat', sortable: true, sortValue: (c) => c.status, render: (c) => <StatusChip status={c.status} /> },
+    {
+      key: 'deadlineAt', header: 'Muddat', sortable: true, sortValue: (c) => c.deadlineAt ?? '',
+      render: (c) => <CollectionDeadlineBadge deadlineAt={c.deadlineAt} closed={c.status === CollectionStatus.CLOSED} />,
+    },
     {
       key: 'createdAt', header: 'Sana', align: 'right', sortable: true, sortValue: (c) => c.createdAt,
       render: (c) => <span className="whitespace-nowrap text-xs text-gray-500">{new Date(c.createdAt).toLocaleDateString('ru-RU')}</span>,

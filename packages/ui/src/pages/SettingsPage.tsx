@@ -83,7 +83,7 @@ export function SettingsPage() {
 
   // Global config (pause limit + loan rates). Percentages shown as whole numbers.
   const { data: appCfg } = useQuery({ queryKey: ['app-config'], queryFn: () => api.getConfig() });
-  const [conf, setConf] = useState<{ maxPauseDays: number; markup: number; bank: number; tax: number; npl: number; min: number; max: number } | null>(null);
+  const [conf, setConf] = useState<{ maxPauseDays: number; markup: number; bank: number; tax: number; npl: number; min: number; max: number; dueDays: number } | null>(null);
   useEffect(() => {
     if (appCfg) setConf({
       maxPauseDays: appCfg.maxPauseDays,
@@ -93,6 +93,7 @@ export function SettingsPage() {
       npl: Math.round(appCfg.nplRate * 100),
       min: Math.round(appCfg.minRate * 100),
       max: Math.round(appCfg.maxRate * 100),
+      dueDays: appCfg.collectionDueDays,
     });
   }, [appCfg]);
   const saveConfig = useMutation({
@@ -100,6 +101,7 @@ export function SettingsPage() {
       maxPauseDays: Math.max(0, Math.min(60, Math.round(conf!.maxPauseDays))),
       markupPercent: conf!.markup / 100, bankRate: conf!.bank / 100, taxRate: conf!.tax / 100, nplRate: conf!.npl / 100,
       minRate: conf!.min / 100, maxRate: conf!.max / 100,
+      collectionDueDays: Math.max(1, Math.min(365, Math.round(conf!.dueDays))),
     }),
     onSuccess: (res) => { qc.setQueryData(['app-config'], res); toast.success('Saqlandi', 'Sozlamalar yangilandi'); },
     onError: () => toast.error('Xatolik', 'Saqlab bo‘lmadi'),
@@ -191,6 +193,9 @@ export function SettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Maksimal pauza (kun)" hint="ariza shu kundan ortiq pauzada tursa — avtomatik davom etadi">
               <Input type="number" min={0} max={60} value={conf.maxPauseDays} onChange={(e) => setConf({ ...conf, maxPauseDays: num0(e.target.value) })} className="nums" />
+            </Field>
+            <Field label="Undiruv muddati (kun)" hint="undiruvchiga beriladigan default max kun — har bir undiruvda o‘zgartirsa bo‘ladi">
+              <Input type="number" min={1} max={365} value={conf.dueDays} onChange={(e) => setConf({ ...conf, dueDays: num0(e.target.value) })} className="nums" />
             </Field>
             <Field label="Klient ustama foizi (%)">
               <Input type="number" min={0} max={500} value={conf.markup} onChange={(e) => setConf({ ...conf, markup: num0(e.target.value) })} className="nums" />

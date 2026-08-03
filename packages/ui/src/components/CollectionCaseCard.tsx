@@ -11,6 +11,7 @@ import { useAuth } from '../lib/auth';
 import { Button, Card, Skeleton } from './primitives';
 import { CollectionForm } from './CollectionForm';
 import { CollectionVisits } from './CollectionVisits';
+import { CollectionDeadlineBadge } from './CollectionDeadlineBadge';
 import { Money, Edit, Plus } from '../lib/icons';
 import { cn, formatMoney } from '../lib/cn';
 
@@ -66,6 +67,9 @@ export function CollectionCaseCard({ caseId, caseLabel }: { caseId: string; case
             <Row label="Undirilgan" value={<span className="nums text-success-600 dark:text-success-400">{formatMoney(collection.collectedAmount)}</span>} />
             <Row label="Qoldiq" value={<span className="nums font-medium text-warning-700 dark:text-warning-400">{formatMoney(collectionRemaining(collection.totalDebt, collection.collectedAmount))}</span>} />
             <Row label="Oylar" value={`${collection.months.length} ta`} />
+            {collection.deadlineAt && collection.status !== CollectionStatus.CLOSED && (
+              <Row label="Muddat" value={<CollectionDeadlineBadge deadlineAt={collection.deadlineAt} closed={false} />} />
+            )}
           </dl>
           {canManage && (
             <Button variant="secondary" className="w-full" onClick={() => setOpen(true)}><Edit className="h-4 w-4" /> Tahrirlash</Button>

@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   collectionTotal,
+  DEFAULT_COLLECTION_DUE_DAYS,
   type CollectionDto,
   type CollectionMonthInput,
   type CollectorRef,
 } from '@credit-core/shared';
 import { api, getErrorMessage } from '@credit-core/api-client';
 import { Modal } from './Modal';
-import { Button, Field } from './primitives';
+import { Button, Field, Input } from './primitives';
 import { MoneyInput, Select } from './forms';
 import { CollectionVisits } from './CollectionVisits';
 import { useToast } from './Toast';
@@ -110,6 +111,15 @@ export function CollectionForm({
   const [note, setNote] = useState<string>(collection?.note ?? '');
   const [collectorId, setCollectorId] = useState<string>(collection?.collector?.id ?? '');
 
+  // Max days to collect: editing keeps the collection's value; a new one adopts the admin global
+  // default (falling back to the shared constant until the config loads).
+  const { data: appCfg } = useQuery({ queryKey: ['appConfig'], queryFn: () => api.getConfig(), staleTime: 5 * 60 * 1000, enabled: open });
+  const [dueDays, setDueDays] = useState<number>(collection?.dueDays ?? DEFAULT_COLLECTION_DUE_DAYS);
+  const [dueTouched, setDueTouched] = useState(false);
+  useEffect(() => {
+    if (!editing && !dueTouched && appCfg?.collectionDueDays) setDueDays(appCfg.collectionDueDays);
+  }, [editing, dueTouched, appCfg]);
+
   const options = useMemo(
     () => monthOptions(12, (collection?.months ?? []).map((m) => ({ year: m.year, month: m.month }))),
     [collection],
@@ -140,6 +150,7 @@ export function CollectionForm({
           fine,
           note: note || null,
           assignedCollectorId: collectorId || null,
+          dueDays,
         });
       }
       return api.createCollection({
@@ -149,6 +160,7 @@ export function CollectionForm({
         fine,
         note: note || null,
         assignedCollectorId: collectorId || null,
+        dueDays,
       });
     },
     onSuccess: () => {
@@ -240,15 +252,26 @@ export function CollectionForm({
           </Field>
         </div>
 
-        <Field label="Undiruvchi" hint="Ixtiyoriy — keyin ham biriktirish mumkin">
-          <Select
-            value={collectorId}
-            onChange={(v) => setCollectorId(v)}
-            options={collectorOpts}
-            placeholder="Biriktirilmagan"
-            searchable
-          />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Undiruvchi" hint="Ixtiyoriy — keyin ham biriktirish mumkin">
+            <Select
+              value={collectorId}
+              onChange={(v) => setCollectorId(v)}
+              options={collectorOpts}
+              placeholder="Biriktirilmagan"
+              searchable
+            />
+          </Field>
+          <Field label="Muddat (kun)" hint="Undiruvchiga beriladigan maksimal kun — o‘tsa qizil belgi + ogohlantirish">
+            <Input
+              type="number"
+              min={1}
+              max={365}
+              value={String(dueDays)}
+              onChange={(e) => { setDueDays(Math.max(1, Math.min(365, Math.round(Number(e.target.value)) || 1))); setDueTouched(true); }}
+            />
+          </Field>
+        </div>
 
         <Field label="Izoh">
           <textarea
