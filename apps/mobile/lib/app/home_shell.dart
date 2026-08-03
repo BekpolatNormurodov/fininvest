@@ -8,12 +8,15 @@ import '../core/network/network_info.dart';
 import '../features/auth/presentation/profile_page.dart';
 import '../features/collections/presentation/collections_page.dart';
 import '../features/collections/presentation/stats_page.dart';
+import '../features/map/presentation/map_page.dart';
 import '../features/collections/presentation/cubit/collections_cubit.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/notifications/presentation/cubit/notifications_cubit.dart';
 import '../features/work/presentation/work_cubit.dart';
+import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/face/data/face_service.dart';
 import '../features/face/presentation/face_capture_page.dart';
+import '../core/widgets/app_toast.dart';
 import '../app/theme.dart';
 
 /// The signed-in home: bottom-nav across undiruv list, statistics, notifications and profile, with
@@ -48,6 +51,7 @@ class _HomeShellState extends State<HomeShell> {
                 children: const [
                   CollectionsPage(),
                   StatsPage(),
+                  MapPage(),
                   NotificationsPage(),
                   ProfilePage(),
                 ],
@@ -63,6 +67,7 @@ class _HomeShellState extends State<HomeShell> {
               destinations: [
                 NavigationDestination(icon: const Icon(Iconsax.money_recive), label: lang.tr('nav.collections')),
                 NavigationDestination(icon: const Icon(Iconsax.chart_2), label: lang.tr('nav.stats')),
+                NavigationDestination(icon: const Icon(Iconsax.map_1), label: lang.tr('nav.map')),
                 NavigationDestination(
                   icon: Badge(
                     isLabelVisible: notif.unread > 0,
@@ -92,20 +97,27 @@ class _WorkBanner extends StatelessWidget {
     return '${two(d.hour)}:${two(d.minute)}';
   }
 
-  /// Starting a shift is gated by a face check when a template is enrolled; ending is not.
+  /// Starting a shift is ALWAYS gated by the face: if no template is enrolled yet the first check-in
+  /// enrols it, otherwise it verifies against the enrolled one. Ending a shift is not gated.
   Future<void> _onToggle(BuildContext context, bool active) async {
     final cubit = context.read<WorkCubit>();
-    if (!active && await sl<FaceService>().isEnrolled()) {
+    if (!active) {
+      final face = sl<FaceService>();
+      final enrolled = await face.isEnrolled();
       if (!context.mounted) return;
+      final workerId = context.read<AuthCubit>().state.user?.id ?? '';
       final ok = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (_) => const FaceCapturePage(mode: FaceMode.verify)),
+        MaterialPageRoute(
+          builder: (_) => FaceCapturePage(
+            mode: enrolled ? FaceMode.verify : FaceMode.enroll,
+            workerId: workerId,
+          ),
+        ),
       );
       if (ok != true) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(const SnackBar(content: Text('Yuz tasdiqlanmadi — ish boshlanmadi')));
+          AppToast.error(enrolled ? 'Yuz tasdiqlanmadi — ish boshlanmadi' : 'Yuz ro‘yxatga olinmadi — ish boshlanmadi');
         }
         return;
       }

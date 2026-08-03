@@ -8,6 +8,7 @@ class S {
   static const Map<String, Map<AppLang, String>> _table = {
     'nav.collections': {AppLang.uz: 'Undiruvlar', AppLang.ru: 'Взыскания'},
     'nav.stats': {AppLang.uz: 'Statistika', AppLang.ru: 'Статистика'},
+    'nav.map': {AppLang.uz: 'Xarita', AppLang.ru: 'Карта'},
     'nav.notifications': {AppLang.uz: 'Bildirishnoma', AppLang.ru: 'Уведомления'},
     'nav.profile': {AppLang.uz: 'Profil', AppLang.ru: 'Профиль'},
 

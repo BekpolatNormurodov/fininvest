@@ -12,6 +12,9 @@ import '../../../app/theme.dart';
 import '../../../core/di/injector.dart';
 import '../../../core/i18n/locale_cubit.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/widgets/app_toast.dart';
+import '../../face/data/face_service.dart';
+import '../../face/presentation/face_capture_page.dart';
 import '../data/collections_repository.dart';
 
 const _letterLabels = {
@@ -85,6 +88,18 @@ class _VisitFormPageState extends State<VisitFormPage> {
   }
 
   Future<void> _submit() async {
+    // Face gate on arrival: verify the collector's identity (enrol on first use) before the visit is saved.
+    final face = sl<FaceService>();
+    final enrolled = await face.isEnrolled();
+    if (!mounted) return;
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => FaceCapturePage(mode: enrolled ? FaceMode.verify : FaceMode.enroll)),
+    );
+    if (ok != true) {
+      if (mounted) AppToast.error('Yuz tasdiqlanmadi — tashrif saqlanmadi');
+      return;
+    }
     final amount = double.tryParse(_amountController.text.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
     setState(() => _submitting = true);
     try {
