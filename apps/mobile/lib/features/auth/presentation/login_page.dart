@@ -4,7 +4,6 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/server_dialog.dart';
 import 'cubit/auth_cubit.dart';
 
 class LoginPage extends StatefulWidget {
@@ -36,21 +35,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                tooltip: 'Server manzili',
-                icon: const Icon(Iconsax.setting_2, size: 20),
-                onPressed: () => showServerDialog(context),
-              ),
-            ),
-            _form(context),
-          ],
-        ),
-      ),
+      body: SafeArea(child: _form(context)),
     );
   }
 
