@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { CollectionDto, CollectionListItem, CollectionMonthDto, VisitDto } from '@credit-core/shared';
+import { collectionDeadline, type CollectionDto, type CollectionListItem, type CollectionMonthDto, type VisitDto } from '@credit-core/shared';
 
 /** Turns a Decimal | number | null into a plain number (0 when absent). */
 const num = (v: Prisma.Decimal | number | null | undefined): number => (v == null ? 0 : Number(v));
@@ -41,6 +41,8 @@ export function toCollectionListItem(c: CollectionListRow): CollectionListItem {
     collectorName: c.assignedCollector?.fullName ?? null,
     createdByName: c.createdBy?.fullName ?? null,
     assignedAt: c.assignedAt?.toISOString() ?? null,
+    dueDays: c.dueDays,
+    deadlineAt: collectionDeadline((c.assignedAt ?? c.createdAt).toISOString(), c.dueDays),
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   };
@@ -108,6 +110,8 @@ export function toCollectionDto(c: CollectionDetailRow): CollectionDto {
     collector: c.assignedCollector ? { id: c.assignedCollector.id, fullName: c.assignedCollector.fullName } : null,
     assignedByName: c.assignedBy?.fullName ?? null,
     assignedAt: c.assignedAt?.toISOString() ?? null,
+    dueDays: c.dueDays,
+    deadlineAt: collectionDeadline((c.assignedAt ?? c.createdAt).toISOString(), c.dueDays),
     createdByName: c.createdBy?.fullName ?? null,
     closedAt: c.closedAt?.toISOString() ?? null,
     createdAt: c.createdAt.toISOString(),

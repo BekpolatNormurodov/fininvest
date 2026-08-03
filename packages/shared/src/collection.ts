@@ -74,6 +74,10 @@ export interface CollectionDto {
   collector: CollectorRef | null;
   assignedByName: string | null;
   assignedAt: string | null;
+  /** Max days the collector has to finish, from assignment (or creation if unassigned). */
+  dueDays: number;
+  /** Computed deadline (ISO) — null while there is no anchor date. */
+  deadlineAt: string | null;
   createdByName: string | null;
   closedAt: string | null;
   createdAt: string;
@@ -99,6 +103,8 @@ export interface CollectionListItem {
   collectorName: string | null;
   createdByName: string | null;
   assignedAt: string | null;
+  dueDays: number;
+  deadlineAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +116,8 @@ export interface CreateCollectionInput {
   fine: number;
   note?: string | null;
   assignedCollectorId?: string | null;
+  /** Max days to collect; when omitted the server uses the global default. */
+  dueDays?: number;
 }
 
 export interface UpdateCollectionInput {
@@ -119,6 +127,27 @@ export interface UpdateCollectionInput {
   note?: string | null;
   assignedCollectorId?: string | null;
   status?: CollectionStatus;
+  dueDays?: number;
+}
+
+/** Fallback max days to collect, used when neither the collection nor the config sets one. */
+export const DEFAULT_COLLECTION_DUE_DAYS = 4;
+
+/** The deadline for a collection: `anchor` (assignment or creation date) + `dueDays`. */
+export function collectionDeadline(anchorIso: string | null, dueDays: number): string | null {
+  if (!anchorIso) return null;
+  const d = new Date(anchorIso);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() + dueDays);
+  return d.toISOString();
+}
+
+/** Whole days left until the deadline (negative = overdue by that many days). null when no deadline. */
+export function collectionDaysLeft(deadlineIso: string | null, now: Date = new Date()): number | null {
+  if (!deadlineIso) return null;
+  const dl = new Date(deadlineIso);
+  if (Number.isNaN(dl.getTime())) return null;
+  return Math.ceil((dl.getTime() - now.getTime()) / 86_400_000);
 }
 
 // collector accounts (admin-managed) ──────────────────────────────────────────

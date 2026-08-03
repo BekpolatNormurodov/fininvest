@@ -51,7 +51,8 @@ const row = (o: Partial<CollectionListItem>): CollectionListItem => ({
   branchName: 'Buxoro filiali', region: 'Buxoro', status: CollectionStatus.ASSIGNED,
   totalDebt: 1_000_000, collectedAmount: 0, penalty: 0, fine: 0, monthsCount: 1,
   collectorId: 'u1', collectorName: 'Ali', createdByName: 'Vali',
-  assignedAt: '2026-07-01T00:00:00.000Z', createdAt: '2026-07-01T00:00:00.000Z',
+  assignedAt: '2026-07-01T00:00:00.000Z', dueDays: 4, deadlineAt: '2026-07-05T00:00:00.000Z',
+  createdAt: '2026-07-01T00:00:00.000Z',
   updatedAt: '2026-07-01T00:00:00.000Z', ...o,
 });
 

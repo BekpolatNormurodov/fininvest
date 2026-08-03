@@ -330,6 +330,7 @@ model AppConfig {
   nplRate       Float    @default(0.05) // NPL (to'lanmaslik) foizi
   minRate       Float    @default(0.55) // klient kredit yillik foizi — pastki chegara
   maxRate       Float    @default(0.60) // yuqori chegara (moderator shu gacha ko'taradi)
+  collectionDueDays Int  @default(4) // default max days an undiruv gives the collector
   updatedAt     DateTime @updatedAt
 }
 
@@ -543,6 +544,12 @@ model Collection {
   assignedBy          User?     @relation("CollectionAssignedBy", fields: [assignedById], references: [id])
   assignedById        String?
   assignedAt          DateTime?
+
+  // Max days to collect (deadline = anchor + dueDays). The two flags let the scheduler send the
+  // «deadline soon» and «overdue» notifications once each, not on every run.
+  dueDays         Int     @default(4)
+  dueSoonNotified Boolean @default(false)
+  overdueNotified Boolean @default(false)
 
   createdBy   User      @relation("CollectionCreatedBy", fields: [createdById], references: [id])
   createdById String

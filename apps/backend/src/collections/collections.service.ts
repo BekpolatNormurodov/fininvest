@@ -12,6 +12,7 @@ import {
   Role,
   collectionStats,
   collectionTotal,
+  DEFAULT_COLLECTION_DUE_DAYS,
   type CollectionDto,
   type CollectionListItem,
   type CollectionStats,
@@ -158,6 +159,7 @@ export class CollectionsService {
     const penalty = dto.penalty ?? 0;
     const fine = dto.fine ?? 0;
     const totalDebt = collectionTotal({ months: dto.months, penalty, fine });
+    const dueDays = dto.dueDays ?? (await this.defaultDueDays());
 
     const created = await this.prisma.collection.create({
       data: {
@@ -166,6 +168,7 @@ export class CollectionsService {
         penalty,
         fine,
         totalDebt,
+        dueDays,
         note: dto.note ?? null,
         createdById: user.id,
         assignedCollectorId: collectorId,
@@ -229,6 +232,13 @@ export class CollectionsService {
     }
     if (dto.note !== undefined) data.note = dto.note;
 
+    // Deadline change → re-arm the reminder/overdue notifications for the new deadline.
+    if (dto.dueDays !== undefined) {
+      data.dueDays = dto.dueDays;
+      data.dueSoonNotified = false;
+      data.overdueNotified = false;
+    }
+
     // Assignment change.
     let newlyAssigned = false;
     if (dto.assignedCollectorId !== undefined) {
@@ -237,6 +247,8 @@ export class CollectionsService {
       data.assignedCollector = collectorId ? { connect: { id: collectorId } } : { disconnect: true };
       data.assignedBy = collectorId ? { connect: { id: user.id } } : { disconnect: true };
       data.assignedAt = collectorId ? new Date() : null;
+      // A new assignment moves the deadline anchor — reset the notify flags.
+      if (newlyAssigned) { data.dueSoonNotified = false; data.overdueNotified = false; }
       if (collectorId && existing.status === CollectionStatus.NEW) data.status = CollectionStatus.ASSIGNED;
     }
 
@@ -377,6 +389,12 @@ export class CollectionsService {
   }
 
   /** Validate that an assigned id is an active collector; '' / null clears the assignment. */
+  /** The admin-configured global default max days, falling back to the shared constant. */
+  private async defaultDueDays(): Promise<number> {
+    const cfg = await this.prisma.appConfig.findUnique({ where: { id: 'default' }, select: { collectionDueDays: true } });
+    return cfg?.collectionDueDays ?? DEFAULT_COLLECTION_DUE_DAYS;
+  }
+
   private async resolveCollector(assignedCollectorId?: string | null): Promise<string | null> {
     if (!assignedCollectorId) return null;
     const u = await this.prisma.user.findUnique({ where: { id: assignedCollectorId }, select: { role: true, isActive: true } });

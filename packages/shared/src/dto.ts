@@ -525,6 +525,7 @@ export interface AppConfigDto {
   nplRate: number;
   minRate: number; // lending rate floor (fraction, default 0.55)
   maxRate: number; // lending rate ceiling (fraction, default 0.60)
+  collectionDueDays: number; // default max days an undiruv gives the collector
 }
 
 /** Payload to create or update a case (manual form OR import-confirmed). */

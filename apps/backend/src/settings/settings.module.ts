@@ -43,6 +43,7 @@ class ConfigDto {
   @IsNumber() @Min(0) @Max(5) nplRate!: number;
   @IsNumber() @Min(0) @Max(5) @Validate(MinLeMax) minRate!: number;
   @IsNumber() @Min(0) @Max(5) maxRate!: number;
+  @IsInt() @Min(1) @Max(365) collectionDueDays!: number;
 }
 
 @Injectable()
@@ -93,7 +94,7 @@ export class SettingsService {
   /** Singleton global config (pause limit + loan rates), seeded with defaults. */
   async getConfig(): Promise<AppConfigDto> {
     const c = await this.prisma.appConfig.upsert({ where: { id: 'default' }, create: { id: 'default' }, update: {} });
-    return { maxPauseDays: c.maxPauseDays, markupPercent: c.markupPercent, bankRate: c.bankRate, taxRate: c.taxRate, nplRate: c.nplRate, minRate: c.minRate, maxRate: c.maxRate };
+    return { maxPauseDays: c.maxPauseDays, markupPercent: c.markupPercent, bankRate: c.bankRate, taxRate: c.taxRate, nplRate: c.nplRate, minRate: c.minRate, maxRate: c.maxRate, collectionDueDays: c.collectionDueDays };
   }
 
   async updateConfig(dto: ConfigDto, user: RequestUser): Promise<AppConfigDto> {

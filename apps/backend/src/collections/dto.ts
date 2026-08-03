@@ -28,6 +28,7 @@ export class CreateCollectionDto {
   @IsOptional() @IsNumber() @Min(0) fine?: number;
   @IsOptional() @IsString() note?: string;
   @IsOptional() @IsString() assignedCollectorId?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(365) dueDays?: number;
 }
 
 export class UpdateCollectionDto {
@@ -38,6 +39,7 @@ export class UpdateCollectionDto {
   @IsOptional() @IsString() note?: string;
   @IsOptional() @IsString() assignedCollectorId?: string | null;
   @IsOptional() @IsEnum(CollectionStatus) status?: CollectionStatus;
+  @IsOptional() @IsInt() @Min(1) @Max(365) dueDays?: number;
 }
 
 /** A field visit, submitted as multipart (files under `media`) — fields arrive as strings, coerced. */
