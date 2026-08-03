@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Network (real API). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -47,6 +48,15 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- flutter_background_service's BackgroundService ships WITHOUT a foregroundServiceType.
+             On Android 14+ (targetSdk ≥ 34), startForeground() with a location type then throws
+             MissingForegroundServiceTypeException and kills the app right after location is granted.
+             Merge the type into that service so the foreground service can start cleanly. -->
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="location"
+            tools:node="merge" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
